@@ -1,0 +1,46 @@
+name: musica-workflows
+channels:
+  - conda-forge
+dependencies:
+  - python>=3.10,<3.13
+
+  # Core scientific stack
+  - numpy
+  - pandas
+  - xarray
+  - netcdf4
+  - h5netcdf
+  - dask
+  - bottleneck
+  - scipy
+
+  # Plotting
+  - matplotlib
+
+  # Geospatial (for masks / shapefiles)
+  - geopandas
+  - shapely
+  - pyproj
+  - fiona
+  - rasterio
+
+  # Optional but useful for regridding / grid utilities
+  - xesmf
+  - esmpy
+
+  # I/O + utilities
+  - pyyaml
+  - tqdm
+
+  # Jupyter (optional; remove if you don't plan to ship notebooks)
+  - jupyterlab
+  - ipykernel
+
+  # pip-only extras (keep minimal)
+  - pip
+  - pip:
+      - regionmask
+
+# conda env create -f environment.yml
+# conda activate musica-workflows
+# python -c "import xarray as xr; import geopandas as gpd; print('OK')"
