@@ -60,7 +60,7 @@ Adaptation would be required for uniform-resolution or alternative refinement co
 
 Typical Python environment:
 
-- Python ≥ 3.9  
+- Python ≥ 3.10
 - xarray  
 - numpy  
 - pandas  

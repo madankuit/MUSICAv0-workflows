@@ -16,6 +16,7 @@ dependencies:
 
   # Plotting
   - matplotlib
+  - cartopy
 
   # Geospatial (for masks / shapefiles)
   - geopandas
@@ -23,6 +24,7 @@ dependencies:
   - pyproj
   - fiona
   - rasterio
+  - regionmask
 
   # Optional but useful for regridding / grid utilities
   - xesmf
@@ -36,10 +38,6 @@ dependencies:
   - jupyterlab
   - ipykernel
 
-  # pip-only extras (keep minimal)
-  - pip
-  - pip:
-      - regionmask
 
 # conda env create -f environment.yml
 # conda activate musica-workflows
