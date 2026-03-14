@@ -49,6 +49,64 @@ SCRIP and mask files for ne0CONUSne30x8 live in [grids/ne0CONUSne30x8/grid_files
 
 ---
 
+## Getting Started
+
+### 1. Clone and set up the environment
+
+```bash
+git clone https://github.com/madankuit/MUSICAv0-workflows.git
+cd MUSICAv0-workflows
+conda env create -f environment.yml
+conda activate musica-workflows
+```
+
+### 2. Configure your paths
+
+All cluster paths (model output directories, grid files, regridding weights, etc.) are collected in one place:
+
+```
+svante_MUSICA_paths.py
+```
+
+This file contains **one person's** Svante paths as a reference. Copy it and update the paths to match your own directories:
+
+```bash
+cp svante_MUSICA_paths.py my_paths.py   # or keep as svante_MUSICA_paths.py locally
+```
+
+Then edit the variables at the top of the file (paths to CESM archive, regridding weights, output save directories, etc.).
+
+To verify all your paths exist on the cluster, run:
+
+```bash
+python check_svante_paths.py            # checks all entries
+python check_svante_paths.py --fix      # writes svante_MUSICA_paths_updated.py with status annotations
+```
+
+### 3. Set the `functions/` path in each script
+
+Scripts in `grids/` import shared utilities from `functions/`. Each script has a **USER CONFIGURATION** block near the top — set `repo_root` (or `functions_path`) there:
+
+```python
+# --- USER CONFIGURATION ---
+repo_root = '/path/to/MUSICAv0-workflows'
+import sys; sys.path.insert(0, repo_root + '/functions')
+```
+
+### 4. Typical analysis workflow (ne0CONUSne30x8)
+
+```
+1. Regrid SE output to lat/lon         →  grids/ne0CONUSne30x8/regridding/
+2. Compute VCDs / surface extractions  →  grids/ne0CONUSne30x8/postprocessing/
+3. Apply TROPOMI averaging kernels     →  grids/ne0CONUSne30x8/satellite_comparison/
+4. Match with AQS/SLAMS observations   →  grids/ne0CONUSne30x8/model_evaluation/
+5. Plot maps and diagnostics           →  grids/ne0CONUSne30x8/plotting/
+```
+
+Each subfolder has its own README with script-level descriptions.
+
+---
+
 ## Dependencies
 
 ```yaml
