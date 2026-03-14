@@ -1,0 +1,57 @@
+# satellite_comparison/
+
+Compare ne0CONUSne30x8 model columns against TROPOMI L2 satellite retrievals. Applies TROPOMI averaging kernels to model profiles, computes bias and correlation metrics, and masks invalid satellite pixels consistently across datasets.
+
+All scripts operate on **0.15°×0.15° conservatively regridded** model output (produced in `regridding/`).
+
+---
+
+## Files
+
+### Averaging Kernel Application (VCD at TROPOMI Overpass Time)
+
+| File | Species | Description |
+|------|---------|-------------|
+| `ConservativeRegrid_CalcTropVCD_approx1330LT_h2_MUSICA015deglatlon.py` | HCHO, NO₂ | Apply TROPOMI tropospheric averaging kernels to regridded model profiles at ~1:30 PM local time. Computes kernel-weighted tropospheric VCD on the 0.15° grid. |
+| `ConservativeRegrid_CalcTotalVCDCO_approx1330LT_h2_MUSICA015deglatlon.py` | CO | Same approach for total CO column using TROPOMI CO averaging kernels. |
+
+### Data Preprocessing
+
+| File | Description |
+|------|-------------|
+| `MaskTROPOMInan_in_MUSICA_VCD.py` | Mask model VCD pixels where corresponding TROPOMI pixels are NaN (cloud fraction, quality flag filters). Ensures consistent spatial coverage between model and satellite for fair comparison. |
+
+### Metrics and Output
+
+| File | Description |
+|------|-------------|
+| `WriteNCfile_ModelBiasToTROPOMI.TemporalCorrelation_CONUS.py` | Compute Spearman correlation, NMBE (normalized mean bias error), and NRMSE (normalized RMSE) between model and TROPOMI VCDs by US region and across CONUS. Outputs results to NetCDF. |
+
+---
+
+## Dependencies
+
+- TROPOMI averaging kernels: from TROPOMI L2 offline products, mapped to 0.1°×0.1° (see `functions/func_VerticalRegrid_TROPOMIAK_toMUSICAlevs_015latlon.py`)
+- Model VCDs: from `postprocessing/CalcTropVCD_h2_MUSICA_ne30CONUSne30x8_*.py`
+- Regridded 0.15° model fields: from `regridding/ConservativeRegrid_*.py`
+
+## Workflow
+
+```
+regridding/ConservativeRegrid_TROPOMITime_MUSICAOutputs.py
+    ↓
+ConservativeRegrid_CalcTropVCD_approx1330LT_h2_MUSICA015deglatlon.py
+    ↓
+MaskTROPOMInan_in_MUSICA_VCD.py
+    ↓
+WriteNCfile_ModelBiasToTROPOMI.TemporalCorrelation_CONUS.py
+    ↓  regional bias / correlation metrics (.nc)
+```
+
+---
+
+## Notes
+
+- Averaging kernels are applied following the standard formulation: VCD_AK = Σ_k AK_k × x_model_k × Δp_k / g
+- The ~1:30 PM LT overpass time approximation uses UTC offsets from `functions/func_MUSICA_DefineRegion.py`
+- TROPOMI quality flags: use `qa_value ≥ 0.75` (recommended by the TROPOMI L2 ATBD) for NO₂ and HCHO

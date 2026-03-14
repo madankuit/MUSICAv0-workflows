@@ -70,7 +70,10 @@ import datetime, time, os
 import cftime
 from netCDF4 import Dataset
 import subprocess
-from dsj.analysis.Calc_Emis import Calc_Emis_T
+
+import sys
+sys.path.insert(0,'/home/taoma528/Scripts/CESM_analysis/functions/')
+from Calc_Emis import Calc_Emis_T
 
 
 class Add_bounds(object):

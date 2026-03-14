@@ -1,86 +1,76 @@
 # MUSICAv0 Workflows
 
-Modular workflows for regional atmospheric chemistry experiment design, diagnostics, and model–observation evaluation using **MUSICAv0** with the **ne0CONUSne30x8 variable-resolution grid** (~14 km refinement over the contiguous United States).
+Analysis and postprocessing code for **MUSICAv0** (CESM2 with CAM-chem in spectral-element mode), with a focus on regional air quality studies over the continental United States.
 
-This repository organizes emissions processing, model postprocessing, and evaluation tools in a grid-specific, reproducible structure designed for regional air quality studies.
+Scripts here cover the full modeling lifecycle:
 
----
-
-## Scientific Scope
-
-These workflows support:
-
-- Emission sensitivity experiment design (e.g., anthropogenic and biomass-burning perturbations)
-- Regional masking and grid handling for unstructured `ncol` grids
-- Postprocessing of model output (column integration, diurnal analysis, regional aggregation)
-- Model–observation comparison (surface networks and satellite products)
-- Visualization of spatial and temporal diagnostics
-
-The structure reflects the full lifecycle of a modeling study:
-
-**experiment setup → model output processing → evaluation → interpretation**
+**experiment setup → emissions processing → model output postprocessing → evaluation → visualization**
 
 ---
 
 ## Repository Structure
-### `grid_information/`
-Grid-specific configuration for ne0CONUSne30x8, including masks, SCRIP grid handling, region definitions, and helper utilities for unstructured grids.
 
-### `emissions/`
-Tools for emissions preprocessing and sensitivity experiment generation, including regional masking, scaling, and temporal restructuring.
+```
+MUSICAv0-workflows/
+├── functions/                   # General-purpose, grid-agnostic utility functions
+└── grids/
+    └── ne0CONUSne30x8/          # Variable-resolution grid (~14 km over CONUS)
+        ├── grid_files/          # SCRIP grids, land/region masks (.nc)
+        ├── regridding/          # Regrid SE outputs to regular lat/lon
+        ├── emissions/           # Emissions preprocessing and sensitivity experiments
+        ├── postprocessing/      # Model output processing (VCD, surface extraction, merging)
+        ├── model_evaluation/    # Model–observation comparison (AQS, SLAMS, MDA8 O3)
+        ├── satellite_comparison/# TROPOMI column comparison with averaging kernels
+        └── plotting/            # Map visualization scripts
+```
 
-### `postprocessing/`
-Diagnostics and analysis tools for model output, including column calculations, diurnal compositing, anomaly detection, and regional statistics.
+### `functions/`
+Reusable utility functions that are **grid-agnostic** or work across multiple SE grids (ne30, ne0CONUSne30x8, etc.). Import these from any analysis script. See [functions/README.md](functions/README.md).
 
-### `model_evaluation/`
-Model–observation comparison utilities, including bias metrics, correlation analysis, and stratified evaluation (e.g., urban–rural contrasts).
-
-### `visualization/`
-Reusable plotting utilities for maps, time series, and vertical diagnostics.
-
-### `utilities/`
-Shared helper functions used across modules (e.g., local time conversion, pressure interpolation, statistical helpers).
+### `grids/ne0CONUSne30x8/`
+**Grid-specific** workflow scripts for the `ne0CONUSne30x8` variable-resolution CAM-SE grid (174,098 unstructured `ncol` columns; ~14 km over CONUS, ~111 km globally). Each subfolder targets a distinct stage of analysis. See [grids/ne0CONUSne30x8/README.md](grids/ne0CONUSne30x8/README.md).
 
 ---
 
-## Grid Configuration
+## Grid Overview
 
-All workflows under `ne0CONUSne30x8/` assume:
+| Grid | Columns (`ncol`) | Resolution | Primary use |
+|------|-----------------|------------|-------------|
+| `ne0CONUSne30x8` | 174,098 | ~14 km CONUS / ~111 km global | Regional air quality |
+| `ne30np4` | 97,481 | ~111 km global | Global / LBC source runs |
+| `f09` | — | 0.9°×1.25° FV | Finite-volume reference |
 
-- Variable-resolution CAM/MUSICA grid
-- Unstructured `ncol` indexing
-- ~14 km refinement over CONUS with coarser resolution elsewhere
-- Region-based masking defined on the refined grid
-
-Adaptation would be required for uniform-resolution or alternative refinement configurations.
+SCRIP and mask files for all grids live in [grids/ne0CONUSne30x8/grid_files/](grids/ne0CONUSne30x8/grid_files/).
 
 ---
 
 ## Dependencies
 
-Typical Python environment:
+```yaml
+python >= 3.10
+xarray
+numpy
+pandas
+matplotlib
+cartopy
+scipy
+geopandas
+esmpy          # for ESMF-based conservative regridding
+regionmask
+```
 
-- Python ≥ 3.10
-- xarray  
-- numpy  
-- pandas  
-- matplotlib  
-- scipy  
-- geopandas (for mask generation)
-
-An example `environment.yml` can be provided for reproducibility.
+See [environment.yml](environment.yml) for a reproducible conda environment.
 
 ---
 
-## Notes on Data
+## Data
 
-This repository does **not** contain large model output or emissions files.  
-Scripts assume user-supplied input paths and are designed to operate on externally stored datasets.
+Model output, emissions files, and observational datasets are **not** included in this repository. Scripts reference user-supplied input paths. Grid support files (SCRIP, masks) are provided as `.nc` files in `grid_files/`.
 
 ---
 
 ## Author
 
-Madankui Tao  
-Postdoctoral Associate, MIT EAPS  
-Atmospheric chemistry modeling and satellite data analysis
+Madankui (Lena) Tao
+Postdoctoral Associate, MIT EAPS
+Atmospheric chemistry modeling · Satellite data analysis · Regional air quality

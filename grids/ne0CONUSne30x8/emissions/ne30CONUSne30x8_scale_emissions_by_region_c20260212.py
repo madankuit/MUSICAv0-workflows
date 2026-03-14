@@ -1,5 +1,5 @@
 """
-Script: ne30CONUSne30x8_scale_emissions_by_Canadaregion_c20260212.py
+Script: ne30CONUSne30x8_scale_emissions_by_region_c20260212.py
 
 Description
 -----------
@@ -14,7 +14,8 @@ The script:
 
 Inputs
 ------
-- BBEmissions_diri: Original emissions directory (NetCDF files); Scaled files are saved to a subdirectory under the original input file directory.
+- BBEmissions_diri: Original emissions directory (NetCDF files)
+- Out_BBEmissions_diri: Output emissions directory
 - varname: Target variable name (e.g., "NO", "CO")
 - regionMask: Region mask (boolean array or shapefile-derived mask); should be defined already
 - scalefactor: Scaling factor (float; e.g., 0.7 for 30% reduction, 1.3 for 30% increase)
@@ -28,42 +29,15 @@ MODIFICATION HISTORY:
     - Initial version
 
 """
-
-# ============================================================
-# USAGE INSTRUCTIONS
-# ------------------------------------------------------------
-# 1) Set BBEmissions_diri at the top of this script to the
-#    directory containing your original emissions files.
-#
-# 2) Adjust scalefactor and regionMask as needed.
-#
-# 3) Uncomment the execution code in the end and run the script from the terminal:
-#
-#       python scale_emissions_by_canada_region.py
-#
-# The scaled files will be written to:
-#       {BBEmissions_diri}/ne0conus30x8_<region>Masked_<XXpct>/
-#
-# Example:
-#       python scale_emissions_by_canada_region.py
-# ============================================================
-
 #================================================================================================
 # inputs to change
 varname = 'CO' # BB emissions variable if not to process for all ('all')
 
 regionMask = "mask_Quebec"
-scalefactor = 0.7   # e.g. 0.7=70pct, 1.3=130pct
+scalefactor = 0.7   # e.g. 0.7 → 70pct
 
-# BB Emissions directory to use on Svante
 BBEmissions_diri = '/net/fs09/d0/taoma528/ncar_copies/acom/MUSICA/emissions/qfed2.6_finn/ne0conus30x8/'
-# defined mask
-MaskFile = '/home/taoma528/Scripts/CESM_analysis/ne0CONUSne30x8_Y2023T2024/mask_CanadaProvinces_ne0CONUS_ne30x8.nc'
 
-# # Directory containing biomass-burning emissions files
-# BBEmissions_diri = "path/to/biomass_burning_emissions/"
-# # Path to precomputed regional mask file for ne0CONUSne30x8 grid
-# MaskFile = "path/to/mask_CanadaProvinces_ne0CONUS_ne30x8.nc"
 
 #================================================================================================
 #### Module import ###
@@ -114,7 +88,10 @@ else:
     
 #================================================================================================
 # Grid and Mask Information
-mask_ds = xr.open_dataset(MaskFile)
+# SCRIP_CONUS = '/home/taoma528/Scripts/CESM_analysis/functions/ne0CONUS_ne30x8_np4_SCRIP.nc'
+# defined mask
+CanadaMaskFile = '/home/taoma528/Scripts/CESM_analysis/ne0CONUSne30x8_Y2023T2024/mask_CanadaProvinces_ne0CONUS_ne30x8.nc'
+mask_ds = xr.open_dataset(CanadaMaskFile)
 # for the selected region mask
 mask_da_loaded = mask_ds[regionMask].astype(bool)  # dims: (grid_size,) or (ncol,
 
@@ -130,11 +107,10 @@ coord_like_vars = {'time', 'ncol', 'lat', 'lon', 'area', 'date', 'altitude', 'rr
 # Convert scaling factor to percentage label
 pct_value = int(round(scalefactor * 100))   # 0.7 → 70
 pct_str = f"{pct_value}pct"
-
-BASE_OUT = Path(BBEmissions_diri)   # change locally if needed
-# The scaled files will be placed in a subdirectory from the original file
-Out_BBEmissions_diri = BASE_OUT / f"ne0conus30x8_{regionMask}Masked_{pct_str}"
-Out_BBEmissions_diri.mkdir(parents=True, exist_ok=True)
+Out_BBEmissions_diri = (
+    f"/net/fs09/d0/taoma528/ncar_copies/acom/MUSICA/emissions/"
+    f"qfed2.6_finn/ne0conus30x8_{regionMask}Masked_{pct_str}/"
+)
 
 #================================================================================================
 ### Key function
@@ -249,18 +225,18 @@ def scale_bb_emissions_by_mask(
     except Exception as e:
         print(f"Error encountered for {spc}: {e}")
 
-# #================================================================================================
-# ### Execution Step
-# # ----------------------------
-# # Scale emissions within mask
-# # ----------------------------
-# for spc in scalespc_list:
-#     scale_bb_emissions_by_mask(
-#         spc,
-#         BBEmissions_diri,
-#         Out_BBEmissions_diri,
-#         mask_da_loaded,
-#         scalefactor,
-#         regionMask,
-#         coord_like_vars,
-#     )
+#================================================================================================
+### Execution Step
+# ----------------------------
+# Scale emissions within mask
+# ----------------------------
+for spc in scalespc_list:
+    scale_bb_emissions_by_mask(
+        spc,
+        BBEmissions_diri,
+        Out_BBEmissions_diri,
+        mask_da_loaded,
+        scalefactor,
+        regionMask,
+        coord_like_vars,
+    )
