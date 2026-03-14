@@ -44,10 +44,9 @@ PATHS = [
     ("Regridding_015weights",       "/net/fs09/d0/taoma528/CESM22/grids/ne0CONUSne30x8_ESMFmap_0.15x0.15_cubit_conserve_cams_c20231204.nc", "file"),
     ("Regridding_01weights",        "/net/fs09/d0/taoma528/CESM22/grids/ESMFmap_0.1x0.1_ne0CONUSne30x8_cubit_conserve_cams.nc",             "file"),
     ("Regridding_09x125weights",    "/net/fs09/d0/taoma528/CESM22/grids/ESMFmap_0.9x1.25_ne30np4_cubit_conserve_cams.nc",                   "file"),
-    ("Regridding_1x1weights",       "/net/fs09/d0/taoma528/CESM22/grids/ne30np4_ESMFmap_FV1x1grid_cubit_conserve_cams_c20241105.nc",        "file"),
+    ("Regridding_1x1weights",       "/net/fs09/d0/taoma528/CESM22/grids/ESMFmap_0.9x1.25_ne30np4_cubit_conserve_cams.nc",                   "file"),
 
     # CESM archive and processed output
-    ("SpinUp_diri",                 "/net/fs09/d0/taoma528/CESM22/archive/f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.base.Y2018SpinupCmip6hist2013/atm/hist/", "dir"),
     ("processed_output_diri",       "/net/fs09/d0/taoma528/CESM22/processed_output/",                          "dir"),
     ("July2018_surfh2_merged_diri", "/net/fs09/d0/taoma528/CESM22/processed_output/July2018_surfh2_merged/",   "dir"),
     ("MUSICATropVCDSave_root",      "/net/fs09/d0/taoma528/CESM22/Calculated_MUSICA_VCD/TroposphericVCD/",      "dir"),
@@ -90,7 +89,7 @@ PATHS = [
     ("DanJaffe_output_diri",        "/net/fs09/d0/taoma528/ProcessedData/DanJaffeMUSICAPostprocessing/",        "dir"),
 
     # Local home paths
-    ("MUSICA_index_diri",           "/home/taoma528/Scripts/CESM_analysis/colidxCSV/",                         "dir"),
+    ("MUSICA_index_diri",           "/home/taoma528/Scripts/CESM_analysis/ACP_MUSICANEI_scripts/colidxCSV/",  "dir"),
 ]
 
 

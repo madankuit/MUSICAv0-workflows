@@ -41,7 +41,7 @@ ESMFmap_1x1grid_file = '/net/fs09/d0/taoma528/CESM22/grids/FV1x1grid_info_c20241
 Regridding_015weights_ne0CONUS  = '/net/fs09/d0/taoma528/CESM22/grids/ne0CONUSne30x8_ESMFmap_0.15x0.15_cubit_conserve_cams_c20231204.nc'
 Regridding_01weights_ne0CONUS   = '/net/fs09/d0/taoma528/CESM22/grids/ESMFmap_0.1x0.1_ne0CONUSne30x8_cubit_conserve_cams.nc'
 Regridding_09x125weights_ne30   = '/net/fs09/d0/taoma528/CESM22/grids/ESMFmap_0.9x1.25_ne30np4_cubit_conserve_cams.nc'
-Regridding_1x1weights_ne30      = '/net/fs09/d0/taoma528/CESM22/grids/ne30np4_ESMFmap_FV1x1grid_cubit_conserve_cams_c20241105.nc'
+Regridding_1x1weights_ne30      = '/net/fs09/d0/taoma528/CESM22/grids/ESMFmap_0.9x1.25_ne30np4_cubit_conserve_cams.nc'
 
 # ============================================================
 # CESM/MUSICA OUTPUT — RAW HISTORY FILES
@@ -52,9 +52,6 @@ Regridding_1x1weights_ne30      = '/net/fs09/d0/taoma528/CESM22/grids/ne30np4_ES
 # Example:
 #   casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1base01'
 #   RunPath  = svante_archive + casename + '/atm/hist/'
-
-# Spinup case (reference met/state for 2018 simulations)
-SpinUp_diri = '/net/fs09/d0/taoma528/CESM22/archive/f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.base.Y2018SpinupCmip6hist2013/atm/hist/'
 
 # ============================================================
 # CESM/MUSICA OUTPUT — PROCESSED / MERGED
@@ -165,4 +162,4 @@ DanJaffe_output_diri = '/net/fs09/d0/taoma528/ProcessedData/DanJaffeMUSICAPostpr
 # ============================================================
 
 # CSV files mapping AQS monitor IDs to ne0CONUSne30x8 ncol indices
-MUSICA_index_diri = '/home/taoma528/Scripts/CESM_analysis/colidxCSV/'
+MUSICA_index_diri = '/home/taoma528/Scripts/CESM_analysis/ACP_MUSICANEI_scripts/colidxCSV/'
