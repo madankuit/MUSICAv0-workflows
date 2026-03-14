@@ -2,7 +2,16 @@
     This script merges the h2 files to get the surface O3 for a range of dates
 """
 
-Output_diri = '/net/fs09/d0/taoma528/ProcessedData/DanJaffeMUSICAPostprocessing/'
+# ============================================================
+# USER CONFIGURATION — set these paths before running
+# ============================================================
+# Path to your CESM archive directory, e.g. '/path/to/CESM/archive/'
+svante_archive = ''
+
+# Directory to save the merged surface O3 output files
+# e.g. '/path/to/ProcessedData/DanJaffeMUSICAPostprocessing/'
+Output_diri = ''
+# ============================================================
 
 # for hourly
 histfreq  = "h2"
@@ -38,7 +47,6 @@ import matplotlib.patches as mpatches ### , bbox_inches='tight'
 
 #================================================================================================
 
-svante_archive = '/net/fs09/d0/taoma528/CESM22/archive/'
 varlist = ['O3']
 lev_idx = -1
 

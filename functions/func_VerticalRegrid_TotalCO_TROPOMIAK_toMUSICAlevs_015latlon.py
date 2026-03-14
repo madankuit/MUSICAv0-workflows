@@ -33,8 +33,8 @@ from scipy.interpolate import griddata # Simple regridding
 from netCDF4 import Dataset # To write NetCDF files
 
 ### Calculate the mean concentrations of each species averaged at each region
-import sys
-sys.path.insert(0,'/home/taoma528/Scripts/CESM_analysis/functions/')
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from func_MUSICA_DefineRegion import *
 
 #=====Define the locations of TRROPOMI data======
@@ -47,9 +47,10 @@ fileheader_dic = {'HCHO':'S5P_RPRO_L2__HCHO___',
                   }
 
 # Where to store the processed files
-L3_015TROPOMI_diri_dic = {'HCHO':'/net/fs09/d0/taoma528/Datasets/S5P_L2__HCHO___HiR_2/regrid_2018_MUSICA015/',
-                           'NO2':'/net/fs09/d0/taoma528/Datasets/S5P_L2__NO2____HiR_2/regrid_2018_MUSICA015/',
-                           'CO':'/net/fs09/d0/taoma528/Datasets/S5P_L2__CO_____HiR_2/regrid_2018_MUSICA015/',
+# Set your paths to the regridded TROPOMI data directories, e.g.:
+L3_015TROPOMI_diri_dic = {'HCHO':'/path/to/TROPOMI/data/S5P_L2__HCHO___HiR_2/regrid_2018_MUSICA015/',
+                           'NO2':'/path/to/TROPOMI/data/S5P_L2__NO2____HiR_2/regrid_2018_MUSICA015/',
+                           'CO':'/path/to/TROPOMI/data/S5P_L2__CO_____HiR_2/regrid_2018_MUSICA015/',
                           }
 
 #=====Example use======
@@ -96,7 +97,8 @@ def func_VerticalRegrid_TotalCO_TROPOMIAK_toMUSICAlevs_015latlon(casename, datei
     #--------------------------------------------------------------------------
     ### Use CO: also vertical layers from TOA (49500 m above) to surface (500 m above)
     # TROPOMI Test file for layers
-    TROPOMI_L2COdiri = "/net/fs09/d0/taoma528/Datasets/S5P_L2__CO_____HiR_2/2018/"
+    # TODO: set your path to the TROPOMI CO L2 directory, e.g. '/path/to/TROPOMI/S5P_L2__CO_____HiR_2/2018/'
+    TROPOMI_L2COdiri = "/path/to/TROPOMI/S5P_L2__CO_____HiR_2/2018/"
     testCOfile = 'S5P_RPRO_L2__CO_____20180902T144647_20180902T162816_04600_03_020400_20220905T080034.nc'
     TROPOMI_CO_PRODUCT = xr.open_dataset(TROPOMI_L2COdiri+testCOfile,group="/PRODUCT/",engine="netcdf4")
     # TROP_CO_egda = xr.open_dataset(TROPOMI_L2COdiri+testCOfile,group="PRODUCT/SUPPORT_DATA/INPUT_DATA/").sel(time=0)
@@ -107,7 +109,9 @@ def func_VerticalRegrid_TotalCO_TROPOMIAK_toMUSICAlevs_015latlon(casename, datei
     #--------------------------------------------------------------------------
     # Calculated TM5 PMID for the given fileregion and datei, already processed to 0.15 degree lat-lon
     # TM5PMID_datei_layers have layers revserved from TOA to surface
-    TM5SurfaceP_FileOut_diri = '/net/fs09/d0/taoma528/Datasets/TM5MP_Model/'
+    # TODO: set your path to the TM5 surface pressure data for CO, e.g.:
+    # TM5SurfaceP_FileOut_diri = '/path/to/TM5MP_Model/'
+    TM5SurfaceP_FileOut_diri = '/path/to/TM5MP_Model/'
     TM5SurfaceP_Path = TM5SurfaceP_FileOut_diri+'TM5MP_forCO_Model_SurfaceP_Global_015deg_2018-06-30T2018-08-02.nc'
     TM5SurfaceP_ds = xr.open_dataset(TM5SurfaceP_Path)
     regioniSurfaceP_ds = TM5SurfaceP_ds.sel(lat=slice(lat_bot,lat_up),lon=slice(lon_right,lon_left))
@@ -119,7 +123,9 @@ def func_VerticalRegrid_TotalCO_TROPOMIAK_toMUSICAlevs_015latlon(casename, datei
     #--------------------------------------------------------------------------
     #--------------------------------------------------------------------------
     # Read in test MUSICA output file: get the vertical levels from MUSICA; does not matter which specific case
-    test_h2_MUSICAfile = '/net/fs09/d0/taoma528/CESM22/archive/f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1base01/atm/hist/f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1base01.cam.h2.2018-07-01-03600.nc'
+    # TODO: set your path to a representative MUSICA h2 output file, e.g.:
+    # test_h2_MUSICAfile = '/path/to/MUSICA/archive/<casename>/atm/hist/<casename>.cam.h2.YYYY-MM-DD-SSSSS.nc'
+    test_h2_MUSICAfile = '/path/to/MUSICA/archive/'+casename+'/atm/hist/'+casename+'.cam.h2.2018-07-01-03600.nc'
     testh2_ds = xr.open_dataset(test_h2_MUSICAfile)
     # hybrid level at midpoints: from TOA to Surface
     MUSICA_layers = testh2_ds.lev.values
@@ -127,7 +133,9 @@ def func_VerticalRegrid_TotalCO_TROPOMIAK_toMUSICAlevs_015latlon(casename, datei
     del test_h2_MUSICAfile,testh2_ds
     #--------------------------------------------------------------------------
     # PMID processed to 0.15 degree already for the given case
-    regridByVar_diri = '/net/fs09/d0/taoma528/CESM22/Regridded_MUSICA_Output/2018_1330LT_TROPOMIcomp/MassConserve_latlon015_MUSICAoutput/'+casename+'/h2_ByVar/'
+    # TODO: set your path to regridded MUSICA output, e.g.:
+    # regridByVar_diri = '/path/to/Regridded_MUSICA_Output/MassConserve_latlon015_MUSICAoutput/<casename>/h2_ByVar/'
+    regridByVar_diri = '/path/to/Regridded_MUSICA_Output/MassConserve_latlon015_MUSICAoutput/'+casename+'/h2_ByVar/'
     MUSICA_PMID = xr.open_dataset( regridByVar_diri+casename+'.cam.h2.MassConserve_latlon015.PMID.20180701T20180801.nc' )
     regioni_MUSICA_PMID = MUSICA_PMID.PMID.sel(lat=slice(lat_bot, lat_up),lon=slice(lon_right,lon_left))
     # Approx at TROPOMI overpass time

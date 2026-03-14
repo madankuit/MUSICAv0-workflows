@@ -1,3 +1,12 @@
+"""
+ZonalMeridional.py
+Functions for computing area-weighted zonal and meridional means from
+Spectral Element (SE) model output on unstructured grids.
+
+MODIFICATION HISTORY:
+    Madankui Tao: Initial version
+"""
+
 import numpy as np
 
 def SE_ZonalMeridional(Data,Area,input_coords,Regridding_res,**kwargs):  

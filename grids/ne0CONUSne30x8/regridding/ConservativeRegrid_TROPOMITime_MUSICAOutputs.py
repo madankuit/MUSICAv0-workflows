@@ -12,9 +12,37 @@ MODIFICATION HISTORY:
     Madankui Tao, 16, December, 2023: VERSION 1.1
     - Add CO to verticalvars, adjust for different casename
 '''
+# ============================================================
+# USER CONFIGURATION — set these paths before running
+# ============================================================
+# Path to your CESM archive directory, e.g. '/path/to/CESM/archive/'
+svante_archive = ''
+
+# casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1base01'
+# casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1basehourlyNEI2017'
+# casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1basehourlyNOotherJulyMeanNEI2017'
+# casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1baseJulyMeanNEI2017'
+### with 6-hr nudging
+casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.6HrNudgeTS1hourlyNEI2017'
+
+# ne0CONUSne30x8 SCRIP grid file (source grid)
+SERR_scrip_file = ''  # Path to ne0CONUS_ne30x8_np4_SCRIP.nc, e.g. '/path/to/grids/ne0CONUS_ne30x8_np4_SCRIP.nc'
+
+# Target 0.15-degree FV grid information file
+ESMFmap_015grid_file = ''  # Path to FV_gridinfo_0.15 file, e.g. '/path/to/grids/FV_gridinfo_0.15_c20231204.nc'
+
+# ESMF conservative regridding weights file
+Regridding_015weights_file = ''  # Path to weights file, e.g. '/path/to/grids/ne0CONUSne30x8_ESMFmap_0.15x0.15_cubit_conserve_cams_c20231204.nc'
+
+# Directory to write regridded output files
+# e.g. '/path/to/Regridded_MUSICA_Output/2018_1330LT_TROPOMIcomp/MassConserve_latlon015_MUSICAoutput/<casename>/h2/'
+histfreqfiles_diri = ''
+# ============================================================
+
 #================================================================================================
 ### Module import ###
 import os
+import sys
 import glob
 
 import pandas as pd
@@ -34,44 +62,18 @@ warnings.filterwarnings("ignore", category=FutureWarning, message=".*iteritems.*
 from datetime import datetime
 import calendar
 
-# Functions copied from Cheyenne
-import sys
-sys.path.insert(0,'/home/taoma528/Scripts/CESM_analysis/MergeNEI2017_to_CAMS/NCAR_packages/')
-from dsj.array.chk import chk
-from dsj.plot.Plot_2D import Plot_2D
-from dsj.time.expand_date import Expand_date
-from dsj.analysis.Regridding_ESMF import Add_bounds, Regridding
-
-#================================================================================================
-### Providing all files needed to regrid
-# ne0CONUSne30x8 grid file as the source
-SERR_scrip_file = '/net/fs09/d0/taoma528/CESM22/grids/ne0CONUS_ne30x8_np4_SCRIP.nc'
-
-# Target Grid information file for the FV grid
-ESMFmap_015grid_file = '/net/fs09/d0/taoma528/CESM22/grids/FV_gridinfo_0.15_c20231204.nc'
-# ESMFmap_grid_file = '/net/fs09/d0/taoma528/CESM22/grids/CheyCopy_FV_gridinfo_015_c20231202.nc'
-
-# Weights file
-Regridding_015weights_file = '/net/fs09/d0/taoma528/CESM22/grids/ne0CONUSne30x8_ESMFmap_0.15x0.15_cubit_conserve_cams_c20231204.nc'
+# Local function files (from functions/ directory at the repo root)
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../functions/'))
+from Plot_2D import Plot_2D
+from Regridding_ESMF_MTv1 import Add_bounds, Regridding
 
 #================================================================================================
 # Read in MUSICA outputs
 # specify the MUSICA directory
-svante_archive = '/net/fs09/d0/taoma528/CESM22/archive/'
-
-# casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1base01'
-# casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1basehourlyNEI2017'
-# casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1basehourlyNOotherJulyMeanNEI2017'
-# casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1baseJulyMeanNEI2017'
-### with 6-hr nudging
-casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.6HrNudgeTS1hourlyNEI2017'
-
 RunPath = svante_archive+casename+'/atm/hist/'
 
 # for hourly average file
 histfreq = 'h2'
-# where to put the regridded files
-histfreqfiles_diri = '/net/fs09/d0/taoma528/CESM22/Regridded_MUSICA_Output/2018_1330LT_TROPOMIcomp/MassConserve_latlon015_MUSICAoutput/'+casename+'/'+histfreq+'/'
 
 # need to save HCHO, NO2, and also the meteorological variables and tropopause height (to calculate VCD)
 # variables_to_select = ['CO','CH2O', 'NO2','lat','lon','date','area','hyam','hybm','T','TROP_P','PS','PMID']

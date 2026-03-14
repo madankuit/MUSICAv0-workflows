@@ -71,8 +71,8 @@ import cftime
 from netCDF4 import Dataset
 import subprocess
 
-import sys
-sys.path.insert(0,'/home/taoma528/Scripts/CESM_analysis/functions/')
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from Calc_Emis import Calc_Emis_T
 
 

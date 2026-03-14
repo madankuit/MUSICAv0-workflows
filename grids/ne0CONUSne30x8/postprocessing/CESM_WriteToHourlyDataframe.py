@@ -1,24 +1,44 @@
 #===============
 # This script writes all CESM variables/Given varaibles at one site for given dates in EDT to a CSV file
 
+# ============================================================
+# USER CONFIGURATION — set these paths before running
+# ============================================================
+# Path to your AQS dataset directory, e.g. '/path/to/Datasets/AQS/'
+AQS_diri = ''
+
+# Path to your CESM/WRFCMAQ data directory, e.g. '/path/to/Datasets/WRFCMAQ_LISTOS/'
+CESM_diri = ''
+
+# Directory for per-site hourly CSV output, e.g. '/path/to/Datasets/Sitei_Hourly_JJA2018/'
+SiteCSV_diri = ''
+# ============================================================
+
 # Need to replace!
 Datelist = ['20180601','20180602','20180603','20180604','20180605','20180625','20180630',
            '20180701','20180702','20180703','20180719','20180720']
 
 #===============
 # Functions from the function dir
-import sys
-Python_script_diri = '/home/taoma528/Scripts/functions/'
-sys.path.insert(0, Python_script_diri)
-from external_packages import *
-from plot_settings import *
-from statistics_func import *
+import sys, os
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../functions/'))
+
+# Legacy imports from the original functions directory; these may not be available in all environments
+try:
+    from external_packages import *
+except ImportError:
+    pass  # optional legacy import — install or provide external_packages.py if needed
+try:
+    from plot_settings import *
+except ImportError:
+    pass  # optional legacy import — install or provide plot_settings.py if needed
+try:
+    from statistics_func import *
+except ImportError:
+    pass  # optional legacy import — install or provide statistics_func.py if needed
 
 # additional library for writing MATLAB files
 import scipy.io as sio
-
-#===============
-AQS_diri = '/net/fs09/d0/taoma528/Datasets/AQS/'
 
 #===============
 def get_current_next_days(date_string):
@@ -53,16 +73,14 @@ def dt64_to_datetime(dft6):
 #===============
 #===============
 
-# directory locations
-CESM_diri = '/net/fs09/d0/taoma528/Datasets/WRFCMAQ_LISTOS/'
-ACONC_diri = CMAQ_diri+'CMAQ_for_Tao-ma/ACONC/'
+# directory locations (CESM_diri configured in USER CONFIGURATION block above)
+ACONC_diri = CESM_diri+'CMAQ_for_Tao-ma/ACONC/'
 
-lat2d = np.load(CMAQ_diri+'CMAQ_lat2d.npy')
-lon2d = np.load(CMAQ_diri+'CMAQ_lon2d.npy')
+lat2d = np.load(CESM_diri+'CMAQ_lat2d.npy')
+lon2d = np.load(CESM_diri+'CMAQ_lon2d.npy')
 
 # match the keys
-AQSfilediri = "/net/fs09/d0/taoma528/Datasets/AQS/"
-sitedf = pd.read_csv(AQSfilediri+"SiteSetting_Pandoradf_2018_CT_LISTOS_summer.csv")
+sitedf = pd.read_csv(AQS_diri+"SiteSetting_Pandoradf_2018_CT_LISTOS_summer.csv")
 # sitedf
 Pandora_colocate_Monitor_dic = dict(zip(sitedf.SitesLocs.values, sitedf.SiteAbbr.values))
 Pandora_SiteLoc_dic = dict(zip(sitedf.SiteAbbr.values, sitedf.SitesLocs.values))
@@ -74,13 +92,13 @@ Pandora_SiteLat_dic = dict(zip(sitedf.SiteAbbr.values, sitedf.Latitude.values))
 Pandora_SiteLon_dic = dict(zip(sitedf.SiteAbbr.values, sitedf.Longitude.values))
 
 ## get ROW and COL index
-sitedf = pd.read_csv(CMAQ_diri+"CMAQIdx_SiteSetting_Pandoradf_2018_CT_LISTOS_summer.csv")
+sitedf = pd.read_csv(CESM_diri+"CMAQIdx_SiteSetting_Pandoradf_2018_CT_LISTOS_summer.csv")
 
 ROWidx_dic = dict(zip(sitedf.SiteAbbr.values, sitedf.CMAQ_ROWidx.values))
 COLidx_dic = dict(zip(sitedf.SiteAbbr.values, sitedf.CMAQ_COLidx.values))
 
 # read in one example file
-ACONC_diri = '/net/fs09/d0/taoma528/Datasets/WRFCMAQ_LISTOS/CMAQ_for_Tao-ma/ACONC/'
+ACONC_diri = CESM_diri+'CMAQ_for_Tao-ma/ACONC/'
 testCMAQ_filei = 'CCTM_ACONC_v531_intel_1.33LISTOS1_twoway_20180601.nc'
 # read in data
 testCMAQ_DA = xr.open_dataset(ACONC_diri+testCMAQ_filei)#.sel(TSTEP=slice(0,24))
@@ -114,9 +132,9 @@ def ACONC_getvari_siteDA_UTC(ACONC_diri,datei,Sitei,varname):
     
     return {'site_var':site_var,'var_unit':var_unit}
 
-############### 
+###############
 Prefix = "CMAQSurfACONCallChemicals"
-SiteCSV_diri = '/net/fs09/d0/taoma528/Datasets/Sitei_Hourly_JJA2018/'
+# SiteCSV_diri configured in USER CONFIGURATION block above
 
 # all variables in one dataframe Per site
 for Sitei in sitedf.SiteAbbr.values:

@@ -30,12 +30,14 @@ enddate = "2018-08-01" #"2018-08-01"
 ### with 6-hr nudging
 casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.6HrNudgeTS1hourlyNEI2017'
 
-# specify the MUSICA directory
-regridByVar_diri = '/net/fs09/d0/taoma528/CESM22/Regridded_MUSICA_Output/2018_1330LT_TROPOMIcomp/MassConserve_latlon015_MUSICAoutput/'+casename+'/h2_ByVar/'
-print(regridByVar_diri)
+# ============================================================
+# USER CONFIGURATION — set these paths before running
+# ============================================================
+regridByVar_diri = ''           # Path to regridded MUSICA output directory (h2_ByVar/)
+MUSICATropVCDSave_diri = ''     # Path to directory for saving tropospheric VCD output files
+# ============================================================
 
-# where to put the output files
-MUSICATropVCDSave_diri = '/net/fs09/d0/taoma528/CESM22/Regridded_MUSICA_Output/2018_1330LT_TROPOMIcomp/MassConserve_latlon015_MUSICAoutput/'+casename+'/TropVCD_approx1330LT/'
+print(regridByVar_diri)
 
 ### Names of the files
 TROP_P_filename = casename+'.cam.h2.MassConserve_latlon015.TROP_P.20180701T20180801.nc'
@@ -70,9 +72,9 @@ warnings.filterwarnings("ignore", category=FutureWarning, message=".*iteritems.*
 
 #================================================================================================
 ### Self-defined functions
-# Using the following functions that re-calculate TROPOMI AK after vertically interpolated to MUSICA 
-import sys
-sys.path.append('/home/taoma528/Scripts/CESM_analysis/functions')
+# Using the following functions that re-calculate TROPOMI AK after vertically interpolated to MUSICA
+import sys, os
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../functions/'))
 from func_MUSICA_DefineRegion import *
 from func_VerticalRegrid_TROPOMIAK_toMUSICAlevs_015latlon import *
 

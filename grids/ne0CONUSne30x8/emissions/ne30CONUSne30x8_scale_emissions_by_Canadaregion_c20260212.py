@@ -48,6 +48,12 @@ MODIFICATION HISTORY:
 #       python scale_emissions_by_canada_region.py
 # ============================================================
 
+# ============================================================
+# USER CONFIGURATION — set these paths before running
+# ============================================================
+BBEmissions_diri = ''   # Path to directory containing original QFED BB emissions files
+# ============================================================
+
 #================================================================================================
 # inputs to change
 varname = 'CO' # BB emissions variable if not to process for all ('all')
@@ -55,15 +61,9 @@ varname = 'CO' # BB emissions variable if not to process for all ('all')
 regionMask = "mask_Quebec"
 scalefactor = 0.7   # e.g. 0.7=70pct, 1.3=130pct
 
-# BB Emissions directory to use on Svante
-BBEmissions_diri = '/net/fs09/d0/taoma528/ncar_copies/acom/MUSICA/emissions/qfed2.6_finn/ne0conus30x8/'
-# defined mask
-MaskFile = '/home/taoma528/Scripts/CESM_analysis/ne0CONUSne30x8_Y2023T2024/mask_CanadaProvinces_ne0CONUS_ne30x8.nc'
-
-# # Directory containing biomass-burning emissions files
-# BBEmissions_diri = "path/to/biomass_burning_emissions/"
-# # Path to precomputed regional mask file for ne0CONUSne30x8 grid
-# MaskFile = "path/to/mask_CanadaProvinces_ne0CONUS_ne30x8.nc"
+import os
+# Path to precomputed regional mask file for ne0CONUSne30x8 grid
+MaskFile = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../grid_files/mask_CanadaProvinces_ne0CONUS_ne30x8.nc')
 
 #================================================================================================
 #### Module import ###
@@ -80,13 +80,6 @@ from shapely.geometry import Point, Polygon
 
 import xarray as xr
 import numpy as np
-
-#================================================================================================
-### Get output directory
-out_diri = Path(Out_BBEmissions_diri)
-# Create directory if it does not exist
-out_diri.mkdir(parents=True, exist_ok=True)
-print(f"Output directory ready: {out_diri}")
 
 # Find all bb emissions files
 pattern = os.path.join(

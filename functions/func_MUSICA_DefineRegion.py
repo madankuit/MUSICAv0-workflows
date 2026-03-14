@@ -1,4 +1,20 @@
-# File for model evaluation
+"""
+func_MUSICA_DefineRegion.py
+Defines geographic region boundaries and timezone offsets for model evaluation
+over the contiguous United States (CONUS) and sub-regions.
+
+Provides:
+    - latlonbound(fileregion): lat/lon boundaries for named US regions
+    - timezone_approx1330LT(fileregion): UTC time window for approx. 1:30 PM local time
+    - UTCtimezone_offset_summer(fileregion): UTC offset (positive hours) for summer/DST
+    - regional_UTCtimezone_offset_summer(fileregion): UTC offset (negative hours) for summer/DST
+
+Supported regions: WestCoast, Mountain, Midwest, Southwest, Southeast, Northeast, CONUS
+
+MODIFICATION HISTORY:
+    Madankui Tao: Initial version
+"""
+
 # Define the region boundaries
 
 #=====lat.lon bounds======

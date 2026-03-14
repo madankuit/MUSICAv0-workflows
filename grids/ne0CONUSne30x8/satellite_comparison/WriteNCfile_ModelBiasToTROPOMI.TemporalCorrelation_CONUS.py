@@ -11,11 +11,23 @@ MODIFICATION HISTORY:
 
 varlist = ['NO2','HCHO','CO']
 
+# ============================================================
+# USER CONFIGURATION — set these paths before running
+# ============================================================
+svante_archive = ''         # Path to your CESM archive directory
+figure_diri = ''            # Path to directory for saving output figures
+L3ProductFileOut_diri_dic = {'HCHO': '',   # Path to regridded TROPOMI HCHO L3 product directory
+                             'NO2':  '',   # Path to regridded TROPOMI NO2 L3 product directory
+                             'CO':   '',   # Path to regridded TROPOMI CO L3 product directory
+                             }
+MUSICA_regridded_base_diri = ''  # Base path to regridded MUSICA output (parent of per-casename dirs)
+# ============================================================
+
 ### Designated path and files
 #-----------------------------------------------------------------------
 # MUSICA
-svante_archive = '/net/fs09/d0/taoma528/CESM22/archive/'
-SCRIP_CONUS = '/home/taoma528/Scripts/CESM_analysis/functions/ne0CONUS_ne30x8_np4_SCRIP.nc'
+import os
+SCRIP_CONUS = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../grid_files/ne0CONUS_ne30x8_np4_SCRIP.nc')
 
 fileregion_ls = ['WestCoast','Mountain','Midwest','Southwest','Northeast','Southeast']
 nfileregion = len(fileregion_ls)
@@ -80,10 +92,7 @@ fileheader_dic = {'HCHO':'S5P_RPRO_L2__HCHO___',
                    'CO':'S5P_RPRO_L2__CO_____',
                   }
 
-L3ProductFileOut_diri_dic = {'HCHO':'/net/fs09/d0/taoma528/Datasets/S5P_L2__HCHO___HiR_2/regrid_2018_MUSICA015/',
-                               'NO2':'/net/fs09/d0/taoma528/Datasets/S5P_L2__NO2____HiR_2/regrid_2018_MUSICA015/',
-                               'CO':'/net/fs09/d0/taoma528/Datasets/S5P_L2__CO_____HiR_2/regrid_2018_MUSICA015/',
-                              }
+# L3ProductFileOut_diri_dic is set in the USER CONFIGURATION block above
 
 #================================================================================================
 #### Module import ###
@@ -105,18 +114,11 @@ warnings.filterwarnings("ignore", category=FutureWarning, message=".*iteritems.*
 #================================================================================================
 ### Self-defined functions
 # Calculate the mean concentrations of each species averaged at each region
-import sys
-sys.path.insert(0,'/home/taoma528/Scripts/CESM_analysis/functions/')
+import sys, os
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../functions/'))
 from func_MUSICA_DefineRegion import *
 from func_ModelEval_statistical_tests import *
-
-### Designated path and files
-#-----------------------------------------------------------------------
-# Grid file
-SCRIP_CONUS = '/home/taoma528/Scripts/CESM_analysis/functions/ne0CONUS_ne30x8_np4_SCRIP.nc'
-
-# where to put the figures
-figure_diri = '/net/fs09/d0/taoma528/Figures/CESM_analysis/1MJuly/'
+# SCRIP_CONUS and figure_diri are set in the USER CONFIGURATION block above
 
 #================================================================================================
 ### Date for July 2018
@@ -160,11 +162,11 @@ for varname in varlist:
         if varname in ['NO2','HCHO']:
             colOpt = 'TropVCD'
             colLabel = r'$VCD_{Trop}$'
-            FileOut_diri = f'/net/fs09/d0/taoma528/CESM22/Regridded_MUSICA_Output/2018_1330LT_TROPOMIcomp/MassConserve_latlon015_MUSICAoutput/{casename}/TropVCD_approx1330LT/'
+            FileOut_diri = f'{MUSICA_regridded_base_diri}{casename}/TropVCD_approx1330LT/'
         elif varname in ['CO']:
             colOpt = 'TotalVCD'
             colLabel = r'$VCD_{Total}$'
-            FileOut_diri = f'/net/fs09/d0/taoma528/CESM22/Regridded_MUSICA_Output/2018_1330LT_TROPOMIcomp/MassConserve_latlon015_MUSICAoutput/{casename}/TotalVCD_approx1330LT/'
+            FileOut_diri = f'{MUSICA_regridded_base_diri}{casename}/TotalVCD_approx1330LT/'
 
         #Save for each case: where to store the data
         SavePath = f'{FileOut_diri}{casename}.ModelBiasToTROPOMI.TemporalCor.CONUS.nc'
@@ -198,7 +200,7 @@ for varname in varlist:
                 regioni_JulyDaily_TROPOMI_VCD_ds = rawregioni_JulyDaily_TROPOMI_VCD_ds*Multifactor
                 #-----------------------------------------------------------------------------------
                 # Select MUSICA for the given region | use maksed
-                MUSICAVCDSave_diri = f'/net/fs09/d0/taoma528/CESM22/Regridded_MUSICA_Output/2018_1330LT_TROPOMIcomp/MassConserve_latlon015_MUSICAoutput/{casename}/{colOpt}_approx1330LT/'
+                MUSICAVCDSave_diri = f'{MUSICA_regridded_base_diri}{casename}/{colOpt}_approx1330LT/'
                 regioni_MUSICA_filename = f'{MUSICAVCDSave_diri}MaskedTROPOMInan_{casename}.{colOpt}1330LT_withTROPOMIAK.{varname}.{fileregion}.{filetime}.nc'
                 regioni_MUSICA_VCD_ds = xr.open_dataset(regioni_MUSICA_filename)
                 # MUSICA July daily mean 

@@ -11,6 +11,21 @@ MODIFICATION HISTORY:
     - Copied from ACP_MUSICANEI_scripts/CalcTropVCD_h2_MUSICA_ne30CONUSne30x8_v2.py
     - Modified to use meteorology variables saved in the h2 file, instead of read externally
 '''
+# ============================================================
+# USER CONFIGURATION — set these paths before running
+# ============================================================
+# Path to your CESM archive directory, e.g. '/path/to/CESM/archive/'
+svante_archive = ''
+
+# Path to directory for saving tropospheric VCD output files
+# e.g. '/path/to/Calculated_MUSICA_VCD/TroposphericVCD/<casename>/'
+MUSICATropVCDSave_diri = ''
+
+# casename options
+casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.BASE.From20230801.01'
+# casename = ''
+# ============================================================
+
 #================================================================================================
 # inputs
 varname = 'HCHO' # 'HCHO' or 'NO2'
@@ -22,12 +37,6 @@ enddate = "2024-06-30" # inclusive of last day
 FM1_startdate = startdate.replace("-", "")
 FM1_enddate = enddate.replace("-", "")
 
-# casename options 
-casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.BASE.From20230801.01'
-# casename = ''
-
-# where to put the output files
-MUSICATropVCDSave_diri = f'/net/fs09/d0/taoma528/CESM22/Calculated_MUSICA_VCD/TroposphericVCD/{casename}/'
 SavePath = f'{MUSICATropVCDSave_diri}{casename}.cam.h2.TroposphericVCD.{varname}.{FM1_startdate}T{FM1_enddate}.nc'
 
 #================================================================================================
@@ -52,9 +61,9 @@ warnings.filterwarnings("ignore", category=FutureWarning, message=".*iteritems.*
 
 #================================================================================================
 ### Self-defined functions
-# Using the following functions that re-calculate TROPOMI AK after vertically interpolated to MUSICA 
-import sys
-sys.path.append('/home/taoma528/Scripts/CESM_analysis/functions')
+# Using the following functions that re-calculate TROPOMI AK after vertically interpolated to MUSICA
+import sys, os
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../functions/'))
 from func_MUSICA_DefineRegion import *
 
 # Pressure functions
@@ -99,7 +108,6 @@ else:
 #================================================================================================
 # For a given case: Read hourly model outputs h2 files
 # specify the MUSICA directory
-svante_archive = '/net/fs09/d0/taoma528/CESM22/archive/'
 RunPath = svante_archive+casename+'/atm/hist/'
 
 # for hourly average file

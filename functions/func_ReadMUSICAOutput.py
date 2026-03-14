@@ -6,7 +6,7 @@ MODIFICATION HISTORY:
     Madankui Tao, 3, OCT, 2023: VERSION 1.00
     - Initial version
     Madankui Tao, 19, FEB, 2024: VERSION 2.00
-    - Update path from fs06 to fs09; incorporate the old 'July5Day' ipynb functions here
+    - Incorporate the old 'July5Day' ipynb functions here
     
 '''
 
@@ -26,11 +26,9 @@ import os
 import glob
 
 ###########
-# files for grid setup
-EgFile_diri = '/home/taoma528/MUSICA_tutorial_files/'
-# Read SCRIP file that has grid information needed to plot values on a map
-SCRIP_CONUS = EgFile_diri+'ne0CONUS_ne30x8_np4_SCRIP.nc'
-SCRIP_ne30 = EgFile_diri+'ne30np4_091226_pentagons.nc'
+# Set the path to your SCRIP grid files, e.g.:
+# SCRIP_CONUS = '/path/to/ne0CONUS_ne30x8_np4_SCRIP.nc'
+# SCRIP_ne30  = '/path/to/ne30np4_091226_pentagons.nc'
 
 ###########
 import os

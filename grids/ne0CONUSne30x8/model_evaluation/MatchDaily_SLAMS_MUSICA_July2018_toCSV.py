@@ -23,8 +23,18 @@ casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1basehour
 ### with 6-hr nudging
 # casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.6HrNudgeTS1hourlyNEI2017'
 
+# ============================================================
+# USER CONFIGURATION — set these paths before running
+# ============================================================
+AQS2018_diri = ''           # Path to AQS data directory for year 2018 (contains daily zip files)
+AQS_diri = ''               # Path to base AQS data directory (contains parameters.csv)
+Matched_diri = ''           # Path to directory for output matched CSV files
+MUSICA_index_diri = ''      # Path to directory containing MUSICA column-index CSV files
+svante_archive = ''         # Path to your CESM archive directory
+# ============================================================
+
 # Where to store the matched files
-Matched_diri = f'/net/fs09/d0/taoma528/Datasets/AQS/MUSICA_Matched/{casename}/daily/'
+# Matched_diri = f'.../{casename}/daily/'
 
 #------------------------------------------------------------------------------
 ### For AQS
@@ -32,7 +42,6 @@ Matched_diri = f'/net/fs09/d0/taoma528/Datasets/AQS/MUSICA_Matched/{casename}/da
 daily_varlist = ['NO2','O3','CO','SO2','PM25']
 # 'LC25' for PM2.5 - Local Conditions (88101)
 
-AQS2018_diri = '/net/fs09/d0/taoma528/Datasets/AQS/ForYear2018/'
 # for daily measurement
 valcolname = 'Arithmetic Mean'
 
@@ -45,10 +54,8 @@ AQSvarindex_dic = {'CO':'CO','SO2':'SO2',
 
 #------------------------------------------------------------------------------
 ### For MUSICA
-svante_archive = '/net/fs09/d0/taoma528/CESM22/archive/'
 RunPath = svante_archive+casename+'/atm/hist/'
-            
-MUSICA_index_diri = '/home/taoma528/Scripts/CESM_analysis/colidxCSV/' # Get the index
+# MUSICA_index_diri is set in the USER CONFIGURATION block above
 
 # Name used in MUSICA outputs
 MUSICA_varname_dic = {'CO':'CO','SO2':'SO2',
@@ -82,15 +89,14 @@ from netCDF4 import Dataset
 import xarray as xr
 
 # my functions
-import sys
-sys.path.insert(0,'/home/taoma528/Scripts/CESM_analysis/functions/')
+import sys, os
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../functions/'))
 from func_MUSICA_DefineRegion import *
 
 # Grid
-EgFile_diri = '/home/taoma528/Scripts/CESM_analysis/tutorial_files/'
 # Read SCRIP file that has grid information needed to plot values on a map
-SCRIP_CONUS = EgFile_diri+'ne0CONUS_ne30x8_np4_SCRIP.nc'
-SCRIP_ne30 = EgFile_diri+'ne30np4_091226_pentagons.nc'
+SCRIP_CONUS = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../grid_files/ne0CONUS_ne30x8_np4_SCRIP.nc')
+SCRIP_ne30 = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../grid_files/ne30np4_091226_pentagons.nc')
 
 #================================================================================================
 ### """Functions for AQS"""
@@ -112,7 +118,6 @@ def deflatten(names):
         names.remove(name)
     return deflattened
 
-AQS_diri = '/net/fs09/d0/taoma528/Datasets/AQS/'
 # get parameter code
 parameters_df = pd.read_csv(AQS_diri+"parameters.csv")
 ParaAbrrCode_dic = dict(zip(parameters_df["Parameter Abbreviation"].values, parameters_df["Parameter Code"].values))

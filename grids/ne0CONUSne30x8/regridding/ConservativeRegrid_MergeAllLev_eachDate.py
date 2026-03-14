@@ -10,11 +10,38 @@ MODIFICATION HISTORY:
     - Add checks for Merged files
 '''
 
+# ============================================================
+# USER CONFIGURATION — set these paths before running
+# ============================================================
+# casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1base01'
+# casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1basehourlyNEI2017'
+casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1basehourlyNOotherJulyMeanNEI2017'
+# casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1baseJulyMeanNEI2017'
+### with 6-hr nudging
+# casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.6HrNudgeTS1hourlyNEI2017'
+
+# Directory containing per-level regridded h2 files
+# e.g. '/path/to/Regridded_MUSICA_Output/.../MassConserve_latlon015_MUSICAoutput/<casename>/h2/'
+h2files_diri = ''
+
+# Directory for single-day merged vertical-variable files
+# e.g. '/path/to/Regridded_MUSICA_Output/.../MassConserve_latlon015_MUSICAoutput/<casename>/h2_VertiVarsByVarDate/'
+singleDay_diri = ''
+
+# Directory for per-variable output files
+# e.g. '/path/to/Regridded_MUSICA_Output/.../MassConserve_latlon015_MUSICAoutput/<casename>/h2_ByVar/'
+FileOutByVar_dir = ''
+
+# Directory for merged-vertical h2 files (often same as singleDay_diri)
+# e.g. '/path/to/Regridded_MUSICA_Output/.../MassConserve_latlon015_MUSICAoutput/<casename>/h2_VertiVarsByVarDate/'
+MergedVerticalh2files_diri = ''
+# ============================================================
+
 GroupedName = 'vertivars' # 'vertivars' ; '.CO.'
 # single species files use .XX. to make sure the file selection was effective
 
 startDate = "2018-07-01"
-endDate = "2018-08-01" 
+endDate = "2018-08-01"
 endDateExclude = "2018-08-02" # the created datearray exclude this date
 
 ### version for case: f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1basehourlyNEI2017
@@ -27,19 +54,6 @@ var_dic = {
 #            'vertivars':['CH2O','NO2','T','PMID'],
 #            '.CO.':['CO'],
 #           }
-
-# casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1base01'
-# casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1basehourlyNEI2017'
-casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1basehourlyNOotherJulyMeanNEI2017'
-# casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1baseJulyMeanNEI2017'
-### with 6-hr nudging
-# casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.6HrNudgeTS1hourlyNEI2017'
-
-# directory specification
-h2files_diri = '/net/fs09/d0/taoma528/CESM22/Regridded_MUSICA_Output/2018_1330LT_TROPOMIcomp/MassConserve_latlon015_MUSICAoutput/'+casename+'/h2/'
-singleDay_diri = '/net/fs09/d0/taoma528/CESM22/Regridded_MUSICA_Output/2018_1330LT_TROPOMIcomp/MassConserve_latlon015_MUSICAoutput/'+casename+'/h2_VertiVarsByVarDate/'
-FileOutByVar_dir = '/net/fs09/d0/taoma528/CESM22/Regridded_MUSICA_Output/2018_1330LT_TROPOMIcomp/MassConserve_latlon015_MUSICAoutput/'+casename+'/h2_ByVar/'
-MergedVerticalh2files_diri = '/net/fs09/d0/taoma528/CESM22/Regridded_MUSICA_Output/2018_1330LT_TROPOMIcomp/MassConserve_latlon015_MUSICAoutput/'+casename+'/h2_VertiVarsByVarDate/'
 
 #================================================================================================
 ### Module import ###

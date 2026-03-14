@@ -51,18 +51,21 @@ MODIFICATION HISTORY:
     Madankui Tao, 4, Sep, 2025: VERSION 1.0
     - Initial version
 """
+# ============================================================
+# USER CONFIGURATION — set these paths before running
+# ============================================================
+Output_diri = ''        # Path to output directory for processed data
+svante_archive = ''     # Path to your CESM archive directory
+# ============================================================
+
 #================================================================================================
-Output_diri = '/net/fs09/d0/taoma528/ProcessedData/DanJaffeMUSICAPostprocessing/'
+import os
 
 MonitorInfo_filepath = f'{Output_diri}MonitorInfo/Lee_Jaffe_GAM_stats.csv'
 Monitorne30Idx_filepath = f'{Output_diri}MonitorInfo/MatchedMonitors_ne30_ColIdx.csv'
 
 # Variable Resolution Grid
-SCRIP_ne30 = '/home/taoma528/Scripts/CESM_analysis/functions/ne30np4_091226_pentagons.nc'
-
-# Define dictionaries
-# a diri to place all related files for this project
-svante_archive = '/net/fs09/d0/taoma528/CESM22/archive/'
+SCRIP_ne30 = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../grid_files/ne30np4_091226_pentagons.nc')
 
 # list for all case names
 BASE2022_casename = 'f.e22.FCnudged.ne30_ne30_mg17.BGO3.BASEY20220401TY20230401'
@@ -127,8 +130,8 @@ warnings.filterwarnings("ignore", category=FutureWarning, module="xarray.core.ac
 #================================================================================================
 # Define functions specific for this application
 # my functions
-import sys
-sys.path.append('/home/taoma528/Scripts/CESM_analysis/functions')
+import sys, os
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../functions/'))
 from SE_analysis import get_site_index
 
 from timezonefinder import TimezoneFinder

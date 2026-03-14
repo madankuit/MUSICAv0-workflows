@@ -114,8 +114,8 @@ def rewrite_ne0CONUSne30x8_0125latlongrid_forCONUS_surflayer_v2(ds_CONUS,varlist
         Use example:
             ds_CONUS (on ne0CONUS30x8 grid)
             varlist = ['O3','CO','OH']
-            savefilePath = '/home/taoma528/Scripts/CESM_analysis/Regrid_CONUS_data/'
-            filename = 
+            savefilePath = '/path/to/output/directory/'
+            filename =
             allvars_ds = rewrite_ne0CONUSne30x8_0125latlongrid_forCONUS_surflayer_v2(ds_CONUS,varlist,savefilePath)
         
     """
@@ -197,7 +197,7 @@ def rewrite_ne0CONUSne30x8_0125latlongrid_forCONUS_surflayer(diri,filename,varli
             diri = EgFile_diri
             filename = 'f.e22.FCcotagsNudged.ne0CONUSne30x8.cesm220.2012-01.cam.h1.2013-08.nc'
             varlist = ['O3','CO','OH']
-            savefilePath = '/home/taoma528/Scripts/CESM_analysis/Regrid_CONUS_data/'
+            savefilePath = '/path/to/output/directory/'
             allvars_ds = rewrite_ne0CONUSne30x8_0125latlongrid_forCONUS_surflayer(diri,filename,varlist,savefilePath)
         
     """

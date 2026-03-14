@@ -5,13 +5,20 @@ MODIFICATION HISTORY:
     Madankui Tao, 18, DEC, 2023: VERSION 1.0
     - Initial version
 '''
+# ============================================================
+# USER CONFIGURATION — set these paths before running
+# ============================================================
+AQS2018_diri = ''       # Path to AQS data directory for year 2018
+AQS_diri = ''           # Path to base AQS data directory (contains parameters.csv)
+MUSICA_index_diri = ''  # Path to directory for output column-index CSV files
+SpinUp_diri = ''        # Path to CESM archive directory containing spinup h1 files
+ex_h1_filename = ''     # Example h1 filename to read model lat/lon coordinates
+# ============================================================
+
 #================================================================================================
-# Specified variables 
+# Specified variables
 hourly_varlist = ['CO','SO2','NO2','O3','LC25']
 # 'LC25' for PM2.5 - Local Conditions (88101)
-
-AQS2018_diri = '/net/fs09/d0/taoma528/Datasets/AQS/ForYear2018/'
-MUSICA_index_diri = '/home/taoma528/Scripts/CESM_analysis/colidxCSV/'
 
 # for most hourly measurement
 valcolname = 'Sample Measurement'
@@ -41,16 +48,15 @@ from netCDF4 import Dataset
 import xarray as xr
 
 # my functions
-import sys
-sys.path.append('/home/taoma528/Scripts/CESM_analysis/functions')
+import sys, os
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../functions/'))
 from func_ModelEval_statistical_tests import *
 from SE_analysis import get_site_index
 
 # Grid
-EgFile_diri = '/home/taoma528/Scripts/CESM_analysis/tutorial_files/'
 # Read SCRIP file that has grid information needed to plot values on a map
-SCRIP_CONUS = EgFile_diri+'ne0CONUS_ne30x8_np4_SCRIP.nc'
-SCRIP_ne30 = EgFile_diri+'ne30np4_091226_pentagons.nc'
+SCRIP_CONUS = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../grid_files/ne0CONUS_ne30x8_np4_SCRIP.nc')
+SCRIP_ne30 = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../grid_files/ne30np4_091226_pentagons.nc')
 
 #================================================================================================
 ### """Functions for AQS"""
@@ -72,7 +78,6 @@ def deflatten(names):
         names.remove(name)
     return deflattened
 
-AQS_diri = '/net/fs09/d0/taoma528/Datasets/AQS/'
 # get parameter code
 parameters_df = pd.read_csv(AQS_diri+"parameters.csv")
 ParaAbrrCode_dic = dict(zip(parameters_df["Parameter Abbreviation"].values, parameters_df["Parameter Code"].values))
@@ -109,8 +114,6 @@ def write_hourlyAQSMonitorID_to_MUSICAcolidx_csvfile(varname,AQSvar_df,CVSOUT_di
     else:
         print(f"Start....")
         # Read an example MUSICA ne0CONUSne30x8 ds for model lat and lon
-        SpinUp_diri = '/net/fs09/d0/taoma528/CESM22/archive/f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.base.Y2018SpinupCmip6hist2013/atm/hist/'
-        ex_h1_filename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.base.Y2018SpinupCmip6hist2013.cam.h1.2018-05-01-00000.nc'
         ds_CONUS = xr.open_dataset(SpinUp_diri+ex_h1_filename)
 
         # Keep only the unique MonitorID values along with their Latitude and Longitude
@@ -131,10 +134,10 @@ def write_hourlyAQSMonitorID_to_MUSICAcolidx_csvfile(varname,AQSvar_df,CVSOUT_di
             # find the model index
             Index_MonitorIDi = get_site_index( site_lat=lati, site_lon=360+loni, scrip_file=SCRIP_CONUS )
             if Index_MonitorIDi==None:
-                # add to the list
+                # add to the list; use np.nan as sentinel since Model_lati/loni are not yet defined
                 ls_Index_MonitorIDi.append('Find None')
-                ls_Model_lati.append(Model_lati)
-                ls_Model_loni.append(Model_loni)
+                ls_Model_lati.append(np.nan)
+                ls_Model_loni.append(np.nan)
 
             else:
                 Model_lati = ds_CONUS.lat.values[Index_MonitorIDi]

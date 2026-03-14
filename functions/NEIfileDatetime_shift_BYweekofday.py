@@ -1,8 +1,21 @@
-# This function is used to modify the date for a different year than the NEI emissions file
-# Created by Madankui Tao on July 24, 2023
+"""
+NEIfileDatetime_shift_BYweekofday.py
+Functions to shift NEI emissions filenames to a target year while preserving
+the day-of-week, so that weekday/weekend emission patterns remain consistent.
 
-# Input: Hourly mean NEI filename (in the format of '')
-# Output: NEI filename for the target year
+Provides:
+    - extract_date_and_time(filename): Extract datetime from a NEI filename string.
+    - NEIfileDatetime_shift_BYweekofday(inpNEIfile, outyear): Shift a NEI filename
+      forward to a target year, adjusting date to match the same weekday.
+    - NEIfileDatetime_shift_BACKWARDto2017(outpNEIfile_datetime, outyear): Reverse-map
+      a target-year date back to the corresponding 2017 NEI date.
+
+Input:  Hourly mean NEI filename in the format 'wrfchemi_d01_YYYY-MM-DD_HH:MM:SS'.
+Output: NEI filename adjusted for the target year.
+
+MODIFICATION HISTORY:
+    Madankui Tao, 24, JUL, 2023: Initial version
+"""
 
 #=====Dependent library & functions======
 #--------------------------------------------------------------------------

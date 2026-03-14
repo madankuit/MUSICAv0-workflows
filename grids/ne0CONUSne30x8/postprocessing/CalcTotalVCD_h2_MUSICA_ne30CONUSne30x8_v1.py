@@ -8,6 +8,33 @@ MODIFICATION HISTORY:
     Madankui Tao, May, 29, 2024: VERSION 1.0
     - Based on CalcTropVCD_h2_MUSICA_ne30CONUSne30x8_v2.py 
 '''
+# ============================================================
+# USER CONFIGURATION — set these paths before running
+# ============================================================
+# Path to your CESM archive directory, e.g. '/path/to/CESM/archive/'
+svante_archive = ''
+
+# Path to directory for saving total VCD output files
+# e.g. '/path/to/Calculated_MUSICA_VCD/TotalVCD/<casename>/'
+MUSICAVCDSave_diri = ''
+
+# Path to external meteorology file (PS, PMID, T)
+# e.g. '/path/to/Calculated_MUSICA_VCD/TroposphericVCD/met_<casename>.nc'
+MetPath = ''
+
+# ### One-month NEI simulations
+# casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1base01'
+# casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1baseJulyMeanNEI2017'
+# casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1basehourlyNEI2017'
+# casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1basehourlyNOotherJulyMeanNEI2017'
+# casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1basedailyNOotherJulyMeanNEI2017'
+
+### 5-day sensitivity simulations
+# casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.July5DaySensiTest.TS1base01'
+# casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.July5DaySensiTest.TS1Anthro70Perct01'
+casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.July5DaySensiTest.TS1BioEmis70Perct01'
+# ============================================================
+
 #================================================================================================
 # inputs
 varname = 'CO' # 'HCHO' or 'NO2'
@@ -23,23 +50,7 @@ enddate = "2018-07-05" # inclusive of last day
 FM1_startdate = startdate.replace("-", "")
 FM1_enddate = enddate.replace("-", "")
 
-# ### One-month NEI simulations
-# casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1base01'
-# casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1baseJulyMeanNEI2017'
-# casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1basehourlyNEI2017'
-# casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1basehourlyNOotherJulyMeanNEI2017'
-# casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1basedailyNOotherJulyMeanNEI2017'
-
-### 5-day sensitivity simulations
-# casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.July5DaySensiTest.TS1base01'
-# casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.July5DaySensiTest.TS1Anthro70Perct01'
-casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.July5DaySensiTest.TS1BioEmis70Perct01'
-
-# where to put the output files
-MUSICAVCDSave_diri = f'/net/fs09/d0/taoma528/CESM22/Calculated_MUSICA_VCD/TotalVCD/{casename}/'
 SavePath = f'{MUSICAVCDSave_diri}{casename}.cam.h2.TotalVCD.{varname}.{FM1_startdate}T{FM1_enddate}.nc'
-
-MetPath = '/net/fs09/d0/taoma528/CESM22/Calculated_MUSICA_VCD/TroposphericVCD/met_f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1base01.nc'
 
 #================================================================================================
 #### Module import ###
@@ -63,9 +74,9 @@ warnings.filterwarnings("ignore", category=FutureWarning, message=".*iteritems.*
 
 #================================================================================================
 ### Self-defined functions
-# Using the following functions that re-calculate TROPOMI AK after vertically interpolated to MUSICA 
-import sys
-sys.path.append('/home/taoma528/Scripts/CESM_analysis/functions')
+# Using the following functions that re-calculate TROPOMI AK after vertically interpolated to MUSICA
+import sys, os
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../functions/'))
 from func_MUSICA_DefineRegion import *
 
 # Pressure functions
@@ -110,7 +121,6 @@ else:
 #================================================================================================
 # For a given case: Read hourly model outputs h2 files
 # specify the MUSICA directory
-svante_archive = '/net/fs09/d0/taoma528/CESM22/archive/'
 RunPath = svante_archive+casename+'/atm/hist/'
 
 # for hourly average file

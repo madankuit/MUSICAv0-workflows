@@ -1,5 +1,17 @@
 ### Extract_Model_surfacelev
-### This script extracts the surface level 
+### This script extracts the surface level
+
+# ============================================================
+# USER CONFIGURATION — set these paths before running
+# ============================================================
+# Path to your CESM archive directory, e.g. '/path/to/CESM/archive/'
+svante_archive = ''
+
+# Directory to save the merged surface h2 output files
+# e.g. '/path/to/processed_output/July2018_surfh2_merged/'
+processed_output_diri = ''
+# ============================================================
+
 #================================================================================================
 import numpy as np # for array manipulation and basic scientific calculation
 import xarray as xr # To read NetCDF files
@@ -27,7 +39,7 @@ import matplotlib.patches as mpatches ### , bbox_inches='tight'
 #================================================================================================
 # functions I defined
 import sys
-sys.path.insert(0,'/home/taoma528/Scripts/CESM_analysis/functions/')
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../functions/'))
 
 from func_MUSICA_DefineRegion import *
 from func_ModelEval_statistical_tests import *
@@ -38,8 +50,6 @@ from Plot_2D import Plot_2D # To draw a map
 from SE_analysis import get_site_index
 
 #================================================================================================
-
-svante_archive = '/net/fs09/d0/taoma528/CESM22/archive/'
 
 lev_idx = -1 # for near-surface level
 
@@ -120,7 +130,7 @@ for caseIdx in range(len(casename_ls)):
     startfileDate = RunFiles[0].split('.')[-2][:10]
     endfileDate = RunFiles[-1].split('.')[-2][:10]
     # Save
-    HourlyFilePath = f'/net/fs09/d0/taoma528/CESM22/processed_output/July2018_surfh2_merged/{casename}.cam.h2.surflev.{startfileDate}T{endfileDate}.nc'
+    HourlyFilePath = f'{processed_output_diri}{casename}.cam.h2.surflev.{startfileDate}T{endfileDate}.nc'
     
     # save to .nc
     surf_ds.to_netcdf(HourlyFilePath)

@@ -29,14 +29,19 @@ MODIFICATION HISTORY:
     - Initial version
 
 """
+# ============================================================
+# USER CONFIGURATION — set these paths before running
+# ============================================================
+BBEmissions_diri = ''       # Path to directory containing original QFED BB emissions files
+Out_BBEmissions_diri = ''   # Path to directory for scaled output emissions files
+# ============================================================
+
 #================================================================================================
 # inputs to change
 varname = 'CO' # BB emissions variable if not to process for all ('all')
 
 regionMask = "mask_Quebec"
 scalefactor = 0.7   # e.g. 0.7 → 70pct
-
-BBEmissions_diri = '/net/fs09/d0/taoma528/ncar_copies/acom/MUSICA/emissions/qfed2.6_finn/ne0conus30x8/'
 
 
 #================================================================================================
@@ -54,13 +59,6 @@ from shapely.geometry import Point, Polygon
 
 import xarray as xr
 import numpy as np
-
-#================================================================================================
-### Get output directory
-out_diri = Path(Out_BBEmissions_diri)
-# Create directory if it does not exist
-out_diri.mkdir(parents=True, exist_ok=True)
-print(f"Output directory ready: {out_diri}")
 
 # Find all bb emissions files
 pattern = os.path.join(
@@ -88,9 +86,8 @@ else:
     
 #================================================================================================
 # Grid and Mask Information
-# SCRIP_CONUS = '/home/taoma528/Scripts/CESM_analysis/functions/ne0CONUS_ne30x8_np4_SCRIP.nc'
-# defined mask
-CanadaMaskFile = '/home/taoma528/Scripts/CESM_analysis/ne0CONUSne30x8_Y2023T2024/mask_CanadaProvinces_ne0CONUS_ne30x8.nc'
+import os
+CanadaMaskFile = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../grid_files/mask_CanadaProvinces_ne0CONUS_ne30x8.nc')
 mask_ds = xr.open_dataset(CanadaMaskFile)
 # for the selected region mask
 mask_da_loaded = mask_ds[regionMask].astype(bool)  # dims: (grid_size,) or (ncol,
@@ -107,10 +104,14 @@ coord_like_vars = {'time', 'ncol', 'lat', 'lon', 'area', 'date', 'altitude', 'rr
 # Convert scaling factor to percentage label
 pct_value = int(round(scalefactor * 100))   # 0.7 → 70
 pct_str = f"{pct_value}pct"
-Out_BBEmissions_diri = (
-    f"/net/fs09/d0/taoma528/ncar_copies/acom/MUSICA/emissions/"
-    f"qfed2.6_finn/ne0conus30x8_{regionMask}Masked_{pct_str}/"
-)
+# If Out_BBEmissions_diri is not set by the user, derive it from BBEmissions_diri
+if not Out_BBEmissions_diri:
+    Out_BBEmissions_diri = str(Path(BBEmissions_diri).parent / f"ne0conus30x8_{regionMask}Masked_{pct_str}") + '/'
+
+# Ensure output directory exists
+out_diri = Path(Out_BBEmissions_diri)
+out_diri.mkdir(parents=True, exist_ok=True)
+print(f"Output directory ready: {out_diri}")
 
 #================================================================================================
 ### Key function

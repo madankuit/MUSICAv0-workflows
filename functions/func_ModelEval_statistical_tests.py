@@ -90,13 +90,13 @@ def pearsonr2_TwoArComp(data1, data2, numbertype):
     # with specified format, print the results
     if numbertype=='f':
         print(r"r2 = %5.2f" % (rsquare))
-        print(r"Mean Diff %s - %s = %5.2f; %5.0f percent" % (Datestr1,Datestr2,Meandiff,Meandiff_percent))
-        print(r"Median of Diff %s - %s = %5.2f" % (Datestr1,Datestr2,Mediandiff))
+        print(r"Mean Diff data1 - data2 = %5.2f; %5.0f percent" % (Meandiff,Meandiff_percent))
+        print(r"Median of Diff data1 - data2 = %5.2f" % (Mediandiff))
     elif numbertype=='e':
         print(r"r2 = %5.2e" % (rsquare))
-        print(r"Mean Diff %s - %s = %5.2e; %5.0f percent" % (Datestr1,Datestr2,Meandiff,Meandiff_percent))
-        print(r"Median of Diff %s - %s = %5.2e" % (Datestr1,Datestr2,Mediandiff))
-    
+        print(r"Mean Diff data1 - data2 = %5.2e; %5.0f percent" % (Meandiff,Meandiff_percent))
+        print(r"Median of Diff data1 - data2 = %5.2e" % (Mediandiff))
+
     return rsquare,Meandiff,Meandiff_percent,Mediandiff
 
 def pearsonr_TwoArComp_returnr(data1, data2):
@@ -126,13 +126,13 @@ def spearmanr2_TwoArComp(data1, data2, numbertype):
     # with specified format, print the results
     if numbertype=='f':
         print(r"r2 = %5.2f" % (rsquare))
-        print(r"Mean Diff %s - %s = %5.2f; %5.0f percent" % (Datestr1,Datestr2,Meandiff,Meandiff_percent))
-        print(r"Median of Diff %s - %s = %5.2f" % (Datestr1,Datestr2,Mediandiff))
+        print(r"Mean Diff data1 - data2 = %5.2f; %5.0f percent" % (Meandiff,Meandiff_percent))
+        print(r"Median of Diff data1 - data2 = %5.2f" % (Mediandiff))
     elif numbertype=='e':
         print(r"r2 = %5.2e" % (rsquare))
-        print(r"Mean Diff %s - %s = %5.2e; %5.0f percent" % (Datestr1,Datestr2,Meandiff,Meandiff_percent))
-        print(r"Median of Diff %s - %s = %5.2e" % (Datestr1,Datestr2,Mediandiff))
-    
+        print(r"Mean Diff data1 - data2 = %5.2e; %5.0f percent" % (Meandiff,Meandiff_percent))
+        print(r"Median of Diff data1 - data2 = %5.2e" % (Mediandiff))
+
     return rsquare,Meandiff,Meandiff_percent,Mediandiff
 
 def spearmanr_TwoArComp_returnr(data1, data2):
@@ -285,21 +285,6 @@ def OnlyReturnR2Slope_model_vs_obs_RMA(Model_ar, Obs_ar, givenpval):
     return R2, rma_slope, rma_intercept
 
 #================================================================================================
-def calculate_RMSE(Model_ar, Obs_ar):
-    """
-    RMSE measures the average magnitude of the errors between predicted values and observed values.
-    RMSE is sensitive to outliers in the data.
-    Interpretation: An RMSE of 0 indicates a perfect fit between the predicted and observed values. Lower RMSE values indicate better model performance.
-    """
-    # # Calculate Mean Bias Error (MBE)
-    # MBE = np.mean(Model_ar - Obs_ar)
-
-    # Calculate Root Mean Square Error (RMSE)
-    RMSE = np.sqrt(np.nanmean((Model_ar - Obs_ar) ** 2))
-    
-    return RMSE
-
-#================================================================================================
 def calculate_NRMSE(Model_ar, Obs_ar):
     """
     Calculate the Normalized Root Mean Square Error (NRMSE) between Model_ar and Obs_ar.
@@ -326,6 +311,7 @@ def calculate_NRMSE(Model_ar, Obs_ar):
 
 #================================================================================================
 # # Set the negative values to display lightblue
+import pandas as pd
 def color_negative(val):
     """
     Returns a CSS style string to set the background color based on the value.

@@ -1,10 +1,13 @@
 # This script plots the comparison mapes for Svante and Cheyenne runs
 
+import sys, os
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../functions/'))
+
 import numpy as np # for array manipulation and basic scientific calculation
 import xarray as xr # To read NetCDF files
 import matplotlib.pyplot as plt # Core library for plotting
 import matplotlib.cm as cm # To use different colormaps
-from functions.Plot_2D import Plot_2D # To draw a map
+from Plot_2D import Plot_2D # To draw a map
 import cartopy.crs as ccrs # For map projection
 import seaborn as sns # boxplot
 import pandas as pd
@@ -22,19 +25,20 @@ warnings.filterwarnings('ignore', message='Some warning message')
 # Ignore the FutureWarning caused by iteritems()
 warnings.filterwarnings("ignore", category=FutureWarning, message=".*iteritems.*")
 
+# ============================================================
+# USER CONFIGURATION — set these paths before running
+# ============================================================
+cheyenne_archive = ''   # Path to Cheyenne CESM archive directory
+svante_archive = ''     # Path to Svante CESM archive directory
+figure_diri = ''        # Path to directory for saving output figures
+# ============================================================
 
 ###################
-cheyenne_archive = '/net/fs09/d0/taoma528/cheyenne_copies/archive/'
-svante_archive = '/net/fs09/d0/taoma528/CESM22/archive/'
-
 casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.base.001'
 
-EgFile_diri = '/home/taoma528/Scripts/CESM_analysis/tutorial_files/'
 # Read SCRIP file that has grid information needed to plot values on a map
-SCRIP_CONUS = EgFile_diri+'ne0CONUS_ne30x8_np4_SCRIP.nc'
-SCRIP_ne30 = EgFile_diri+'ne30np4_091226_pentagons.nc'
-
-figure_diri = '/home/taoma528/Scripts/CESM_analysis/Figure/'
+SCRIP_CONUS = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../grid_files/ne0CONUS_ne30x8_np4_SCRIP.nc')
+SCRIP_ne30 = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../grid_files/ne30np4_091226_pentagons.nc')
 
 cheyenne_filepath = cheyenne_archive+casename+'/atm/hist/'+casename+'.cam.h1.2013-08-01-00000.nc'
 cheyenne_ds_CONUS = xr.open_dataset( cheyenne_filepath ) 

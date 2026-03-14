@@ -1,12 +1,27 @@
 '''
 MUSICAvsSLAMS_surf.py
-the functions are designed to compare MUSICA model simulations with SLAMS/AQS observations
+
+Description
+-----------
+Functions designed to compare MUSICA model simulations with SLAMS/AQS surface
+observations. Provides utilities to match AQS monitor locations to the nearest
+MUSICA ne0CONUSne30x8 grid column, compute scatter statistics, and generate
+map-based visualizations of model-observation differences.
+
 MODIFICATION HISTORY:
     Madankui Tao, 3, OCT, 2023: VERSION 1.0
     - Initial version
     Madankui Tao, 18, DEC, 2023: VERSION 1.1
     - Add a modified function for hourly AQS files
 '''
+
+# ============================================================
+# USER CONFIGURATION — set these paths before running
+# ============================================================
+CVSOUT_diri = ''        # Path to directory for output CSV files (colidxCSV/)
+SpinUp_diri = ''        # Path to CESM archive directory containing spinup h1 files
+ex_h1_filename = ''     # Example h1 filename to read model lat/lon coordinates
+# ============================================================
 
 #================================================================================================
 # ### functions import ###
@@ -21,16 +36,15 @@ from netCDF4 import Dataset
 import xarray as xr
 
 # my functions
-import sys
-sys.path.append('/home/taoma528/Scripts/CESM_analysis/functions')
+import sys, os
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../functions/'))
 from func_ModelEval_statistical_tests import *
 from SE_analysis import get_site_index
 
 # Grid
-EgFile_diri = '/home/taoma528/Scripts/CESM_analysis/tutorial_files/'
 # Read SCRIP file that has grid information needed to plot values on a map
-SCRIP_CONUS = EgFile_diri+'ne0CONUS_ne30x8_np4_SCRIP.nc'
-SCRIP_ne30 = EgFile_diri+'ne30np4_091226_pentagons.nc'
+SCRIP_CONUS = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../grid_files/ne0CONUS_ne30x8_np4_SCRIP.nc')
+SCRIP_ne30 = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../grid_files/ne30np4_091226_pentagons.nc')
 
 ### preset variables ###
 lev_idx = -1 # -1 for vertical level 
@@ -55,12 +69,7 @@ def write_MonitorIDtoMUSICAcolidx_csvfile(varname,AQSvar_df):
     - 'Approx_MUSICA0_lon': Approximate longitude on the MUSICA grid
     """
     
-    # location for the output
-    CVSOUT_diri = '/home/taoma528/Scripts/CESM_analysis/colidxCSV/'
-    
     # Read an example MUSICA ne0CONUSne30x8 ds for model lat and lon
-    SpinUp_diri = '/net/fs09/d0/taoma528/CESM22/archive/f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.base.Y2018SpinupCmip6hist2013/atm/hist/'
-    ex_h1_filename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.base.Y2018SpinupCmip6hist2013.cam.h1.2018-05-01-00000.nc'
     ds_CONUS = xr.open_dataset(SpinUp_diri+ex_h1_filename)
     
     # Keep only the unique MonitorID values along with their Latitude and Longitude
@@ -81,10 +90,10 @@ def write_MonitorIDtoMUSICAcolidx_csvfile(varname,AQSvar_df):
         # find the model index
         Index_MonitorIDi = get_site_index( site_lat=lati, site_lon=360+loni, scrip_file=SCRIP_CONUS )
         if Index_MonitorIDi==None:
-            # add to the list
+            # add to the list; use np.nan as sentinel since Model_lati/loni are not yet defined
             ls_Index_MonitorIDi.append('Find None')
-            ls_Model_lati.append(Model_lati)
-            ls_Model_loni.append(Model_loni)
+            ls_Model_lati.append(np.nan)
+            ls_Model_loni.append(np.nan)
 
         else:
             Model_lati = ds_CONUS.lat.values[Index_MonitorIDi]
@@ -126,13 +135,11 @@ def write_hourlyAQS_MonitorIDtoMUSICAcolidx_csvfile(varname,AQSvar_df,CVSOUT_dir
     """
     
     # Read an example MUSICA ne0CONUSne30x8 ds for model lat and lon
-    SpinUp_diri = '/net/fs09/d0/taoma528/CESM22/archive/f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.base.Y2018SpinupCmip6hist2013/atm/hist/'
-    ex_h1_filename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.base.Y2018SpinupCmip6hist2013.cam.h1.2018-05-01-00000.nc'
     ds_CONUS = xr.open_dataset(SpinUp_diri+ex_h1_filename)
-    
+
     # Keep only the unique MonitorID values along with their Latitude and Longitude
     unique_AQSmonitor_locations = AQSvar_df[['MonitorID', 'Latitude', 'Longitude']].drop_duplicates().reset_index(drop=True)
-    
+
     # loop through the monitors and find the corresponding column index
     ls_Index_MonitorIDi = []
     ls_Model_lati = []
@@ -148,10 +155,10 @@ def write_hourlyAQS_MonitorIDtoMUSICAcolidx_csvfile(varname,AQSvar_df,CVSOUT_dir
         # find the model index
         Index_MonitorIDi = get_site_index( site_lat=lati, site_lon=360+loni, scrip_file=SCRIP_CONUS )
         if Index_MonitorIDi==None:
-            # add to the list
+            # add to the list; use np.nan as sentinel since Model_lati/loni are not yet defined
             ls_Index_MonitorIDi.append('Find None')
-            ls_Model_lati.append(Model_lati)
-            ls_Model_loni.append(Model_loni)
+            ls_Model_lati.append(np.nan)
+            ls_Model_loni.append(np.nan)
 
         else:
             Model_lati = ds_CONUS.lat.values[Index_MonitorIDi]

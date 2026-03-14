@@ -46,7 +46,8 @@ def latlonbound(fileregion):
 # datei = '20180702'
 
 # # get TM5PMID_ds.TM5PMID for one day
-# SurfaceP_FileOut_diri = "/net/fs09/d0/taoma528/Datasets/TROPOMI_RegridL2_ToL3/Global/TROPOMI_SurfaceP/"
+# Set your path to the TROPOMI surface pressure files, e.g.:
+# SurfaceP_FileOut_diri = "/path/to/TROPOMI_SurfaceP/"
 # startDate = "2018-07-02"
 # endDate = "2018-07-03"
 # SurfaceP_Path = SurfaceP_FileOut_diri+'TROPOMI_SurfaceP_Global_01deg_'+startDate+'T'+endDate+'.nc'
@@ -59,7 +60,10 @@ def latlonbound(fileregion):
 #=====Main Function======
 #--------------------------------------------------------------------------
 
-def func_VerticalRegrid_TROPOMIAK_toMUSICAlevs(datei, TM5SurfaceP_ds, fileregion, varname):
+def func_VerticalRegrid_TROPOMIAK_toMUSICAlevs(datei, TM5SurfaceP_ds, fileregion, varname,
+                                               TROPOMI_NO2_01deg_diri, TROPOMI_L2NO2diri,
+                                               TROPOMI_L2NO2_testfile, RegridL1_diri,
+                                               AK_NO2_diri, AK_HCHO_diri):
     """
     Calculate vertically gridded Average Kernel (AK) data to match MUSICA output.
 
@@ -68,6 +72,19 @@ def func_VerticalRegrid_TROPOMIAK_toMUSICAlevs(datei, TM5SurfaceP_ds, fileregion
         TM5SurfaceP_ds (xarray.Dataset): The surface pressure dataset from TROPOMI (using TM5 Model).
         fileregion (str): The region of interest.
         varname (str): The variable name, either 'HCHO' or 'NO2'.
+        TROPOMI_NO2_01deg_diri (str): Path to the directory with TROPOMI NO2 01-degree regridded files,
+            used to define the target lat/lon grid.
+            # TODO: set your path, e.g. '/path/to/TROPOMI_NO2_01deg/'
+        TROPOMI_L2NO2diri (str): Path to the directory with TROPOMI NO2 L2 files.
+            # TODO: set your path, e.g. '/path/to/TROPOMI_NO2_L2/'
+        TROPOMI_L2NO2_testfile (str): Filename of a representative TROPOMI NO2 L2 file used to extract
+            TM5 pressure constants (tm5_constant_a, tm5_constant_b).
+        RegridL1_diri (str): Path to the directory containing regridded MUSICA L1 output.
+            # TODO: set your path, e.g. '/path/to/Regridded_MUSICA_Output/latlon01_MUSICAoutput/'
+        AK_NO2_diri (str): Path to the directory containing regridded TROPOMI NO2 AK files.
+            # TODO: set your path, e.g. '/path/to/TROPOMI_NO2AK_01deg/'
+        AK_HCHO_diri (str): Path to the directory containing regridded TROPOMI HCHO AK files.
+            # TODO: set your path, e.g. '/path/to/TROPOMI_HCHOAK_01deg/'
 
     Returns:
         xarray.DataArray: The vertically gridded Average Kernel data for the given date and region.
@@ -76,16 +93,15 @@ def func_VerticalRegrid_TROPOMIAK_toMUSICAlevs(datei, TM5SurfaceP_ds, fileregion
     # Get the target grid
     lon_right,lat_bot,lon_left,lat_up = latlonbound(fileregion)
     # One file as an example to get the 0.01x0.01 grid
-    TROPOMI_var = xr.open_dataset('/net/fs09/d0/taoma528/Datasets/TROPOMI_RegridL2_ToL3/Global/TROPOMI_NO2_01deg/TROPOMI_NO2_Global_01deg_20180801.nc')
+    TROPOMI_var = xr.open_dataset(TROPOMI_NO2_01deg_diri+'TROPOMI_NO2_Global_01deg_20180801.nc')
     # select for the domain
     region_TROPOMI_var = TROPOMI_var.sel(lat=slice(lat_bot, lat_up),lon=slice(lon_right,lon_left))
     regionilats01 = region_TROPOMI_var.lat.values
     regionilons01 = region_TROPOMI_var.lon.values
-    
+
     #--------------------------------------------------------------------------
     # TROPOMI Test file for tm5_constant_a,tm5_constant_b,layers
-    TROPOMI_L2NO2diri = "/net/fs09/d0/taoma528/Datasets/TROPOMI_NO2_L2_RPROv10202_2018_Global/"
-    testno2file = 'S5P_RPRO_L2__NO2____20181015T060728_20181015T075055_05205_01_010202_20190227T185503.nc'
+    testno2file = TROPOMI_L2NO2_testfile
     TROPOMI_NO2_PRODUCT = xr.open_dataset(TROPOMI_L2NO2diri+testno2file,group="/PRODUCT/",engine="netcdf4")
     TROP_NO2_egda = xr.open_dataset(TROPOMI_L2NO2diri+testno2file,group="PRODUCT/SUPPORT_DATA/INPUT_DATA/").sel(time=0)
 
@@ -95,13 +111,12 @@ def func_VerticalRegrid_TROPOMIAK_toMUSICAlevs(datei, TM5SurfaceP_ds, fileregion
     tm5_constant_b = TROPOMI_NO2_PRODUCT.tm5_constant_b
     layers = TROPOMI_NO2_PRODUCT.layer.values
     layernum = len(layers)
-    
+
     #--------------------------------------------------------------------------
     # Test RegridL1 MUSICA file: get the vertical levels from MUSICA
-    RegridL1_diri = '/net/fs09/d0/taoma528/CESM22/Regridded_MUSICA_Output/2018_1330LT_TROPOMIcomp/latlon01_MUSICAoutput/'
     ProcessLevel = 'L1.'
     # search for the file
-    fileregion_filelist = glob.glob(os.path.join(RegridL1_diri, f'*{fileregion}*'))
+    fileregion_filelist = glob.glob(os.path.join(RegridL1_diri, f'*{fileregion}*'))  # TODO: set RegridL1_diri
     combined_file_list = [file for file in fileregion_filelist if all(keyword in file for keyword in [ProcessLevel])]
     if len(combined_file_list)==0:
         print('No MUSICA file on %s over %s'%(fileregion))
@@ -143,14 +158,14 @@ def func_VerticalRegrid_TROPOMIAK_toMUSICAlevs(datei, TM5SurfaceP_ds, fileregion
     #--------------------------------------------------------------------------
     # Read in TROPOMI AK
     if varname=='NO2':
-        AK_FileOut_diri =  "/net/fs09/d0/taoma528/Datasets/TROPOMI_RegridL2_ToL3/Global/TROPOMI_NO2AK_01deg/"
-        AK_FileOutPath = AK_FileOut_diri+'TROPOMI_NO2AK_Global_01deg_'+datei+'.nc'
+        # TODO: set your path via the AK_NO2_diri parameter
+        AK_FileOutPath = AK_NO2_diri+'TROPOMI_NO2AK_Global_01deg_'+datei+'.nc'
         AK_ds = xr.open_dataset(AK_FileOutPath)
         AK_xar = AK_ds.TROPOMI_NO2_AK.sel(time=datei)
-        
+
     elif varname=='HCHO':
-        AK_FileOut_diri =  "/net/fs09/d0/taoma528/Datasets/TROPOMI_RegridL2_ToL3/Global/TROPOMI_HCHOAK_01deg/"
-        AK_FileOutPath = AK_FileOut_diri+'TROPOMI_HCHOAK_Global_01deg_'+datei+'.nc'
+        # TODO: set your path via the AK_HCHO_diri parameter
+        AK_FileOutPath = AK_HCHO_diri+'TROPOMI_HCHOAK_Global_01deg_'+datei+'.nc'
         AK_ds = xr.open_dataset(AK_FileOutPath)
         AK_xar = AK_ds.TROPOMI_HCHO_AK.sel(time=datei)
         

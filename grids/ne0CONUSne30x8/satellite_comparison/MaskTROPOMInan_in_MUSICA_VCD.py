@@ -28,10 +28,15 @@ fileheader_dic = {'HCHO':'S5P_RPRO_L2__HCHO___',
                'CO':'S5P_RPRO_L2__CO_____',
               }
 
-L3ProductFileOut_diri_dic = {'HCHO':'/net/fs09/d0/taoma528/Datasets/S5P_L2__HCHO___HiR_2/regrid_2018_MUSICA015/',
-                               'NO2':'/net/fs09/d0/taoma528/Datasets/S5P_L2__NO2____HiR_2/regrid_2018_MUSICA015/',
-                               'CO':'/net/fs09/d0/taoma528/Datasets/S5P_L2__CO_____HiR_2/regrid_2018_MUSICA015/',
-                              }
+# ============================================================
+# USER CONFIGURATION — set these paths before running
+# ============================================================
+L3ProductFileOut_diri_dic = {'HCHO': '',   # Path to regridded TROPOMI HCHO L3 product directory
+                             'NO2':  '',   # Path to regridded TROPOMI NO2 L3 product directory
+                             'CO':   '',   # Path to regridded TROPOMI CO L3 product directory
+                             }
+MUSICA_regridded_base_diri = ''  # Base path to regridded MUSICA output (parent of per-casename dirs)
+# ============================================================
 
 #--------------------------------------------------------------------------
 #=====Dependent library & functions======
@@ -66,8 +71,8 @@ from pytz import timezone
 import warnings
 warnings.filterwarnings("ignore")
 
-import sys
-sys.path.insert(0,'/home/taoma528/Scripts/CESM_analysis/functions/')
+import sys, os
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../functions/'))
 from func_MUSICA_DefineRegion import *
 
 #=====Get the processing dates======
@@ -93,7 +98,7 @@ if varname in ['NO2','HCHO']:
     ### Loop through all cases and regions
     for casename in casename_ls:
         # MUSICA-TropVCD directory 
-        MUSICATropVCD_diri = f'/net/fs09/d0/taoma528/CESM22/Regridded_MUSICA_Output/2018_1330LT_TROPOMIcomp/MassConserve_latlon015_MUSICAoutput/{casename}/TropVCD_approx1330LT/'
+        MUSICATropVCD_diri = f'{MUSICA_regridded_base_diri}{casename}/TropVCD_approx1330LT/'
 
         for fileregion in fileregion_ls:
             lon_right,lat_bot,lon_left,lat_up = latlonbound(fileregion)
@@ -147,7 +152,7 @@ elif varname in ['CO']:
     ### Loop through all cases and regions
     for casename in casename_ls:
         # MUSICA-TotalVCD directory 
-        MUSICAVCD_diri = f'/net/fs09/d0/taoma528/CESM22/Regridded_MUSICA_Output/2018_1330LT_TROPOMIcomp/MassConserve_latlon015_MUSICAoutput/{casename}/TotalVCD_approx1330LT/'
+        MUSICAVCD_diri = f'{MUSICA_regridded_base_diri}{casename}/TotalVCD_approx1330LT/'
 
         for fileregion in fileregion_ls:
             lon_right,lat_bot,lon_left,lat_up = latlonbound(fileregion)
