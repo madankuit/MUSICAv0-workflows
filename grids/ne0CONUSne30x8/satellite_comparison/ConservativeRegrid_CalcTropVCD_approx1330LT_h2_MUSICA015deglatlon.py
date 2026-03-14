@@ -5,11 +5,11 @@ this code is designed to calculate tropospheric vertical column densities of HCH
 process separately for HCHO and NO2, for the duration of the given period
 
 MODIFICATION HISTORY:
-    Madankui Tao, December, 13, 2023: VERSION 1.0
+    M. Tao, December, 13, 2023: VERSION 1.0
     - Initial version
-    Madankui Tao, December, 16, 2023: VERSION 1.1
+    M. Tao, December, 16, 2023: VERSION 1.1
     - Modify the way of reading in files to minimize memory demand,, adjust for different
-    Madankui Tao, Feb, 25, 2024: VERSION 1.0
+    M. Tao, Feb, 25, 2024: VERSION 1.0
     - Bug fix, add one to the last layer index as slice will not include the right-hand number: indices[-1]+1
 '''
 #================================================================================================

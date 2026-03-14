@@ -2,9 +2,9 @@
 ModelEval_statistical_tests.py
 this script contains functions of statistical tests designed for model evaluation, i.e., comparing model simulations with SLAMS or TROPOMI
 MODIFICATION HISTORY:
-    Madankui Tao, 3, OCT, 2023: VERSION 1.0
+    M. Tao, 3, OCT, 2023: VERSION 1.0
     - Initial version
-    Madankui Tao, 17, DEC, 2023: VERSION 1.1
+    M. Tao, 17, DEC, 2023: VERSION 1.1
     - Add options to specify p-value and print number format
 '''
 ### Module import ###

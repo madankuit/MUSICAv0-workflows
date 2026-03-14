@@ -5,7 +5,7 @@ this code is designed to calculate total vertical column densities of HCHO or NO
 process separately for each variable, for the duration of the given period
 
 MODIFICATION HISTORY:
-    Madankui Tao, May, 29, 2024: VERSION 1.0
+    M. Tao, May, 29, 2024: VERSION 1.0
     - Based on CalcTropVCD_h2_MUSICA_ne30CONUSne30x8_v2.py 
 '''
 # ============================================================

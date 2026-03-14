@@ -2,7 +2,7 @@
 This script is used to get matched MUSICA outputs in ne0CONUSne30x8 horizontal grid with SLAMS/AQS hourly measurements
 
 MODIFICATION HISTORY:
-    Madankui Tao, 18, DEC, 2023: VERSION 1.0
+    M. Tao, 18, DEC, 2023: VERSION 1.0
     - Initial version
 '''
 #================================================================================================

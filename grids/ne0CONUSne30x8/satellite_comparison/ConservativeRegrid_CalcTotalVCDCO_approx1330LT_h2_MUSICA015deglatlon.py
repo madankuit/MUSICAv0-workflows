@@ -3,7 +3,7 @@
 This code is designed to calculate total vertical column densities of CO of h2 MUSICA-V0 outputs approximated at 1:30 PM LT in a regular 0.15x0.15 lat and lon grids using the averaging kernels from TROPOMI, for the duration of the given period
 
 MODIFICATION HISTORY:
-    Madankui Tao, Feb, 23, 2024: VERSION 1.0
+    M. Tao, Feb, 23, 2024: VERSION 1.0
     - Initial version
 '''
 #================================================================================================

@@ -4,9 +4,9 @@ This function is used to re-grid TROPOMI AK already processed to 0.15x0.15 degre
 # Revised from func_VerticalRegrid_TROPOMIAK_toMUSICAlevs.py, modified given different ways of processing MUSICA and TROPOMI
 
 MODIFICATION HISTORY:
-    Madankui Tao, 13, December, 2023: VERSION 1.0
+    M. Tao, 13, December, 2023: VERSION 1.0
     - Initial version
-    Madankui Tao, 16, December, 2023: VERSION 1.1
+    M. Tao, 16, December, 2023: VERSION 1.1
     - Adjust for different casename
 '''
 

@@ -6,7 +6,7 @@ this code is designed to regrid SE outputs (ne30 and MUSICA-V0) to regular lat a
 Based on 'Rewrite_output.ipynb' from MUSICA Tutorial Nov. 2021
 
 MODIFICATION HISTORY:
-    Madankui Tao, 6, March, 2023: VERSION 1.00
+    M. Tao, 6, March, 2023: VERSION 1.00
     - Initial version
 '''
 

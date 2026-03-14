@@ -7,9 +7,9 @@ Based on 'ConservativeRegrid_MUSICAOutputs.ipynb' from MUSICA Tutorial Nov. 2021
 Regrid only the horizontal resolution to regular lat,lon 
 
 MODIFICATION HISTORY:
-    Madankui Tao, 4, December, 2023: VERSION 1.0
+    M. Tao, 4, December, 2023: VERSION 1.0
     - Initial version
-    Madankui Tao, 16, December, 2023: VERSION 1.1
+    M. Tao, 16, December, 2023: VERSION 1.1
     - Add CO to verticalvars, adjust for different casename
 '''
 # ============================================================

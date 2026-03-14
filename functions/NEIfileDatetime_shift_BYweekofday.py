@@ -14,7 +14,7 @@ Input:  Hourly mean NEI filename in the format 'wrfchemi_d01_YYYY-MM-DD_HH:MM:SS
 Output: NEI filename adjusted for the target year.
 
 MODIFICATION HISTORY:
-    Madankui Tao, 24, JUL, 2023: Initial version
+    M. Tao, 24, JUL, 2023: Initial version
 """
 
 #=====Dependent library & functions======

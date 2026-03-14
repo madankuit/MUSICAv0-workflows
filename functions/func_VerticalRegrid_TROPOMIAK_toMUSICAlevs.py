@@ -1,5 +1,5 @@
 # This function is used to re-grid TROPOMI AK already processed to 0.1x0.1 degree to the vertical resolution of MUSICA for a given region on datei (YYYYMMDD)
-# Created by Madankui Tao on Nov 13, 2023
+# Created by M. Tao on Nov 13, 2023
 
 #=====Dependent library & functions======
 #--------------------------------------------------------------------------

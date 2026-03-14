@@ -5,11 +5,11 @@ This function is used to re-grid TROPOMI AK already processed to 0.15x0.15 degre
 # Note that TROPOMI CO is also recorded from TOA to surface based on layers, same as MUSICA
 
 MODIFICATION HISTORY:
-    Madankui Tao, 13, December, 2023: VERSION 1.0
+    M. Tao, 13, December, 2023: VERSION 1.0
     - Initial version
-    Madankui Tao, 16, December, 2023: VERSION 1.1
+    M. Tao, 16, December, 2023: VERSION 1.1
     - Adjust for different casename
-    Madankui Tao, 23, Feb, 2023: VERSION 2.0
+    M. Tao, 23, Feb, 2023: VERSION 2.0
     - Adjust for TotalCO (total VCD contains more layers than trop VCD)
 '''
 

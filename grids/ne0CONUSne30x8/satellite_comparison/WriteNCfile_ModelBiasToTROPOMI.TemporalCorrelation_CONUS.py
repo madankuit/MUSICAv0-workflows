@@ -3,7 +3,7 @@
 This code is designed to calculate Spearman correlation, Normalized Model Bias and Normalized RMSE for vertical column densities of HCHO, NO2, and CO of h2 MUSICA-V0 outputs approximated at 1:30 PM LT in a regular 0.15x0.15
 
 MODIFICATION HISTORY:
-    Madankui Tao, Match, 23, 2024: VERSION 1.0
+    M. Tao, Match, 23, 2024: VERSION 1.0
     - Initial version
     
 '''

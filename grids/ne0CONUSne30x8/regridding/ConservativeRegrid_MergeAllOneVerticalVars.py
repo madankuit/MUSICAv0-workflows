@@ -4,7 +4,7 @@ This code is designed to merge all one-vertical-layer variables ('NoVertvars') f
 The MUSICAv0 output has already been mass-conservatively regridded into a resolution of 0.15x0.15 lat-lon but in separate files for each date
 
 MODIFICATION HISTORY:
-    Madankui Tao, 17, December, 2023: VERSION 1.0
+    M. Tao, 17, December, 2023: VERSION 1.0
     - Initial version
 '''
 

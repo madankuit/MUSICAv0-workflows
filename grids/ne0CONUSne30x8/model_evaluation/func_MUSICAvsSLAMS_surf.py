@@ -9,9 +9,9 @@ MUSICA ne0CONUSne30x8 grid column, compute scatter statistics, and generate
 map-based visualizations of model-observation differences.
 
 MODIFICATION HISTORY:
-    Madankui Tao, 3, OCT, 2023: VERSION 1.0
+    M. Tao, 3, OCT, 2023: VERSION 1.0
     - Initial version
-    Madankui Tao, 18, DEC, 2023: VERSION 1.1
+    M. Tao, 18, DEC, 2023: VERSION 1.1
     - Add a modified function for hourly AQS files
 '''
 

@@ -10,7 +10,7 @@ Designed for use in atmospheric chemistry and emissions workflows
 
 Author
 ------
-Madankui Tao
+M. Tao
 Created: 2026-02
 """
 

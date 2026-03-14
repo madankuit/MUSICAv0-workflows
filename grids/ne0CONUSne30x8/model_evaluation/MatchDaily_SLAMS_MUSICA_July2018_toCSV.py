@@ -3,7 +3,7 @@ This script is used to get matched Daily mean MUSICA outputs (converted to LT) i
 *MUSICA saved the previous mean to the current one
 
 MODIFICATION HISTORY:
-    Madankui Tao, 19, DEC, 2023: VERSION 1.0
+    M. Tao, 19, DEC, 2023: VERSION 1.0
     - Initial version
 '''
 #================================================================================================

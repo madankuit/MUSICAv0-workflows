@@ -27,11 +27,11 @@ MODIFICATION HISTORY:
     - minor bug fix for log plot with maximum values less than 0.1
     Duseong Jo, 31, MAY, 2021: VERSION 1.61
     - minor bug fix when colorbar is False
-    Madankui Tao, 6, March, 2023
+    M. Tao, 6, March, 2023
     - modified map settings for individual project
-    Madankui Tao, 7, March, 2024
+    M. Tao, 7, March, 2024
     - added one input colortick_size
-    Madankui Tao, 14, May, 2025
+    M. Tao, 14, May, 2025
     - for colorbar add twodecimal requirement
 '''
 

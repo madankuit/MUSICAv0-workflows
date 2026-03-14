@@ -71,6 +71,6 @@ Model output, emissions files, and observational datasets are **not** included i
 
 ## Author
 
-Madankui (Lena) Tao
+M. Tao
 Postdoctoral Associate, MIT EAPS
 Atmospheric chemistry modeling · Satellite data analysis · Regional air quality

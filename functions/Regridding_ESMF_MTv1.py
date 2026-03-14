@@ -5,7 +5,7 @@ this code is designed for regridding between finite volume grid and spectral ele
 (2) Regrid FV grid values to SE-RR grid values
 
 M.TAO revised history:
-    Madankui Tao, 5, DEC, 2023: VERSION 1.0
+    M. Tao, 5, DEC, 2023: VERSION 1.0
     - Try to account vertical levels
 
 MODIFICATION HISTORY:

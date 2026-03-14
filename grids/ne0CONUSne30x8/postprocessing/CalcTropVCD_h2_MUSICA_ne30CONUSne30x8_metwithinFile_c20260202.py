@@ -7,7 +7,7 @@ process separately for HCHO and NO2, for the duration of the given period
 Can run with sbatch run_CalcTropVCD.slurm to have it running in fdr in the background
 
 MODIFICATION HISTORY:
-    Madankui Tao, Feb, 2, 2026: VERSION 1.1
+    M. Tao, Feb, 2, 2026: VERSION 1.1
     - Copied from ACP_MUSICANEI_scripts/CalcTropVCD_h2_MUSICA_ne30CONUSne30x8_v2.py
     - Modified to use meteorology variables saved in the h2 file, instead of read externally
 '''

@@ -48,7 +48,7 @@ Notes
 - Script prints the saved file paths; no return object.
 
 MODIFICATION HISTORY:
-    Madankui Tao, 4, Sep, 2025: VERSION 1.0
+    M. Tao, 4, Sep, 2025: VERSION 1.0
     - Initial version
 """
 # ============================================================

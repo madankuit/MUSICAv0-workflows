@@ -5,9 +5,9 @@ this code is designed to calculate tropospheric vertical column densities of HCH
 process separately for HCHO and NO2, for the duration of the given period
 
 MODIFICATION HISTORY:
-    Madankui Tao, May, 29, 2024: VERSION 1.0
+    M. Tao, May, 29, 2024: VERSION 1.0
     - Initial version
-    Madankui Tao, Oct, 8, 2024: VERSION 2.0
+    M. Tao, Oct, 8, 2024: VERSION 2.0
     - As some cases did not save PS, use external file 
 '''
 # ============================================================

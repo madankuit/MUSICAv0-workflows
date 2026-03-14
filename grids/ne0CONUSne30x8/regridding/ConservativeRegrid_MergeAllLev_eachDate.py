@@ -4,9 +4,9 @@ This code is designed to merge all vertical layered variables for each day for r
 The MUSICAv0 output has already been mass-conservatively regridded into a resolution of 0.15x0.15 lat-lon but in separate files for date and each vertical layer
 
 MODIFICATION HISTORY:
-    Madankui Tao, 4, December, 2023: VERSION 1.0
+    M. Tao, 4, December, 2023: VERSION 1.0
     - Initial version
-    Madankui Tao, 4, March, 2024: VERSION 1.1
+    M. Tao, 4, March, 2024: VERSION 1.1
     - Add checks for Merged files
 '''
 

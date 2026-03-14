@@ -3,9 +3,9 @@ ReadMUSICAOutput.py
 this code is designed to read in MUSICA model simulation outputs 
 
 MODIFICATION HISTORY:
-    Madankui Tao, 3, OCT, 2023: VERSION 1.00
+    M. Tao, 3, OCT, 2023: VERSION 1.00
     - Initial version
-    Madankui Tao, 19, FEB, 2024: VERSION 2.00
+    M. Tao, 19, FEB, 2024: VERSION 2.00
     - Incorporate the old 'July5Day' ipynb functions here
     
 '''

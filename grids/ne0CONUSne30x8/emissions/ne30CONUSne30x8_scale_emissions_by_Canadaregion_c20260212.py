@@ -24,7 +24,7 @@ Output
 - NetCDF files containing scaled emissions
 
 MODIFICATION HISTORY:
-    Madankui Tao, Feb, 12, 2026: VERSION 1
+    M. Tao, Feb, 12, 2026: VERSION 1
     - Initial version
 
 """
