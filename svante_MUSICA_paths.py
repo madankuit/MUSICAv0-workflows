@@ -63,8 +63,9 @@ July2018_surfh2_merged_diri   = '/net/fs09/d0/taoma528/CESM22/processed_output/J
 
 # Vertical column density (VCD) outputs — on native ncol grid
 # (computed by postprocessing/CalcTropVCD_* and CalcTotalVCD_*)
-MUSICATropVCDSave_diri = '/net/fs09/d0/taoma528/CESM22/Calculated_MUSICA_VCD/TroposphericVCD/{casename}/'
-MUSICAVCDSave_diri     = '/net/fs09/d0/taoma528/CESM22/Calculated_MUSICA_VCD/TotalVCD/{casename}/'
+# Per-case path: MUSICATropVCDSave_root + casename + '/'
+MUSICATropVCDSave_root = '/net/fs09/d0/taoma528/CESM22/Calculated_MUSICA_VCD/TroposphericVCD/'
+MUSICAVCDSave_root     = '/net/fs09/d0/taoma528/CESM22/Calculated_MUSICA_VCD/TotalVCD/'
 
 # Met file used with VCD v2 scripts (external met)
 MetPath = '/net/fs09/d0/taoma528/CESM22/Calculated_MUSICA_VCD/TroposphericVCD/met_f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1base01.nc'

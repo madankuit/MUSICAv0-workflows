@@ -41,15 +41,15 @@ PATHS = [
     ("ESMFmap_015grid_file",        "/net/fs09/d0/taoma528/CESM22/grids/FV_gridinfo_0.15_c20231204.nc",        "file"),
     ("ESMFmap_01grid_file",         "/net/fs09/d0/taoma528/CESM22/grids/FV_gridinfo_CAMS_c20210219.nc",        "file"),
     ("ESMFmap_1x1grid_file",        "/net/fs09/d0/taoma528/CESM22/grids/FV1x1grid_info_c20241105.nc",          "file"),
-    ("Regridding_015weights",       "/net/fs09/d0/taoma528/CESM22/grids/ne0CONUSne30x8_ESMFmap_0.15x0.15_cubit_conserve_cams_c20231204.nc", "file"),
-    ("Regridding_01weights",        "/net/fs09/d0/taoma528/CESM22/grids/ESMFmap_0.1x0.1_ne0CONUSne30x8_cubit_conserve_cams.nc",             "file"),
-    ("Regridding_09x125weights",    "/net/fs09/d0/taoma528/CESM22/grids/ESMFmap_0.9x1.25_ne30np4_cubit_conserve_cams.nc",                   "file"),
-    ("Regridding_1x1weights",       "/net/fs09/d0/taoma528/CESM22/grids/ESMFmap_0.9x1.25_ne30np4_cubit_conserve_cams.nc",                   "file"),
+    ("Regridding_015weights_ne0CONUS", "/net/fs09/d0/taoma528/CESM22/grids/ne0CONUSne30x8_ESMFmap_0.15x0.15_cubit_conserve_cams_c20231204.nc", "file"),
+    ("Regridding_01weights_ne0CONUS",  "/net/fs09/d0/taoma528/CESM22/grids/ESMFmap_0.1x0.1_ne0CONUSne30x8_cubit_conserve_cams.nc",             "file"),
+    ("Regridding_09x125weights_ne30",  "/net/fs09/d0/taoma528/CESM22/grids/ESMFmap_0.9x1.25_ne30np4_cubit_conserve_cams.nc",                   "file"),
+    ("Regridding_1x1weights_ne30",     "/net/fs09/d0/taoma528/CESM22/grids/ESMFmap_0.9x1.25_ne30np4_cubit_conserve_cams.nc",                   "file"),
 
     # CESM archive and processed output
     ("processed_output_diri",       "/net/fs09/d0/taoma528/CESM22/processed_output/",                          "dir"),
     ("July2018_surfh2_merged_diri", "/net/fs09/d0/taoma528/CESM22/processed_output/July2018_surfh2_merged/",   "dir"),
-    ("MUSICATropVCDSave_root",      "/net/fs09/d0/taoma528/CESM22/Calculated_MUSICA_VCD/TroposphericVCD/",      "dir"),
+    ("MUSICATropVCDSave_root",       "/net/fs09/d0/taoma528/CESM22/Calculated_MUSICA_VCD/TroposphericVCD/",      "dir"),
     ("MUSICAVCDSave_root",          "/net/fs09/d0/taoma528/CESM22/Calculated_MUSICA_VCD/TotalVCD/",             "dir"),
     ("MetPath",                     "/net/fs09/d0/taoma528/CESM22/Calculated_MUSICA_VCD/TroposphericVCD/met_f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1base01.nc", "file"),
 
