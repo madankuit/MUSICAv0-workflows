@@ -52,6 +52,6 @@ For the statistical test functions themselves (Pearson/Spearman correlation, Wil
 
 ## Notes
 
-- `func_MUSICAvsSLAMS_surf.py` has hardcoded references to the ne0CONUSne30x8 SCRIP file path. Update `scrip_path` at the top of the file for your local data directory.
+- `func_MUSICAvsSLAMS_surf.py` resolves SCRIP file paths relative to the script location (`../grid_files/`), so no path changes are needed as long as the repository structure is intact.
 - Monitor-to-column matching is done using great-circle distance on the unstructured SE grid; column boundaries from the SCRIP file are used to verify containment.
 - MDA8 computation follows 40 CFR Part 50 (8-hour rolling max, requiring ≥ 18 valid hourly values per day), applied in local standard time.

@@ -1,4 +1,4 @@
-# This script plots the comparison mapes for Svante and Cheyenne runs
+# This script plots the comparison maps for Svante and Cheyenne runs
 
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../functions/'))
@@ -31,10 +31,8 @@ warnings.filterwarnings("ignore", category=FutureWarning, message=".*iteritems.*
 cheyenne_archive = ''   # Path to Cheyenne CESM archive directory
 svante_archive = ''     # Path to Svante CESM archive directory
 figure_diri = ''        # Path to directory for saving output figures
-# ============================================================
-
-###################
 casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.base.001'
+# ============================================================
 
 # Read SCRIP file that has grid information needed to plot values on a map
 SCRIP_CONUS = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../grid_files/ne0CONUS_ne30x8_np4_SCRIP.nc')

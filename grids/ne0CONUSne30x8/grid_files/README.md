@@ -18,7 +18,7 @@ These files are useful for lateral boundary condition (LBC) workflows and global
 
 | File | Size | Description |
 |------|------|-------------|
-| `ne30np4_091226_pentagons.nc` | ~5.2 MB | SCRIP grid description for the ne30np4 global grid (97,481 columns). |
+| `ne30np4_091226_pentagons.nc` | ~5.2 MB | SCRIP grid description for the ne30np4 global grid (48,602 columns). |
 | `ne30np4_091226_pentagons_CONUSlandMaskedFalse_80kmBuffer.nc` | ~434 KB | CONUS land mask with 80 km buffer on ne30np4 ncol. |
 | `ne30np4_091226_pentagons_Lower48StatesCoastal50kmMaskedFalse.nc` | ~434 KB | Lower 48 states coastal mask (50 km buffer) on ne30np4 ncol. |
 
