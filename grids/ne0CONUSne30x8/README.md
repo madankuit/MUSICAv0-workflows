@@ -35,7 +35,7 @@ Process model history files: compute tropospheric and total VCDs (HCHO, NO₂, C
 Compare model output against surface observations (AQS/SLAMS network). Match monitor locations to grid columns, extract time series, compute MDA8 O₃, and export matched datasets to CSV/NetCDF.
 
 ### `satellite_comparison/`
-Compare model columns against TROPOMI L2 retrievals using averaging kernels. Compute bias metrics, Spearman correlation, and mask NaN regions consistently between datasets.
+Compare model columns against TROPOMI L2 retrievals using averaging kernels. Compute bias metrics, Spearman correlation, and mask NaN regions consistently between datasets. For NO₂ the stored total-column AK is converted to a tropospheric AK (`AK_trop = AK_total × AMF_total / AMF_trop`); see that subfolder's README.
 
 ### `plotting/`
 Diagnostic maps for the ne0CONUSne30x8 domain: absolute and relative differences between model runs, regional overlays, and scenario comparisons.

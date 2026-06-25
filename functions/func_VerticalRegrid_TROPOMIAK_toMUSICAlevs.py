@@ -63,7 +63,8 @@ def latlonbound(fileregion):
 def func_VerticalRegrid_TROPOMIAK_toMUSICAlevs(datei, TM5SurfaceP_ds, fileregion, varname,
                                                TROPOMI_NO2_01deg_diri, TROPOMI_L2NO2diri,
                                                TROPOMI_L2NO2_testfile, RegridL1_diri,
-                                               AK_NO2_diri, AK_HCHO_diri):
+                                               AK_NO2_diri, AK_HCHO_diri,
+                                               AMF_NO2_total_diri=None, AMF_NO2_trop_diri=None):
     """
     Calculate vertically gridded Average Kernel (AK) data to match MUSICA output.
 
@@ -85,9 +86,21 @@ def func_VerticalRegrid_TROPOMIAK_toMUSICAlevs(datei, TM5SurfaceP_ds, fileregion
             # TODO: set your path, e.g. '/path/to/TROPOMI_NO2AK_01deg/'
         AK_HCHO_diri (str): Path to the directory containing regridded TROPOMI HCHO AK files.
             # TODO: set your path, e.g. '/path/to/TROPOMI_HCHOAK_01deg/'
+        AMF_NO2_total_diri (str, optional): Path to regridded TROPOMI NO2 total AMF files
+            (0.1°, variable 'TROPOMI_NO2_AMFtotal'). REQUIRED for varname='NO2'.
+            # TODO: set your path, e.g. '/path/to/TROPOMI_NO2AMFtotal_01deg/'
+        AMF_NO2_trop_diri (str, optional): Path to regridded TROPOMI NO2 tropospheric AMF
+            files (0.1°, variable 'TROPOMI_NO2_AMFtrop'). REQUIRED for varname='NO2'.
+            # TODO: set your path, e.g. '/path/to/TROPOMI_NO2AMFtrop_01deg/'
 
     Returns:
         xarray.DataArray: The vertically gridded Average Kernel data for the given date and region.
+
+    Notes:
+        For NO2 the stored AK is the *total-column* averaging kernel; it is converted to a
+        tropospheric averaging kernel via AK_trop = AK_total × (AMF_total / AMF_trop)
+        (TROPOMI ATBD S5P-KNMI-L2-0005-RP), matching the L2 match/recalc convention. HCHO is
+        a (tropospheric) total-column retrieval, so its stored AK is used directly.
     """
     #--------------------------------------------------------------------------
     # Get the target grid
@@ -198,7 +211,26 @@ def func_VerticalRegrid_TROPOMIAK_toMUSICAlevs(datei, TM5SurfaceP_ds, fileregion
             values_target = np.interp(pressure_target, pressure_source, values_source)
             vertically_gridded_AK[latidx,lonidx,:] = values_target
             # print("Interpolated values on the target grid:", values_target)
-    
+
+    #--------------------------------------------------------------------------
+    # NO2 only: convert the stored total-column AK to a tropospheric AK using the
+    # per-pixel AMF ratio, AK_trop = AK_total × (AMF_total / AMF_trop). The ratio is
+    # vertically uniform, so multiply every MUSICA layer by the 2-D (lat, lon) field.
+    # HCHO (tropospheric total-column retrieval) uses its stored AK directly.
+    if varname == 'NO2':
+        if AMF_NO2_total_diri is None or AMF_NO2_trop_diri is None:
+            raise ValueError(
+                "varname='NO2' requires AMF_NO2_total_diri and AMF_NO2_trop_diri so the stored "
+                "total-column AK can be converted to a tropospheric AK "
+                "(AK_trop = AK_total × AMF_total / AMF_trop).")
+        AMFtotal_ds = xr.open_dataset(AMF_NO2_total_diri+'TROPOMI_NO2AMFtotal_Global_01deg_'+datei+'.nc')
+        AMFtrop_ds  = xr.open_dataset(AMF_NO2_trop_diri +'TROPOMI_NO2AMFtrop_Global_01deg_' +datei+'.nc')
+        amf_total = AMFtotal_ds.TROPOMI_NO2_AMFtotal.sel(time=datei).sel(lat=slice(lat_bot, lat_up), lon=slice(lon_right, lon_left)).values
+        amf_trop  = AMFtrop_ds.TROPOMI_NO2_AMFtrop.sel(time=datei).sel(lat=slice(lat_bot, lat_up), lon=slice(lon_right, lon_left)).values
+        with np.errstate(invalid='ignore', divide='ignore'):
+            amf_ratio = np.where(amf_trop > 0, amf_total / amf_trop, np.nan)
+        vertically_gridded_AK = vertically_gridded_AK * amf_ratio[:, :, np.newaxis]
+
     #--------------------------------------------------------------------------
     # Write to a xarray
     # Save using reversed vertical layers

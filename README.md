@@ -105,6 +105,12 @@ import sys; sys.path.insert(0, repo_root + '/functions')
 
 Each subfolder has its own README with script-level descriptions.
 
+> **Note (TROPOMI NO₂ averaging kernel).** In step 3, the TROPOMI NO₂ averaging kernel
+> stored in the L2 product is the *total-column* kernel and is converted to a tropospheric
+> kernel via `AK_trop = AK_total × (AMF_total / AMF_trop)` (TROPOMI ATBD S5P-KNMI-L2-0005-RP),
+> matching the L2 match/recalc convention. This requires regridded `AMF_total`/`AMF_trop`
+> fields; see `functions/README.md` and `grids/ne0CONUSne30x8/satellite_comparison/README.md`.
+
 ---
 
 ## Dependencies

@@ -50,6 +50,43 @@ L3_015TROPOMI_diri_dic = {'HCHO':'/path/to/TROPOMI/data/S5P_L2__HCHO___HiR_2/reg
                            'CO':'/path/to/TROPOMI/data/S5P_L2__CO_____HiR_2/regrid_2018_MUSICA015/',
                           }
 
+# Regridded TROPOMI air-mass-factor (AMF) fields, on the SAME 0.15° grid as the AK above.
+# Needed for NO2 ONLY: the AK stored in the L2 PRODUCT group (and therefore in the regridded
+# AK file read below) is the *total-column* averaging kernel. The tropospheric averaging
+# kernel used in the tropospheric-VCD comparison is
+#     AK_trop(l) = AK_total(l) × (AMF_total / AMF_trop)
+# (TROPOMI ATBD S5P-KNMI-L2-0005-RP / Product User Manual Eq. 4). This mirrors the L2
+# match/recalc convention (see tempo-v04-satellite-intercomparison, match_L2Scan.py
+# _apply_ak_trop_conversion). HCHO is a (tropospheric) total-column retrieval, so its
+# stored AK is used directly — no scaling. CO uses its total-column AK directly.
+#
+# Expected inputs, produced by the L2->L3 regrid step alongside the AK, each holding one
+# 3-D variable 'TROPOMI_NO2_AMFtotal' / 'TROPOMI_NO2_AMFtrop' on (time, lat, lon):
+#     <dir>S5P_RPRO_L2__NO2____AMFtotal_Global_Regrid015deg_<YYYYMMDD>.nc
+#     <dir>S5P_RPRO_L2__NO2____AMFtrop_Global_Regrid015deg_<YYYYMMDD>.nc
+# TODO: set your path to the regridded AMF directory.
+L3_015AMF_diri_dic = {'NO2':'/path/to/TROPOMI/data/S5P_L2__NO2____HiR_2/regrid_2018_MUSICA015/'}
+
+
+def _load_AMF_total_over_trop_ratio_015(varname, datei, lat_bot, lat_up, lon_right, lon_left):
+    """NO2 only -- per-pixel AMF_total/AMF_trop ratio on the regridded 0.15deg grid.
+
+    Used to convert the stored total-column averaging kernel to a tropospheric
+    averaging kernel: AK_trop = AK_total x (AMF_total / AMF_trop). The ratio is
+    layer-independent, so it is applied as a single scalar per (lat, lon) pixel.
+    Pixels with AMF_trop <= 0 (or missing) are set to NaN. Returns a 2-D array
+    aligned to the AK region grid (lat, lon).
+    """
+    amf_diri = L3_015AMF_diri_dic[varname]
+    header   = fileheader_dic[varname]
+    amf_total = xr.open_dataset(amf_diri+header+'AMFtotal_Global_Regrid015deg_'+datei+'.nc')['TROPOMI_'+varname+'_AMFtotal'].sel(time=datei)
+    amf_trop  = xr.open_dataset(amf_diri+header+'AMFtrop_Global_Regrid015deg_'+datei+'.nc')['TROPOMI_'+varname+'_AMFtrop'].sel(time=datei)
+    amf_total = amf_total.sel(lat=slice(lat_bot, lat_up), lon=slice(lon_right, lon_left)).values
+    amf_trop  = amf_trop.sel(lat=slice(lat_bot, lat_up), lon=slice(lon_right, lon_left)).values
+    with np.errstate(invalid='ignore', divide='ignore'):
+        ratio = np.where(amf_trop > 0, amf_total / amf_trop, np.nan)
+    return ratio
+
 #=====Example use======
 #--------------------------------------------------------------------------
 # # Example use
@@ -188,6 +225,15 @@ def func_VerticalRegrid_TROPOMIAK_toMUSICAlevs_015latlon(casename, datei, filere
             values_target = np.interp(pressure_target, pressure_source, values_source)
             vertically_gridded_AK[latidx,lonidx,:] = values_target
             # print("Interpolated values on the target grid:", values_target)
+
+    #--------------------------------------------------------------------------
+    # NO2 only: convert the stored total-column AK to a tropospheric AK using the
+    # per-pixel AMF ratio, AK_trop = AK_total x (AMF_total / AMF_trop). The ratio is
+    # vertically uniform, so multiply every MUSICA layer by the 2-D (lat, lon) field.
+    # HCHO (tropospheric total-column retrieval) uses its stored AK directly.
+    if varname == 'NO2':
+        amf_ratio = _load_AMF_total_over_trop_ratio_015(varname, datei, lat_bot, lat_up, lon_right, lon_left)
+        vertically_gridded_AK = vertically_gridded_AK * amf_ratio[:, :, np.newaxis]
 
     #--------------------------------------------------------------------------
     # Write to a xarray

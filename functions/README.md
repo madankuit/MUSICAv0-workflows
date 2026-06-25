@@ -56,9 +56,26 @@ Import these into grid-specific scripts rather than duplicating logic.
 
 | File | Description |
 |------|-------------|
-| `func_VerticalRegrid_TROPOMIAK_toMUSICAlevs.py` | Regrid TROPOMI L2 averaging kernels (TM5 pressure grid) to MUSICA hybrid pressure levels. Output on 0.1°×0.1° lat/lon. Supports NO₂ and HCHO. |
-| `func_VerticalRegrid_TROPOMIAK_toMUSICAlevs_015latlon.py` | Same as above but outputs on 0.15°×0.15° lat/lon grid (matches conservative regridding output). |
-| `func_VerticalRegrid_TotalCO_TROPOMIAK_toMUSICAlevs_015latlon.py` | Total CO column variant of the above. |
+| `func_VerticalRegrid_TROPOMIAK_toMUSICAlevs.py` | Regrid TROPOMI L2 averaging kernels (TM5 pressure grid) to MUSICA hybrid pressure levels. Output on 0.1°×0.1° lat/lon. Supports NO₂ and HCHO. **For NO₂ the stored total-column AK is converted to a tropospheric AK** (see note below); requires the regridded AMF directories `AMF_NO2_total_diri` / `AMF_NO2_trop_diri`. |
+| `func_VerticalRegrid_TROPOMIAK_toMUSICAlevs_015latlon.py` | Same as above but outputs on 0.15°×0.15° lat/lon grid (matches conservative regridding output). NO₂ total→tropospheric AK conversion uses the regridded AMF files configured in `L3_015AMF_diri_dic`. |
+| `func_VerticalRegrid_TotalCO_TROPOMIAK_toMUSICAlevs_015latlon.py` | Total CO column variant of the above. CO is a total-column product — its AK is used directly, no AMF conversion. |
+
+> **NO₂ total-column → tropospheric averaging kernel.** The AK stored in the TROPOMI
+> L2 `PRODUCT` group (and hence in the regridded AK files read here) is the
+> *total-column* averaging kernel. The tropospheric AK used for the tropospheric-VCD
+> comparison is obtained by scaling with the per-pixel air-mass-factor ratio:
+>
+> ```
+> AK_trop(l) = AK_total(l) × (AMF_total / AMF_trop)
+> ```
+>
+> (TROPOMI ATBD S5P-KNMI-L2-0005-RP / Product User Manual Eq. 4). The ratio is
+> vertically uniform, so it multiplies every MUSICA layer. This matches the L2
+> match/recalc convention (`tempo-v04-satellite-intercomparison`,
+> `match_L2Scan._apply_ak_trop_conversion`). It is applied for **NO₂ only**; HCHO is a
+> (tropospheric) total-column retrieval and uses its stored AK directly, as does CO.
+> The conversion requires regridded `AMF_total` and `AMF_trop` fields on the same grid
+> as the AK, produced by the upstream L2→L3 regrid step.
 
 ### Utilities
 
