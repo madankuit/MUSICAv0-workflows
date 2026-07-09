@@ -35,6 +35,7 @@ UTC offset via `timezonefinder`), **then** the EPA MDA8 is computed — 8-h roll
 |--------|-----|---------|
 | `gen_ne30_to_1x1_weights.py` | `rootxesmf` (esmpy 8.7) | One-time: generate + verify the ne30np4→1° conservative weight file. |
 | `Regrid_ne30_surfO3_to_1x1_conserve.py` | `base` | Regrid the 6 merged surface-O3 files → hourly gridded + unified MDA8. Weight application is a sparse mat-mul (no esmpy needed). |
+| `plot_gridded_MDA8_scenarios.py` | `base` | 3-panel CONUS figure from the unified MDA8: (a) BASE, (b) BASE−noAnthro, (c) BASE−noBB, seasonal-mean over Apr–Oct 2022–2023. |
 
 ## Outputs (Svante, `…/DanJaffeMUSICAPostprocessing/Regridded1deg/`)
 
@@ -59,4 +60,13 @@ MDA8 is applied consistently with the point pipeline.
 **Note:** ~24 of 1620 cells (Southern California; a few in ID/OR) show MDA8 > 150 ppb.
 These reflect the **model's** surface-O3 extremes (present in the point files too — the
 gridded/point agreement is r≈0.99), not a regrid artifact; the bulk field is realistic
-(p99 ≈ 77 ppb).
+(p99 ≈ 77 ppb). A single unrecoverable edge exists — Oct 31 in western time zones for
+BASE-2023 and noBB-2022 is NaN (those merged inputs stop at Nov 1 00 UTC, so the last local
+day has <13 valid 8-h windows and is correctly dropped) — 0.2 % of values.
+
+## Figures
+
+`plot_gridded_MDA8_scenarios.py` → `Figures/CESM_analysis/BGO3/regrid_trial/MDA8_BASE_and_diffs_seasonmean_2022-2023.png`:
+three CONUS panels — **(a) BASE**, **(b) BASE − noAnthro**, **(c) BASE − noBB** — as the
+seasonal-mean MDA8 over Apr–Oct 2022–2023. Panels (b)/(c) use independent diverging scales
+because the anthropogenic contribution (~30 ppb) is ~8× the biomass-burning contribution (~4 ppb).

@@ -82,6 +82,12 @@ CONUSBGO3/
 │   ├── Extract_givenmonitorO3_hourly_dailyMDA8_toNetCDF.py     # 3. extract hourly + compute MDA8 → NetCDF
 │   └── Extract_MDA8O3_givenMonitors.ipynb                      # development notebook for step 3
 │
+├── regridding/                # ne30 → 1° mass-conservative CONUS grid + gridded MDA8
+│   ├── gen_ne30_to_1x1_weights.py             # one-time: ESMF conservative weights (rootxesmf env)
+│   ├── Regrid_ne30_surfO3_to_1x1_conserve.py  # regrid 6 cases → hourly gridded + unified MDA8
+│   ├── plot_gridded_MDA8_scenarios.py         # BASE + (BASE−noAnthro)/(BASE−noBB) figure
+│   └── README.md
+│
 └── analysis/                  # scenario differences & figures
     ├── ResultAnalysis_v20250707.ipynb   # monthly-mean surface-O3 differences (BASE − noAnthro, BASE − noBB), across years/regions
     └── FireAnalysis.ipynb               # fire (BB) emission maps & diagnostics
@@ -130,7 +136,19 @@ CONUSBGO3/
 
 `Extract_MDA8O3_givenMonitors.ipynb` is the exploratory notebook the `.py` was distilled from.
 
-### 4. Analysis — `analysis/`
+### 4. Regridding to a 1° CONUS grid — `regridding/`
+Spatial companion to step 3: the same surface O₃ / MDA8, but for the **entire CONUS** on a
+regular **1°×1°** grid via **mass-conservative** ESMF remap (ne30np4 → 1° FV). See
+[regridding/README.md](regridding/README.md). Products land in
+`…/DanJaffeMUSICAPostprocessing/Regridded1deg/`:
+- 6 per-case hourly gridded surface O₃ files (`hourly/`, UTC, ppb);
+- one **unified** daily-MDA8 file `MDA8O3(scenario={BASE,noAnthro,noBB}, time, lat, lon)`
+  spanning Apr–Oct 2022 + 2023 — the shareable product.
+
+The gridded MDA8 uses the identical local-time-adjusted EPA method as step 3 and was
+validated against the point deliverable (nearest cell vs monitor: r = 0.994, bias −0.11 ppb).
+
+### 5. Analysis — `analysis/`
 - `ResultAnalysis_v20250707.ipynb` — monthly-mean surface-O₃ differences between scenarios
   (`noAnthro − BASE`, `noBB − BASE`) and across years, with regional maps.
 - `FireAnalysis.ipynb` — fire emission magnitude maps and diagnostics.
@@ -151,6 +169,8 @@ constants in the repo's [`svante_MUSICA_paths.py`](../svante_MUSICA_paths.py)):
 | ↳ Matched column index | `…/MonitorInfo/MatchedMonitors_ne30_ColIdx.csv` | |
 | ↳ Merged hourly surface O₃ | `…/h2_surfO3_merged/` | |
 | ↳ Per-monitor deliverables | `…/ForGivenMonitors/` | |
+| ↳ Gridded 1° deliverables | `…/Regridded1deg/` (unified MDA8 + `hourly/`) | |
+| ESMF grids + weights | `/net/fs09/d0/taoma528/CESM22/grids/` (ne30 SCRIP, `FV1x1grid_info_c20241105.nc`, `ESMFmap_ne30np4_TO_1x1_conserve_c20260708.nc`) | |
 | `ne30np4` SCRIP grid (data) | `/home/taoma528/Scripts/CESM_analysis/functions/ne30np4_091226_pentagons.nc` — the absolute path hard-coded as `SCRIP_ne30` in the two postprocessing scripts | |
 | CONUS land masks (data) | `…/Scripts/CESM_analysis/functions/ne30np4_091226_pentagons_CONUSlandMaskedFalse_{50,80}kmBuffer.nc` | |
 | CONUS-mask emission source | `/net/fs09/d0/taoma528/cheyenne_copies/acom/MUSICA/emissions/` | |
@@ -171,6 +191,9 @@ Data files (`.nc`, `.csv`, archive output) are **not** version-controlled — th
     Svante via absolute paths (see [Paths](#paths)).
 - **Python env**: the repo [`environment.yml`](../environment.yml) (`musica-workflows`),
   plus `timezonefinder`, `pytz`, and `geopandas` (used by the extraction and mask notebooks).
+  On Svante the point + gridded postprocessing runs in the `base` env; the one-time
+  conservative-weight generation (`regridding/gen_ne30_to_1x1_weights.py`) needs `esmpy`
+  (env `rootxesmf`, esmpy 8.7).
 
 ---
 
