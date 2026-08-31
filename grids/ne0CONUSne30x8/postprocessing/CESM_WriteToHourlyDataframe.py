@@ -31,7 +31,7 @@ Datelist = ['20180601','20180602','20180603','20180604','20180605','20180625','2
 
 #===============
 # Functions from the function dir
-import sys, os
+import sys, os, glob
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../functions/'))
 
 # Legacy imports from the original functions directory; these may not be available in all environments
@@ -109,10 +109,23 @@ ROWidx_dic = dict(zip(sitedf.SiteAbbr.values, sitedf.CMAQ_ROWidx.values))
 COLidx_dic = dict(zip(sitedf.SiteAbbr.values, sitedf.CMAQ_COLidx.values))
 
 # read in one example file
-ACONC_diri = str(CMAQ_ACONC_DIR) + '/'
-testCMAQ_filei = 'CCTM_ACONC_v531_intel_1.33LISTOS1_twoway_20180601.nc'
+
+
+def aconc_path(datei):
+    """Resolve the CMAQ ACONC file for one YYYYMMDD date.
+
+    The delivered file names carry a trailing per-recipient suffix, so match on
+    the date by glob rather than constructing an exact file name.
+    """
+    hits = sorted(glob.glob(os.path.join(ACONC_diri, f'CCTM_ACONC_*_{datei}*.nc')))
+    if not hits:
+        raise FileNotFoundError(
+            f'No CMAQ ACONC file for {datei} in {ACONC_diri}')
+    return hits[0]
+
+
 # read in data
-testCMAQ_DA = xr.open_dataset(ACONC_diri+testCMAQ_filei)#.sel(TSTEP=slice(0,24))
+testCMAQ_DA = xr.open_dataset(aconc_path('20180601'))#.sel(TSTEP=slice(0,24))
 TSTEPVals = testCMAQ_DA.TSTEP.values
 # print(TSTEPVals)
 
@@ -125,9 +138,7 @@ def ACONC_getvari_siteDA_UTC(ACONC_diri,datei,Sitei,varname):
         Prefix:
             "ACONC"
     """    
-    filei = 'CCTM_ACONC_v531_intel_1.33LISTOS1_twoway_'+datei+'.nc'
-        
-    da = xr.open_dataset(ACONC_diri+filei).sel(TSTEP=slice(0,24))
+    da = xr.open_dataset(aconc_path(datei)).sel(TSTEP=slice(0,24))
     
     ROWidx = ROWidx_dic[Sitei]
     COLidx = COLidx_dic[Sitei]

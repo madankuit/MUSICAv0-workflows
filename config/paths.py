@@ -216,10 +216,12 @@ AQS_2018_DIR = AQS_DIR / 'ForYear2018'
 AQS_MATCHED_ROOT = AQS_DIR / 'MUSICA_Matched'
 
 WRFCMAQ_LISTOS_DIR = DATASETS_ROOT / 'WRFCMAQ_LISTOS'
-# CMAQ ACONC output used for the LISTOS model-vs-model comparison. The
-# directory this was originally delivered into was named after a person; set
-# MUSICA_ENV_CMAQ_ACONC_DIR if your copy still uses that layout.
-CMAQ_ACONC_DIR = _env_path('MUSICA_ENV_CMAQ_ACONC_DIR', WRFCMAQ_LISTOS_DIR / 'ACONC')
+# CMAQ ACONC output used for the LISTOS model-vs-model comparison.
+# NOTE: the delivered file names carry a per-recipient suffix, so callers must
+# resolve a day's file by glob (CCTM_ACONC_*_<YYYYMMDD>*.nc) rather than by
+# constructing an exact name.
+CMAQ_ACONC_DIR = _env_path('MUSICA_ENV_CMAQ_ACONC_DIR',
+                           WRFCMAQ_LISTOS_DIR / 'CMAQ_output' / 'ACONC_v1')
 SITE_HOURLY_JJA2018_DIR = DATASETS_ROOT / 'Sitei_Hourly_JJA2018'
 
 # CSV files mapping AQS monitor IDs to SE column indices
