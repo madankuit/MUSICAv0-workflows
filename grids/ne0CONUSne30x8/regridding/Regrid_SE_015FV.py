@@ -6,9 +6,21 @@ this code is designed to regrid SE outputs (ne30 and MUSICA-V0) to regular lat a
 Based on 'Rewrite_output.ipynb' from MUSICA Tutorial Nov. 2021
 
 MODIFICATION HISTORY:
-    M. Tao, 6, March, 2023: VERSION 1.00
+    6, March, 2023: VERSION 1.00
     - Initial version
 '''
+# ============================================================
+# CONFIGURATION - every path comes from config/paths.py, the single
+# source of truth. Override cluster locations with the MUSICA_ENV_*
+# environment variables documented there. Do not hard-code paths here.
+# ============================================================
+import sys as _sys, pathlib as _pathlib
+_ROOT = next(_p for _p in _pathlib.Path(__file__).resolve().parents
+             if (_p / 'config' / 'paths.py').exists())
+_sys.path.insert(0, str(_ROOT))
+from config.paths import REGRIDDED_2018_ROOT, ensure_dir
+# ============================================================
+
 
 ### Module import ###
 import numpy as np # for array manipulation and basic scientific calculation
@@ -114,7 +126,7 @@ def rewrite_ne0CONUSne30x8_0125latlongrid_forCONUS_surflayer_v2(ds_CONUS,varlist
         Use example:
             ds_CONUS (on ne0CONUS30x8 grid)
             varlist = ['O3','CO','OH']
-            savefilePath = '/path/to/output/directory/'
+            savefilePath = str(ensure_dir(REGRIDDED_2018_ROOT)) + '/'
             filename =
             allvars_ds = rewrite_ne0CONUSne30x8_0125latlongrid_forCONUS_surflayer_v2(ds_CONUS,varlist,savefilePath)
         
@@ -197,7 +209,7 @@ def rewrite_ne0CONUSne30x8_0125latlongrid_forCONUS_surflayer(diri,filename,varli
             diri = EgFile_diri
             filename = 'f.e22.FCcotagsNudged.ne0CONUSne30x8.cesm220.2012-01.cam.h1.2013-08.nc'
             varlist = ['O3','CO','OH']
-            savefilePath = '/path/to/output/directory/'
+            savefilePath = str(ensure_dir(REGRIDDED_2018_ROOT)) + '/'
             allvars_ds = rewrite_ne0CONUSne30x8_0125latlongrid_forCONUS_surflayer(diri,filename,varlist,savefilePath)
         
     """

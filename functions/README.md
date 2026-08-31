@@ -19,7 +19,7 @@ Import these into grid-specific scripts rather than duplicating logic.
 
 | File | Description |
 |------|-------------|
-| `Regridding_ESMF_MTv1.py` | General ESMF regridding framework. Supports bilinear and mass-conservative (patch) methods for SE → regular lat/lon. Called by grid-specific regridding scripts. |
+| `Regridding_ESMF_v1.py` | General ESMF regridding framework. Supports bilinear and mass-conservative (patch) methods for SE → regular lat/lon. Called by grid-specific regridding scripts. |
 
 ### SE Grid Utilities
 
@@ -87,6 +87,6 @@ Import these into grid-specific scripts rather than duplicating logic.
 
 ## Notes
 
-- `Regridding_ESMF_MTv1.py` requires `esmpy` (the Python interface to ESMF). Install via conda: `conda install -c conda-forge esmpy`.
+- `Regridding_ESMF_v1.py` requires `esmpy` (the Python interface to ESMF). Install via conda: `conda install -c conda-forge esmpy`.
 - `Plot_2D.py` requires `cartopy`. Install via conda: `conda install -c conda-forge cartopy`.
 - All functions accept `xarray.Dataset` or `numpy` arrays; output types match inputs where possible.

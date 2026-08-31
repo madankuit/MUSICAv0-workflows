@@ -1,5 +1,5 @@
 # This function is used to re-grid TROPOMI AK already processed to 0.1x0.1 degree to the vertical resolution of MUSICA for a given region on datei (YYYYMMDD)
-# Created by M. Tao on Nov 13, 2023
+# Created Nov 13, 2023
 
 #=====Dependent library & functions======
 #--------------------------------------------------------------------------
@@ -47,7 +47,7 @@ def latlonbound(fileregion):
 
 # # get TM5PMID_ds.TM5PMID for one day
 # Set your path to the TROPOMI surface pressure files, e.g.:
-# SurfaceP_FileOut_diri = "/path/to/TROPOMI_SurfaceP/"
+# SurfaceP_FileOut_diri = str(config.paths.TM5_SURFACE_P_DIR) + "/"
 # startDate = "2018-07-02"
 # endDate = "2018-07-03"
 # SurfaceP_Path = SurfaceP_FileOut_diri+'TROPOMI_SurfaceP_Global_01deg_'+startDate+'T'+endDate+'.nc'
@@ -75,23 +75,23 @@ def func_VerticalRegrid_TROPOMIAK_toMUSICAlevs(datei, TM5SurfaceP_ds, fileregion
         varname (str): The variable name, either 'HCHO' or 'NO2'.
         TROPOMI_NO2_01deg_diri (str): Path to the directory with TROPOMI NO2 01-degree regridded files,
             used to define the target lat/lon grid.
-            # TODO: set your path, e.g. '/path/to/TROPOMI_NO2_01deg/'
+            # From config/paths.py: TROPOMI_01_NO2_DIR
         TROPOMI_L2NO2diri (str): Path to the directory with TROPOMI NO2 L2 files.
-            # TODO: set your path, e.g. '/path/to/TROPOMI_NO2_L2/'
+            # From config/paths.py: TROPOMI_L2_NO2_DIR
         TROPOMI_L2NO2_testfile (str): Filename of a representative TROPOMI NO2 L2 file used to extract
             TM5 pressure constants (tm5_constant_a, tm5_constant_b).
         RegridL1_diri (str): Path to the directory containing regridded MUSICA L1 output.
-            # TODO: set your path, e.g. '/path/to/Regridded_MUSICA_Output/latlon01_MUSICAoutput/'
+            # From config/paths.py: case_regrid_dir(casename, REGRID_SUBDIR_H2)
         AK_NO2_diri (str): Path to the directory containing regridded TROPOMI NO2 AK files.
-            # TODO: set your path, e.g. '/path/to/TROPOMI_NO2AK_01deg/'
+            # From config/paths.py: TROPOMI_01_NO2_AK_DIR
         AK_HCHO_diri (str): Path to the directory containing regridded TROPOMI HCHO AK files.
-            # TODO: set your path, e.g. '/path/to/TROPOMI_HCHOAK_01deg/'
+            # From config/paths.py: TROPOMI_01_HCHO_AK_DIR
         AMF_NO2_total_diri (str, optional): Path to regridded TROPOMI NO2 total AMF files
             (0.1°, variable 'TROPOMI_NO2_AMFtotal'). REQUIRED for varname='NO2'.
-            # TODO: set your path, e.g. '/path/to/TROPOMI_NO2AMFtotal_01deg/'
+            # From config/paths.py: TROPOMI_01_NO2_AMF_TOTAL_DIR
         AMF_NO2_trop_diri (str, optional): Path to regridded TROPOMI NO2 tropospheric AMF
             files (0.1°, variable 'TROPOMI_NO2_AMFtrop'). REQUIRED for varname='NO2'.
-            # TODO: set your path, e.g. '/path/to/TROPOMI_NO2AMFtrop_01deg/'
+            # From config/paths.py: TROPOMI_01_NO2_AMF_TROP_DIR
 
     Returns:
         xarray.DataArray: The vertically gridded Average Kernel data for the given date and region.

@@ -4,8 +4,8 @@ this code is designed for regridding between finite volume grid and spectral ele
 (1) Add_bound values of FV grids for mass conserving regridding (class Add_bounds)
 (2) Regrid FV grid values to SE-RR grid values
 
-M.TAO revised history:
-    M. Tao, 5, DEC, 2023: VERSION 1.0
+Revised history:
+    5, DEC, 2023: VERSION 1.0
     - Try to account vertical levels
 
 MODIFICATION HISTORY:

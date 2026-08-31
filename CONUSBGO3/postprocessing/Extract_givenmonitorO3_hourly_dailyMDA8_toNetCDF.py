@@ -22,7 +22,8 @@ Inputs
 - startMMDD, endMMDD: str
     Start and end dates in 'MM-DD' format (inclusive).
 - Output_diri: str
-    Directory where output NetCDF files are written.
+    Directory where output NetCDF files are written (config.paths
+    BGO3_GIVEN_MONITORS_DIR).
 - casename_label_dic: dict
     Maps casename to string label (last 4 chars = year).
 - mergedh2_surfO3filepath_dic: dict
@@ -48,67 +49,71 @@ Notes
 - Script prints the saved file paths; no return object.
 
 MODIFICATION HISTORY:
-    Madankui Tao, 4, Sep, 2025: VERSION 1.0
+    4 Sep 2025: VERSION 1.0
     - Initial version
+    31 Aug 2026: VERSION 1.1
+    - Paths, case names and the merged-file lookup moved to config/paths.py
 """
 #================================================================================================
-Output_diri = '/net/fs09/d0/taoma528/ProcessedData/DanJaffeMUSICAPostprocessing/'
+#================================================================================================
+# Configuration - every path and case name is imported from config/paths.py
+import sys
+import pathlib
+_ROOT = next(p for p in pathlib.Path(__file__).resolve().parents
+             if (p / 'config' / 'paths.py').exists())
+sys.path.insert(0, str(_ROOT))
+import config  # noqa: F401  - also puts functions/ on sys.path
+from config.paths import (
+    BGO3_CASES,
+    BGO3_CASE_LABELS,
+    BGO3_MONITOR_LIST,
+    BGO3_MONITOR_COLIDX,
+    BGO3_GIVEN_MONITORS_DIR,
+    BGO3_START_MMDD,
+    BGO3_END_MMDD,
+    SCRIP_NE30NP4,
+    bgo3_merged_surfo3_glob,
+    ensure_dir,
+)
 
-MonitorInfo_filepath = f'{Output_diri}MonitorInfo/Lee_Jaffe_GAM_stats.csv'
-Monitorne30Idx_filepath = f'{Output_diri}MonitorInfo/MatchedMonitors_ne30_ColIdx.csv'
+import glob as _glob
 
-# Variable Resolution Grid
-SCRIP_ne30 = '/home/taoma528/Scripts/CESM_analysis/functions/ne30np4_091226_pentagons.nc'
+MonitorInfo_filepath = BGO3_MONITOR_LIST
+Monitorne30Idx_filepath = BGO3_MONITOR_COLIDX
 
-# Define dictionaries
-# a diri to place all related files for this project
-svante_archive = '/net/fs09/d0/taoma528/CESM22/archive/'
-
-# list for all case names
-BASE2022_casename = 'f.e22.FCnudged.ne30_ne30_mg17.BGO3.BASEY20220401TY20230401'
-BASE2023_casename = 'f.e22.FCnudged.ne30_ne30_mg17.BGO3.BASEY20230401TY20231101'
-noBB2022_casename = 'f.e22.FCnudged.ne30_ne30_mg17.BGO3.noBBemisCONUS80kmBufferY20220401TY20221101'
-noBB2023_casename = 'f.e22.FCnudged.ne30_ne30_mg17.BGO3.noBBemisCONUS80kmBufferY20230401TY20231101'
-noAnthro2022_casename = 'f.e22.FCnudged.ne30_ne30_mg17.BGO3.noANTHROemisCONUS80kmBufferY20220401TY20221101'
-noAnthro2023_casename = 'f.e22.FCnudged.ne30_ne30_mg17.BGO3.noANTHROemisCONUS80kmBufferY20230401TY20231101'
-
+# Variable Resolution Grid (ships with the repo)
+SCRIP_ne30 = str(SCRIP_NE30NP4)
 
 # label for each casename
-casename_label_dic = {
-    BASE2022_casename:'BASE2022',
-    BASE2023_casename:'BASE2023',
-    ### Perturbations
-    noBB2022_casename:'noBB2022',
-    noBB2023_casename:'noBB2023',
-    noAnthro2022_casename:'noAnthro2022',
-    noAnthro2023_casename:'noAnthro2023',
-}
+casename_label_dic = dict(BGO3_CASE_LABELS)
+
+
+def _newest_merged_surfo3(casename):
+    """Newest merged hourly surface-O3 file for `casename`.
+
+    The date span is part of the file name and differs per case, so resolve it
+    by globbing rather than hard-coding each name.
+    """
+    hits = sorted(_glob.glob(bgo3_merged_surfo3_glob(casename)))
+    if not hits:
+        raise FileNotFoundError(
+            f'No merged surface-O3 file for {casename}; '
+            f'run Merge_h2files_hourlysurfO3.py first.')
+    return hits[-1]
+
 
 # merged h2 surface file for each case
-mergedh2_surfO3filepath_dic = {
-    BASE2022_casename:f'{Output_diri}h2_surfO3_merged/f.e22.FCnudged.ne30_ne30_mg17.BGO3.BASEY20220401TY20230401.cam.h2.surflev.O3.2022-04-01T2022-11-01.nc',
-    BASE2023_casename:f'{Output_diri}h2_surfO3_merged/f.e22.FCnudged.ne30_ne30_mg17.BGO3.BASEY20230401TY20231101.cam.h2.surflev.O3.2023-04-01T2023-10-31.nc',
-    ### Perturbations
-    noBB2022_casename:f'{Output_diri}h2_surfO3_merged/f.e22.FCnudged.ne30_ne30_mg17.BGO3.noBBemisCONUS80kmBufferY20220401TY20221101.cam.h2.surflev.O3.2022-04-01T2022-10-31.nc',
-    noBB2023_casename:f'{Output_diri}h2_surfO3_merged/f.e22.FCnudged.ne30_ne30_mg17.BGO3.noBBemisCONUS80kmBufferY20230401TY20231101.cam.h2.surflev.O3.2023-04-01T2023-11-01.nc',
-    noAnthro2022_casename:f'{Output_diri}h2_surfO3_merged/f.e22.FCnudged.ne30_ne30_mg17.BGO3.noANTHROemisCONUS80kmBufferY20220401TY20221101.cam.h2.surflev.O3.2022-04-01T2022-11-01.nc',
-    noAnthro2023_casename:f'{Output_diri}h2_surfO3_merged/f.e22.FCnudged.ne30_ne30_mg17.BGO3.noANTHROemisCONUS80kmBufferY20230401TY20231101.cam.h2.surflev.O3.2023-04-01T2023-11-01.nc',
-}
+mergedh2_surfO3filepath_dic = {cn: _newest_merged_surfo3(cn)
+                               for cn in BGO3_CASES.values()}
 
 #================================================================================================
 ### Specified input:
 # For a given case
-case_ls = [
-    # BASE2022_casename,
-    # BASE2023_casename,
-    noBB2022_casename,
-    noBB2023_casename,
-    noAnthro2022_casename,
-    noAnthro2023_casename,
-]
+# Cases to process; default is every CONUSBGO3 case.
+case_ls = list(BGO3_CASES.values())
 
-startMMDD = '04-01'
-endMMDD = '10-31'
+startMMDD = BGO3_START_MMDD
+endMMDD = BGO3_END_MMDD
 
 #================================================================================================
 # Import general functions
@@ -126,9 +131,7 @@ warnings.filterwarnings("ignore", category=FutureWarning, module="xarray.core.ac
 
 #================================================================================================
 # Define functions specific for this application
-# my functions
-import sys
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../functions/'))  # repo-local functions/
+# repo-local shared functions (functions/ is on sys.path via `import config`)
 from SE_analysis import get_site_index
 
 from timezonefinder import TimezoneFinder
@@ -354,6 +357,6 @@ def casei_build_and_save_all_sites(casename, MonitorIdx_df, startMMDD, endMMDD, 
 for casename in case_ls:
     print(f'Processing {casename}')
     #------------------------------
-    saveto_diri = f'{Output_diri}ForGivenMonitors/'
+    saveto_diri = str(ensure_dir(BGO3_GIVEN_MONITORS_DIR)) + '/'
     casei_build_and_save_all_sites(casename, MonitorIdx_df, startMMDD, endMMDD, saveto_diri)
 print("Done!")

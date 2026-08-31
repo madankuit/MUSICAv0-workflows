@@ -34,13 +34,22 @@ ne30np4/
 
 ## Grid files
 
-SCRIP files used for ESMF regridding are stored under `grid_files/`.
-See [`grid_files/README.md`](grid_files/README.md) for a list of available files.
+The ne30np4 SCRIP grid and CONUS masks **ship with this repository** under
+[`grid_files/`](grid_files/) — see its README for the full list. Reference them
+through `config/paths.py`, never by hard-coded path:
 
-Key files on Svante (paths in `svante_MUSICA_paths.py`):
+| Config constant | File |
+|-----------------|------|
+| `SCRIP_NE30NP4` | `ne30np4_091226_pentagons.nc` |
+| `MASK_NE30NP4_CONUS_80KM` | `ne30np4_091226_pentagons_CONUSlandMaskedFalse_80kmBuffer.nc` |
+| `MASK_NE30NP4_LOWER48_50KM` | `ne30np4_091226_pentagons_Lower48StatesCoastal50kmMaskedFalse.nc` |
 
-| Variable | Filename |
-|----------|----------|
-| `SCRIP_ne30np4` | `ne30np4_091226_pentagons.nc` |
-| `SCRIP_ne30np4_new` | `ne30np4_grid_c20241105.nc` |
-| `Regridding_09x125weights_ne30` | `ESMFmap_0.9x1.25_ne30np4_cubit_conserve_cams.nc` |
+Large derived ESMF weight files stay on the cluster and resolve through the same
+config (`WEIGHTS_NE30_TO_1X1`, `WEIGHTS_FV09X125_TO_NE30`).
+
+---
+
+## Workflow scripts
+
+The ne30np4 workflow currently in use is the CONUS background-ozone project,
+which lives at the repository root: [`CONUSBGO3/`](../../CONUSBGO3/).

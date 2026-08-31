@@ -2,17 +2,36 @@
 This script is used to extract matched column index in the ne0CONUSne30x8 horizontal grid of MUSICA model simulations matched with SLAMS/AQS monitors
 
 MODIFICATION HISTORY:
-    M. Tao, 18, DEC, 2023: VERSION 1.0
+    18, DEC, 2023: VERSION 1.0
     - Initial version
 '''
 # ============================================================
-# USER CONFIGURATION — set these paths before running
+# CONFIGURATION - every path comes from config/paths.py, the single
+# source of truth. Override cluster locations with the MUSICA_ENV_*
+# environment variables documented there. Do not hard-code paths here.
 # ============================================================
-AQS2018_diri = ''       # Path to AQS data directory for year 2018
-AQS_diri = ''           # Path to base AQS data directory (contains parameters.csv)
-MUSICA_index_diri = ''  # Path to directory for output column-index CSV files
-SpinUp_diri = ''        # Path to CESM archive directory containing spinup h1 files
-ex_h1_filename = ''     # Example h1 filename to read model lat/lon coordinates
+import sys as _sys, pathlib as _pathlib
+_ROOT = next(_p for _p in _pathlib.Path(__file__).resolve().parents
+             if (_p / 'config' / 'paths.py').exists())
+_sys.path.insert(0, str(_ROOT))
+import config  # noqa: F401  - also puts functions/ on sys.path
+from config.paths import (
+    AQS_DIR,
+    AQS_2018_DIR,
+    MUSICA_COLIDX_DIR,
+    ARCHIVE,
+    ensure_dir,
+)
+
+AQS2018_diri = str(AQS_2018_DIR) + '/'
+AQS_diri = str(AQS_DIR) + '/'
+MUSICA_index_diri = str(ensure_dir(MUSICA_COLIDX_DIR)) + '/'
+SpinUp_diri = str(ARCHIVE) + '/'
+# Example h1 file used only to read the model lat/lon coordinates.
+# Set to a path relative to SpinUp_diri, e.g.
+#   '<casename>/atm/hist/<casename>.cam.h1.2018-07-01-00000.nc'
+ex_h1_filename = ''
+
 # ============================================================
 
 #================================================================================================

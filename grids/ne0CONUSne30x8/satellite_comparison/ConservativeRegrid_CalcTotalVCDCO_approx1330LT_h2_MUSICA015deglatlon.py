@@ -3,7 +3,7 @@
 This code is designed to calculate total vertical column densities of CO of h2 MUSICA-V0 outputs approximated at 1:30 PM LT in a regular 0.15x0.15 lat and lon grids using the averaging kernels from TROPOMI, for the duration of the given period
 
 MODIFICATION HISTORY:
-    M. Tao, Feb, 23, 2024: VERSION 1.0
+    Feb, 23, 2024: VERSION 1.0
     - Initial version
 '''
 #================================================================================================
@@ -25,10 +25,29 @@ casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1basehour
 # casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.6HrNudgeTS1hourlyNEI2017'
 
 # ============================================================
-# USER CONFIGURATION — set these paths before running
+# CONFIGURATION - every path comes from config/paths.py, the single
+# source of truth. Override cluster locations with the MUSICA_ENV_*
+# environment variables documented there. Do not hard-code paths here.
 # ============================================================
-regridByVar_diri = ''           # Path to regridded MUSICA output directory (h2_ByVar/)
-MUSICATotalVCDSave_diri = ''    # Path to directory for saving total VCD output files
+import sys as _sys, pathlib as _pathlib
+_ROOT = next(_p for _p in _pathlib.Path(__file__).resolve().parents
+             if (_p / 'config' / 'paths.py').exists())
+_sys.path.insert(0, str(_ROOT))
+import config  # noqa: F401  - also puts functions/ on sys.path
+from config.paths import (
+    REGRID_SUBDIR_BYVAR,
+    REGRID_SUBDIR_TOTALVCD,
+    case_regrid_dir,
+    ensure_dir,
+)
+
+# Both depend on `casename`, which each script sets below.
+regridByVar_diri = ''
+MUSICATotalVCDSave_diri = ''
+# Resolve them once `casename` is known:
+#   regridByVar_diri = str(case_regrid_dir(casename, REGRID_SUBDIR_BYVAR)) + '/'
+#   MUSICATotalVCDSave_diri = str(ensure_dir(case_regrid_dir(casename, REGRID_SUBDIR_TOTALVCD))) + '/'
+
 # ============================================================
 
 print(regridByVar_diri)

@@ -5,13 +5,28 @@ This function is used to re-grid TROPOMI AK already processed to 0.15x0.15 degre
 # Note that TROPOMI CO is also recorded from TOA to surface based on layers, same as MUSICA
 
 MODIFICATION HISTORY:
-    M. Tao, 13, December, 2023: VERSION 1.0
+    13, December, 2023: VERSION 1.0
     - Initial version
-    M. Tao, 16, December, 2023: VERSION 1.1
+    16, December, 2023: VERSION 1.1
     - Adjust for different casename
-    M. Tao, 23, Feb, 2023: VERSION 2.0
+    23, Feb, 2023: VERSION 2.0
     - Adjust for TotalCO (total VCD contains more layers than trop VCD)
 '''
+# ============================================================
+# CONFIGURATION - every path comes from config/paths.py, the single
+# source of truth. Override cluster locations with the MUSICA_ENV_*
+# environment variables documented there. Do not hard-code paths here.
+# ============================================================
+import sys as _sys, pathlib as _pathlib
+_ROOT = next(_p for _p in _pathlib.Path(__file__).resolve().parents
+             if (_p / 'config' / 'paths.py').exists())
+_sys.path.insert(0, str(_ROOT))
+from config.paths import (
+    TROPOMI_015_DIRS, TROPOMI_L2_NO2_DIR, TROPOMI_L2_CO_DIR, TM5_SURFACE_P_DIR,
+    REGRID_SUBDIR_BYVAR, case_hist_dir, case_regrid_dir,
+)
+# ============================================================
+
 
 #=====Dependent library & functions======
 #--------------------------------------------------------------------------
@@ -48,10 +63,7 @@ fileheader_dic = {'HCHO':'S5P_RPRO_L2__HCHO___',
 
 # Where to store the processed files
 # Set your paths to the regridded TROPOMI data directories, e.g.:
-L3_015TROPOMI_diri_dic = {'HCHO':'/path/to/TROPOMI/data/S5P_L2__HCHO___HiR_2/regrid_2018_MUSICA015/',
-                           'NO2':'/path/to/TROPOMI/data/S5P_L2__NO2____HiR_2/regrid_2018_MUSICA015/',
-                           'CO':'/path/to/TROPOMI/data/S5P_L2__CO_____HiR_2/regrid_2018_MUSICA015/',
-                          }
+L3_015TROPOMI_diri_dic = {k: str(v) + '/' for k, v in TROPOMI_015_DIRS.items()}
 
 #=====Example use======
 #--------------------------------------------------------------------------
@@ -97,8 +109,8 @@ def func_VerticalRegrid_TotalCO_TROPOMIAK_toMUSICAlevs_015latlon(casename, datei
     #--------------------------------------------------------------------------
     ### Use CO: also vertical layers from TOA (49500 m above) to surface (500 m above)
     # TROPOMI Test file for layers
-    # TODO: set your path to the TROPOMI CO L2 directory, e.g. '/path/to/TROPOMI/S5P_L2__CO_____HiR_2/2018/'
-    TROPOMI_L2COdiri = "/path/to/TROPOMI/S5P_L2__CO_____HiR_2/2018/"
+    # From config/paths.py: TROPOMI_L2_CO_DIR
+    TROPOMI_L2COdiri = str(TROPOMI_L2_CO_DIR) + '/'
     testCOfile = 'S5P_RPRO_L2__CO_____20180902T144647_20180902T162816_04600_03_020400_20220905T080034.nc'
     TROPOMI_CO_PRODUCT = xr.open_dataset(TROPOMI_L2COdiri+testCOfile,group="/PRODUCT/",engine="netcdf4")
     # TROP_CO_egda = xr.open_dataset(TROPOMI_L2COdiri+testCOfile,group="PRODUCT/SUPPORT_DATA/INPUT_DATA/").sel(time=0)
@@ -110,8 +122,8 @@ def func_VerticalRegrid_TotalCO_TROPOMIAK_toMUSICAlevs_015latlon(casename, datei
     # Calculated TM5 PMID for the given fileregion and datei, already processed to 0.15 degree lat-lon
     # TM5PMID_datei_layers have layers revserved from TOA to surface
     # TODO: set your path to the TM5 surface pressure data for CO, e.g.:
-    # TM5SurfaceP_FileOut_diri = '/path/to/TM5MP_Model/'
-    TM5SurfaceP_FileOut_diri = '/path/to/TM5MP_Model/'
+    # From config/paths.py: TM5_SURFACE_P_DIR
+    TM5SurfaceP_FileOut_diri = str(TM5_SURFACE_P_DIR) + '/'
     TM5SurfaceP_Path = TM5SurfaceP_FileOut_diri+'TM5MP_forCO_Model_SurfaceP_Global_015deg_2018-06-30T2018-08-02.nc'
     TM5SurfaceP_ds = xr.open_dataset(TM5SurfaceP_Path)
     regioniSurfaceP_ds = TM5SurfaceP_ds.sel(lat=slice(lat_bot,lat_up),lon=slice(lon_right,lon_left))
@@ -124,8 +136,8 @@ def func_VerticalRegrid_TotalCO_TROPOMIAK_toMUSICAlevs_015latlon(casename, datei
     #--------------------------------------------------------------------------
     # Read in test MUSICA output file: get the vertical levels from MUSICA; does not matter which specific case
     # TODO: set your path to a representative MUSICA h2 output file, e.g.:
-    # test_h2_MUSICAfile = '/path/to/MUSICA/archive/<casename>/atm/hist/<casename>.cam.h2.YYYY-MM-DD-SSSSS.nc'
-    test_h2_MUSICAfile = '/path/to/MUSICA/archive/'+casename+'/atm/hist/'+casename+'.cam.h2.2018-07-01-03600.nc'
+    # From config/paths.py: case_hist_dir(casename) / f"{casename}.cam.h2.<date>.nc"
+    test_h2_MUSICAfile = str(case_hist_dir(casename) / f'{casename}.cam.h2.2018-07-01-03600.nc')
     testh2_ds = xr.open_dataset(test_h2_MUSICAfile)
     # hybrid level at midpoints: from TOA to Surface
     MUSICA_layers = testh2_ds.lev.values
@@ -134,8 +146,8 @@ def func_VerticalRegrid_TotalCO_TROPOMIAK_toMUSICAlevs_015latlon(casename, datei
     #--------------------------------------------------------------------------
     # PMID processed to 0.15 degree already for the given case
     # TODO: set your path to regridded MUSICA output, e.g.:
-    # regridByVar_diri = '/path/to/Regridded_MUSICA_Output/MassConserve_latlon015_MUSICAoutput/<casename>/h2_ByVar/'
-    regridByVar_diri = '/path/to/Regridded_MUSICA_Output/MassConserve_latlon015_MUSICAoutput/'+casename+'/h2_ByVar/'
+    # From config/paths.py: case_regrid_dir(casename, REGRID_SUBDIR_BYVAR)
+    regridByVar_diri = str(case_regrid_dir(casename, REGRID_SUBDIR_BYVAR)) + '/'
     MUSICA_PMID = xr.open_dataset( regridByVar_diri+casename+'.cam.h2.MassConserve_latlon015.PMID.20180701T20180801.nc' )
     regioni_MUSICA_PMID = MUSICA_PMID.PMID.sel(lat=slice(lat_bot, lat_up),lon=slice(lon_right,lon_left))
     # Approx at TROPOMI overpass time

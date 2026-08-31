@@ -12,7 +12,7 @@ Provides:
 Supported regions: WestCoast, Mountain, Midwest, Southwest, Southeast, Northeast, CONUS
 
 MODIFICATION HISTORY:
-    M. Tao: Initial version
+    Initial version
 """
 
 # Define the region boundaries

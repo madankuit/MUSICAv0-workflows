@@ -7,16 +7,30 @@ Based on 'ConservativeRegrid_MUSICAOutputs.ipynb' from MUSICA Tutorial Nov. 2021
 Regrid only the horizontal resolution to regular lat,lon 
 
 MODIFICATION HISTORY:
-    M. Tao, 4, December, 2023: VERSION 1.0
+    4, December, 2023: VERSION 1.0
     - Initial version
-    M. Tao, 16, December, 2023: VERSION 1.1
+    16, December, 2023: VERSION 1.1
     - Add CO to verticalvars, adjust for different casename
 '''
 # ============================================================
-# USER CONFIGURATION — set these paths before running
+# CONFIGURATION - every path comes from config/paths.py, the single
+# source of truth. Override cluster locations with the MUSICA_ENV_*
+# environment variables documented there. Do not hard-code paths here.
 # ============================================================
-# Path to your CESM archive directory, e.g. '/path/to/CESM/archive/'
-svante_archive = ''
+import sys as _sys, pathlib as _pathlib
+_ROOT = next(_p for _p in _pathlib.Path(__file__).resolve().parents
+             if (_p / 'config' / 'paths.py').exists())
+_sys.path.insert(0, str(_ROOT))
+import config  # noqa: F401  - also puts functions/ on sys.path
+from config.paths import (
+    ARCHIVE,
+    SCRIP_NE0CONUSNE30X8,
+    FV_GRIDINFO_015,
+    WEIGHTS_NE0CONUS_TO_015,
+    REGRID_SUBDIR_H2,
+    case_regrid_dir,
+    ensure_dir,
+)
 
 # casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1base01'
 # casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1basehourlyNEI2017'
@@ -25,18 +39,14 @@ svante_archive = ''
 ### with 6-hr nudging
 casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.6HrNudgeTS1hourlyNEI2017'
 
-# ne0CONUSne30x8 SCRIP grid file (source grid)
-SERR_scrip_file = ''  # Path to ne0CONUS_ne30x8_np4_SCRIP.nc, e.g. '/path/to/grids/ne0CONUS_ne30x8_np4_SCRIP.nc'
+svante_archive = str(ARCHIVE) + '/'
+# Source SE grid and destination FV grid both ship with the repo.
+SERR_scrip_file = str(SCRIP_NE0CONUSNE30X8)
+ESMFmap_015grid_file = str(FV_GRIDINFO_015)
+# Large derived weight file; lives on the cluster.
+Regridding_015weights_file = str(WEIGHTS_NE0CONUS_TO_015)
+histfreqfiles_diri = str(ensure_dir(case_regrid_dir(casename, REGRID_SUBDIR_H2))) + '/'
 
-# Target 0.15-degree FV grid information file
-ESMFmap_015grid_file = ''  # Path to FV_gridinfo_0.15 file, e.g. '/path/to/grids/FV_gridinfo_0.15_c20231204.nc'
-
-# ESMF conservative regridding weights file
-Regridding_015weights_file = ''  # Path to weights file, e.g. '/path/to/grids/ne0CONUSne30x8_ESMFmap_0.15x0.15_cubit_conserve_cams_c20231204.nc'
-
-# Directory to write regridded output files
-# e.g. '/path/to/Regridded_MUSICA_Output/2018_1330LT_TROPOMIcomp/MassConserve_latlon015_MUSICAoutput/<casename>/h2/'
-histfreqfiles_diri = ''
 # ============================================================
 
 #================================================================================================
@@ -65,7 +75,7 @@ import calendar
 # Local function files (from functions/ directory at the repo root)
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../functions/'))
 from Plot_2D import Plot_2D
-from Regridding_ESMF_MTv1 import Add_bounds, Regridding
+from Regridding_ESMF_v1 import Add_bounds, Regridding
 
 #================================================================================================
 # Read in MUSICA outputs

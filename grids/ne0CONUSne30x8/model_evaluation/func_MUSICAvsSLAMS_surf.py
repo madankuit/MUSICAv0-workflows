@@ -9,18 +9,34 @@ MUSICA ne0CONUSne30x8 grid column, compute scatter statistics, and generate
 map-based visualizations of model-observation differences.
 
 MODIFICATION HISTORY:
-    M. Tao, 3, OCT, 2023: VERSION 1.0
+    3, OCT, 2023: VERSION 1.0
     - Initial version
-    M. Tao, 18, DEC, 2023: VERSION 1.1
+    18, DEC, 2023: VERSION 1.1
     - Add a modified function for hourly AQS files
 '''
 
 # ============================================================
-# USER CONFIGURATION — set these paths before running
+# CONFIGURATION - every path comes from config/paths.py, the single
+# source of truth. Override cluster locations with the MUSICA_ENV_*
+# environment variables documented there. Do not hard-code paths here.
 # ============================================================
-CVSOUT_diri = ''        # Path to directory for output CSV files (colidxCSV/)
-SpinUp_diri = ''        # Path to CESM archive directory containing spinup h1 files
-ex_h1_filename = ''     # Example h1 filename to read model lat/lon coordinates
+import sys as _sys, pathlib as _pathlib
+_ROOT = next(_p for _p in _pathlib.Path(__file__).resolve().parents
+             if (_p / 'config' / 'paths.py').exists())
+_sys.path.insert(0, str(_ROOT))
+import config  # noqa: F401  - also puts functions/ on sys.path
+from config.paths import (
+    MUSICA_COLIDX_DIR,
+    ARCHIVE,
+    ensure_dir,
+)
+
+CVSOUT_diri = str(ensure_dir(MUSICA_COLIDX_DIR)) + '/'
+SpinUp_diri = str(ARCHIVE) + '/'
+# Example h1 file used only to read the model lat/lon coordinates;
+# path relative to SpinUp_diri.
+ex_h1_filename = ''
+
 # ============================================================
 
 #================================================================================================

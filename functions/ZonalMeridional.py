@@ -4,7 +4,7 @@ Functions for computing area-weighted zonal and meridional means from
 Spectral Element (SE) model output on unstructured grids.
 
 MODIFICATION HISTORY:
-    M. Tao: Initial version
+    Initial version
 """
 
 import numpy as np

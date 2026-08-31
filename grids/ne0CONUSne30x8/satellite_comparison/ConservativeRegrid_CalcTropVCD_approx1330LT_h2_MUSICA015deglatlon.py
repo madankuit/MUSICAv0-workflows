@@ -5,11 +5,11 @@ this code is designed to calculate tropospheric vertical column densities of HCH
 process separately for HCHO and NO2, for the duration of the given period
 
 MODIFICATION HISTORY:
-    M. Tao, December, 13, 2023: VERSION 1.0
+    December, 13, 2023: VERSION 1.0
     - Initial version
-    M. Tao, December, 16, 2023: VERSION 1.1
+    December, 16, 2023: VERSION 1.1
     - Modify the way of reading in files to minimize memory demand,, adjust for different
-    M. Tao, Feb, 25, 2024: VERSION 1.0
+    Feb, 25, 2024: VERSION 1.0
     - Bug fix, add one to the last layer index as slice will not include the right-hand number: indices[-1]+1
 '''
 #================================================================================================
@@ -31,10 +31,29 @@ enddate = "2018-08-01" #"2018-08-01"
 casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.6HrNudgeTS1hourlyNEI2017'
 
 # ============================================================
-# USER CONFIGURATION — set these paths before running
+# CONFIGURATION - every path comes from config/paths.py, the single
+# source of truth. Override cluster locations with the MUSICA_ENV_*
+# environment variables documented there. Do not hard-code paths here.
 # ============================================================
-regridByVar_diri = ''           # Path to regridded MUSICA output directory (h2_ByVar/)
-MUSICATropVCDSave_diri = ''     # Path to directory for saving tropospheric VCD output files
+import sys as _sys, pathlib as _pathlib
+_ROOT = next(_p for _p in _pathlib.Path(__file__).resolve().parents
+             if (_p / 'config' / 'paths.py').exists())
+_sys.path.insert(0, str(_ROOT))
+import config  # noqa: F401  - also puts functions/ on sys.path
+from config.paths import (
+    REGRID_SUBDIR_BYVAR,
+    REGRID_SUBDIR_TROPVCD,
+    case_regrid_dir,
+    ensure_dir,
+)
+
+# Both depend on `casename`, which each script sets below.
+regridByVar_diri = ''
+MUSICATropVCDSave_diri = ''
+# Resolve them once `casename` is known:
+#   regridByVar_diri = str(case_regrid_dir(casename, REGRID_SUBDIR_BYVAR)) + '/'
+#   MUSICATropVCDSave_diri = str(ensure_dir(case_regrid_dir(casename, REGRID_SUBDIR_TROPVCD))) + '/'
+
 # ============================================================
 
 print(regridByVar_diri)

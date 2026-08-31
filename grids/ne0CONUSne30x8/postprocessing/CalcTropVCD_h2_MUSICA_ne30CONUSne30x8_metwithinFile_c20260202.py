@@ -7,23 +7,33 @@ process separately for HCHO and NO2, for the duration of the given period
 Can run with sbatch run_CalcTropVCD.slurm to have it running in fdr in the background
 
 MODIFICATION HISTORY:
-    M. Tao, Feb, 2, 2026: VERSION 1.1
+    Feb, 2, 2026: VERSION 1.1
     - Copied from ACP_MUSICANEI_scripts/CalcTropVCD_h2_MUSICA_ne30CONUSne30x8_v2.py
     - Modified to use meteorology variables saved in the h2 file, instead of read externally
 '''
 # ============================================================
-# USER CONFIGURATION — set these paths before running
+# CONFIGURATION - every path comes from config/paths.py, the single
+# source of truth. Override cluster locations with the MUSICA_ENV_*
+# environment variables documented there. Do not hard-code paths here.
 # ============================================================
-# Path to your CESM archive directory, e.g. '/path/to/CESM/archive/'
-svante_archive = ''
-
-# Path to directory for saving tropospheric VCD output files
-# e.g. '/path/to/Calculated_MUSICA_VCD/TroposphericVCD/<casename>/'
-MUSICATropVCDSave_diri = ''
+import sys as _sys, pathlib as _pathlib
+_ROOT = next(_p for _p in _pathlib.Path(__file__).resolve().parents
+             if (_p / 'config' / 'paths.py').exists())
+_sys.path.insert(0, str(_ROOT))
+import config  # noqa: F401  - also puts functions/ on sys.path
+from config.paths import (
+    ARCHIVE,
+    case_trop_vcd_dir,
+    ensure_dir,
+)
 
 # casename options
 casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.BASE.From20230801.01'
 # casename = ''
+
+svante_archive = str(ARCHIVE) + '/'
+MUSICATropVCDSave_diri = str(ensure_dir(case_trop_vcd_dir(casename))) + '/'
+
 # ============================================================
 
 #================================================================================================

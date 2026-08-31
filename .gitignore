@@ -1,0 +1,18 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS cruft
+.DS_Store
+
+# Run artifacts — outputs and figures live on the cluster, not in git.
+# NOTE: grid description and mask NetCDFs under grids/*/grid_files/ ARE
+# tracked on purpose (see config/paths.py section 1), so *.nc is not
+# blanket-ignored here.
+output/
+figures/
+logs/
+*.log

@@ -84,8 +84,11 @@ CONUSBGO3/
 │
 ├── regridding/                # ne30 → 1° mass-conservative CONUS grid + gridded MDA8
 │   ├── gen_ne30_to_1x1_weights.py             # one-time: ESMF conservative weights (rootxesmf env)
-│   ├── Regrid_ne30_surfO3_to_1x1_conserve.py  # regrid 6 cases → hourly gridded + unified MDA8
+│   ├── Regrid_ne30_surfO3_to_1x1_conserve.py  # ★ regrid 6 cases → hourly gridded + unified MDA8
+│   ├── check_gridded_MDA8_deliverable.py      # QC: coverage/NaN report + single-year maps
 │   ├── plot_gridded_MDA8_scenarios.py         # BASE + (BASE−noAnthro)/(BASE−noBB) figure
+│   ├── plot_gridded_MDA8_3scenarios.py        # BASE/noAnthro/noBB absolute, shared scale
+│   ├── archive/                               # single-day method trials (conservative vs linear)
 │   └── README.md
 │
 └── analysis/                  # scenario differences & figures
@@ -147,6 +150,8 @@ regular **1°×1°** grid via **mass-conservative** ESMF remap (ne30np4 → 1° 
 
 The gridded MDA8 uses the identical local-time-adjusted EPA method as step 3 and was
 validated against the point deliverable (nearest cell vs monitor: r = 0.994, bias −0.11 ppb).
+Before sharing, run `check_gridded_MDA8_deliverable.py` for the per-(scenario, year)
+coverage and NaN report.
 
 ### 5. Analysis — `analysis/`
 - `ResultAnalysis_v20250707.ipynb` — monthly-mean surface-O₃ differences between scenarios
@@ -158,23 +163,49 @@ validated against the point deliverable (nearest cell vs monitor: r = 0.994, bia
 
 ## Paths
 
-Absolute paths as used on **MIT Svante** (they map to the `<your_username>`-templated
-constants in the repo's [`svante_MUSICA_paths.py`](../svante_MUSICA_paths.py)):
+Every path below is defined once, in [`config/paths.py`](../config/paths.py) — no
+script hard-codes a location. Paths come in two kinds:
 
-| Purpose | Path | Paths-module constant |
-|---------|------|-----------------------|
-| Model archive (case output) | `/net/fs09/d0/taoma528/CESM22/archive/` | `svante_archive` |
-| Project processed-data root | `/net/fs09/d0/taoma528/ProcessedData/DanJaffeMUSICAPostprocessing/` | `DanJaffe_output_diri` |
-| ↳ Monitor list (input) | `…/DanJaffeMUSICAPostprocessing/MonitorInfo/Lee_Jaffe_GAM_stats.csv` | |
-| ↳ Matched column index | `…/MonitorInfo/MatchedMonitors_ne30_ColIdx.csv` | |
-| ↳ Merged hourly surface O₃ | `…/h2_surfO3_merged/` | |
-| ↳ Per-monitor deliverables | `…/ForGivenMonitors/` | |
-| ↳ Gridded 1° deliverables | `…/Regridded1deg/` (unified MDA8 + `hourly/`) | |
-| ESMF grids + weights | `/net/fs09/d0/taoma528/CESM22/grids/` (ne30 SCRIP, `FV1x1grid_info_c20241105.nc`, `ESMFmap_ne30np4_TO_1x1_conserve_c20260708.nc`) | |
-| `ne30np4` SCRIP grid (data) | `/home/taoma528/Scripts/CESM_analysis/functions/ne30np4_091226_pentagons.nc` — the absolute path hard-coded as `SCRIP_ne30` in the two postprocessing scripts | |
-| CONUS land masks (data) | `…/Scripts/CESM_analysis/functions/ne30np4_091226_pentagons_CONUSlandMaskedFalse_{50,80}kmBuffer.nc` | |
-| CONUS-mask emission source | `/net/fs09/d0/taoma528/cheyenne_copies/acom/MUSICA/emissions/` | |
-| Figures | `/net/fs09/d0/taoma528/Figures/CESM_analysis/BGO3/` | |
+**Ships with the repository** (repo-relative, valid on any machine, no setup):
+
+| Purpose | Config constant | Location in repo |
+|---------|-----------------|------------------|
+| `ne30np4` SCRIP grid | `SCRIP_NE30NP4` | `grids/ne30np4/grid_files/ne30np4_091226_pentagons.nc` |
+| CONUS land mask (80 km buffer) | `MASK_NE30NP4_CONUS_80KM` | `grids/ne30np4/grid_files/…_CONUSlandMaskedFalse_80kmBuffer.nc` |
+| Lower-48 coastal mask (50 km) | `MASK_NE30NP4_LOWER48_50KM` | `grids/ne30np4/grid_files/…_Lower48StatesCoastal50kmMaskedFalse.nc` |
+| 1°×1° destination grid | `FV_GRIDINFO_1X1` | `grids/target_grids/grid_files/FV1x1grid_info_c20241105.nc` |
+| Shared functions | `FUNCTIONS_DIR` | `functions/` |
+
+**Lives on the cluster** (built from the runtime `$USER`; override with the
+`MUSICA_ENV_*` environment variables documented in `config/paths.py`):
+
+| Purpose | Config constant | Default location |
+|---------|-----------------|------------------|
+| Model archive (case output) | `ARCHIVE` | `$DATA_ROOT/CESM22/archive/` |
+| Project processed-data root | `BGO3_ROOT` | `$DATA_ROOT/ProcessedData/DanJaffeMUSICAPostprocessing/` |
+| ↳ Monitor list (input) | `BGO3_MONITOR_LIST` | `…/MonitorInfo/Lee_Jaffe_GAM_stats.csv` |
+| ↳ Matched column index | `BGO3_MONITOR_COLIDX` | `…/MonitorInfo/MatchedMonitors_ne30_ColIdx.csv` |
+| ↳ Merged hourly surface O₃ | `BGO3_MERGED_SURFO3_DIR` | `…/h2_surfO3_merged/` |
+| ↳ Per-monitor deliverables | `BGO3_GIVEN_MONITORS_DIR` | `…/ForGivenMonitors/` |
+| ↳ Gridded 1° deliverables | `BGO3_REGRIDDED_1DEG_DIR` | `…/Regridded1deg/` (unified MDA8 + `hourly/`) |
+| ne30→1° conservative weights | `WEIGHTS_NE30_TO_1X1` | `$DATA_ROOT/CESM22/grids/ESMFmap_ne30np4_TO_1x1_conserve_c20260708.nc` |
+| Emission source files | `BB_EMIS_NE30NP4_DIR`, `CAMS_V62_NE30NP4_DIR` | `$DATA_ROOT/ncar_copies/acom/MUSICA/emissions/` |
+| Figures | `BGO3_FIGURE_DIR` | `$DATA_ROOT/Figures/CESM_analysis/BGO3/` |
+
+`$DATA_ROOT` defaults to `/net/fs09/d0/$USER`. Verify what exists on your machine with:
+
+```bash
+python check_paths.py            # both groups
+python check_paths.py --suggest  # also hunt for moved files
+```
+
+The case names and the Apr–Oct window are config constants too
+(`BGO3_CASES`, `BGO3_CASE_LABELS`, `BGO3_START_MMDD`, `BGO3_END_MMDD`), so the
+experiment matrix is defined in exactly one place.
+
+The reference `user_nl_cam` namelists under `experiment_setup/namelists/` carry
+`<MUSICA_ENV_DATA_ROOT>` / `<MUSICA_ENV_HOME_ROOT>` placeholders where absolute
+input paths appeared; substitute your own before using them in a CESM case.
 
 Data files (`.nc`, `.csv`, archive output) are **not** version-controlled — they live on Svante.
 
@@ -185,10 +216,10 @@ Data files (`.nc`, `.csv`, archive output) are **not** version-controlled — th
 - **Shared functions** in the repo's top-level [`functions/`](../functions/):
   - `SE_analysis.py` → `get_site_index` (nearest SE column for a lat/lon via SCRIP)
   - `func_ModelEval_statistical_tests.py`, `func_MUSICA_DefineRegion.py` (analysis)
-  - The two `.py` scripts locate this folder repo-relatively
-    (`sys.path.insert(0, …/../../functions/)`), so the external `Scripts/` copy of the function
-    *library* is no longer needed. The SCRIP grid and CONUS-mask **NetCDFs** are still read from
-    Svante via absolute paths (see [Paths](#paths)).
+  - Scripts reach `functions/` by importing `config`, which puts the directory on
+    `sys.path`; no path juggling is needed. The SCRIP grid and CONUS-mask NetCDFs
+    now ship in the repo as well (see [Paths](#paths)), so nothing outside the
+    repository is required beyond the model output itself.
 - **Python env**: the repo [`environment.yml`](../environment.yml) (`musica-workflows`),
   plus `timezonefinder`, `pytz`, and `geopandas` (used by the extraction and mask notebooks).
   On Svante the point + gridded postprocessing runs in the `base` env; the one-time
@@ -199,7 +230,9 @@ Data files (`.nc`, `.csv`, archive output) are **not** version-controlled — th
 
 ## Provenance
 
-Scripts were developed under `~/Scripts/CESM_analysis/ne30_CONUS_BackgroundO3/` on Svante
-(2025) and reorganized here unchanged except that the two postprocessing `.py` scripts now
-import `functions/` from within this repo. Hard-coded absolute data paths are preserved as
-they were run and are catalogued in [Paths](#paths) above.
+Scripts were developed under a personal `Scripts/CESM_analysis/ne30_CONUS_BackgroundO3/`
+directory on Svante (2025) and reorganized here. The science is unchanged; what changed is
+that every path now resolves through [`config/paths.py`](../config/paths.py) instead of being
+hard-coded, the grid and mask NetCDFs ship with the repository, and provenance strings written
+into output NetCDFs (`processed_by`, `contact`, the `<tag>` in file names) come from config
+rather than being baked into the scripts.

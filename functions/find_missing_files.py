@@ -10,7 +10,6 @@ Designed for use in atmospheric chemistry and emissions workflows
 
 Author
 ------
-M. Tao
 Created: 2026-02
 """
 
@@ -73,7 +72,7 @@ def find_missing_files_v1(startDatetime, endDatetime, filedir, file_prefix):
 # # Example usage
 # startDatetime = '2017-07-01_03:00:00'
 # endDatetime = '2017-07-03_00:00:00'
-# filedir = '/path/to/your/files/'
+# filedir = str(config.paths.<the relevant directory>) + "/"
 # file_prefix = 'wrfchemi_d01'
 # missing_files = find_missing_files_v1(startDatetime, endDatetime, filedir,file_prefix)
 

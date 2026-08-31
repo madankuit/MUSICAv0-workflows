@@ -2,16 +2,27 @@
 # This script writes all CESM variables/Given varaibles at one site for given dates in EDT to a CSV file
 
 # ============================================================
-# USER CONFIGURATION — set these paths before running
+# CONFIGURATION - every path comes from config/paths.py, the single
+# source of truth. Override cluster locations with the MUSICA_ENV_*
+# environment variables documented there. Do not hard-code paths here.
 # ============================================================
-# Path to your AQS dataset directory, e.g. '/path/to/Datasets/AQS/'
-AQS_diri = ''
+import sys as _sys, pathlib as _pathlib
+_ROOT = next(_p for _p in _pathlib.Path(__file__).resolve().parents
+             if (_p / 'config' / 'paths.py').exists())
+_sys.path.insert(0, str(_ROOT))
+import config  # noqa: F401  - also puts functions/ on sys.path
+from config.paths import (
+    AQS_DIR,
+    WRFCMAQ_LISTOS_DIR,
+    CMAQ_ACONC_DIR,
+    SITE_HOURLY_JJA2018_DIR,
+    ensure_dir,
+)
 
-# Path to your CESM/WRFCMAQ data directory, e.g. '/path/to/Datasets/WRFCMAQ_LISTOS/'
-CESM_diri = ''
+AQS_diri = str(AQS_DIR) + '/'
+CESM_diri = str(WRFCMAQ_LISTOS_DIR) + '/'
+SiteCSV_diri = str(ensure_dir(SITE_HOURLY_JJA2018_DIR)) + '/'
 
-# Directory for per-site hourly CSV output, e.g. '/path/to/Datasets/Sitei_Hourly_JJA2018/'
-SiteCSV_diri = ''
 # ============================================================
 
 # Need to replace!
@@ -74,7 +85,7 @@ def dt64_to_datetime(dft6):
 #===============
 
 # directory locations (CESM_diri configured in USER CONFIGURATION block above)
-ACONC_diri = CESM_diri+'CMAQ_for_Tao-ma/ACONC/'
+ACONC_diri = str(CMAQ_ACONC_DIR) + '/'
 
 lat2d = np.load(CESM_diri+'CMAQ_lat2d.npy')
 lon2d = np.load(CESM_diri+'CMAQ_lon2d.npy')
@@ -98,7 +109,7 @@ ROWidx_dic = dict(zip(sitedf.SiteAbbr.values, sitedf.CMAQ_ROWidx.values))
 COLidx_dic = dict(zip(sitedf.SiteAbbr.values, sitedf.CMAQ_COLidx.values))
 
 # read in one example file
-ACONC_diri = CESM_diri+'CMAQ_for_Tao-ma/ACONC/'
+ACONC_diri = str(CMAQ_ACONC_DIR) + '/'
 testCMAQ_filei = 'CCTM_ACONC_v531_intel_1.33LISTOS1_twoway_20180601.nc'
 # read in data
 testCMAQ_DA = xr.open_dataset(ACONC_diri+testCMAQ_filei)#.sel(TSTEP=slice(0,24))

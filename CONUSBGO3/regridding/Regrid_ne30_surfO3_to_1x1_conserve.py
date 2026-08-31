@@ -8,7 +8,7 @@ regular 1x1 deg CONUS grid, for the CONUS Background-O3 (Dan Jaffe) experiments
 (BASE / noAnthro / noBB, 2022 & 2023, Apr-Oct). Produces:
 
   Regridded1deg/hourly/CONUS1x1_UTChourlySurfO3.<label>.<start>T<end>.nc   (6 files, ppb)
-  Regridded1deg/MUSICAv0_ne30_CONUS1x1_MDA8O3_BGO3_2022-2023_AprOct_MTao_c<YMD>.nc
+  Regridded1deg/MUSICAv0_ne30_CONUS1x1_MDA8O3_BGO3_2022-2023_AprOct_<tag>_c<YMD>.nc
         -> MDA8O3(scenario, time, lat, lon)  [ppb]  (unified, shareable)
 
 Conservative weights (ne30np4 -> 1x1) are read from CESM22/grids/; they were
@@ -17,8 +17,12 @@ mat-mul (base env). MDA8 mirrors the point pipeline
 (Extract_givenmonitorO3_hourly_dailyMDA8_toNetCDF.py): EPA 8-h rolling means,
 per-grid-cell summertime UTC offset via timezonefinder.
 
+All paths, case names and the provenance tag come from config/paths.py.
+
 MODIFICATION HISTORY:
-    Madankui Tao, 8 Jul 2026: VERSION 1.0
+    8 Jul 2026: VERSION 1.0
+    31 Aug 2026: VERSION 1.1
+    - Paths, case names and provenance moved to config/paths.py
 """
 import os, datetime
 import numpy as np, pandas as pd, xarray as xr
@@ -27,37 +31,46 @@ from timezonefinder import TimezoneFinder
 from datetime import datetime as dtmod
 import pytz
 
-# ================= paths =================
-G    = "/net/fs09/d0/taoma528/CESM22/grids/"
-OUT  = "/net/fs09/d0/taoma528/ProcessedData/DanJaffeMUSICAPostprocessing/"
-ARCH = "/net/fs09/d0/taoma528/CESM22/archive/"
-DST  = OUT + "Regridded1deg/"
-HRLY = DST + "hourly/"
-os.makedirs(HRLY, exist_ok=True)
-WGT  = G + "ESMFmap_ne30np4_TO_1x1_conserve_c20260708.nc"
-h2ex = ARCH + ("f.e22.FCnudged.ne30_ne30_mg17.BGO3.BASEY20220401TY20230401/atm/hist/"
-               "f.e22.FCnudged.ne30_ne30_mg17.BGO3.BASEY20220401TY20230401.cam.h2.2022-05-04-03600.nc")
+# ================= configuration =================
+# Every path, case name and provenance string comes from config/paths.py.
+import sys, pathlib, glob
+_ROOT = next(p for p in pathlib.Path(__file__).resolve().parents
+             if (p / 'config' / 'paths.py').exists())
+sys.path.insert(0, str(_ROOT))
+import config  # noqa: F401  - also puts functions/ on sys.path
+from config.paths import (
+    BGO3_CASES, BGO3_CASE_LABELS, BGO3_SCENARIOS, BGO3_YEARS,
+    BGO3_START_MMDD, BGO3_END_MMDD,
+    BGO3_REGRIDDED_1DEG_DIR, BGO3_REGRIDDED_1DEG_HOURLY_DIR,
+    SCRIP_NE30NP4, FV_GRIDINFO_1X1, WEIGHTS_NE30_TO_1X1,
+    AUTHOR_TAG, PROCESSED_BY, CONTACT, INSTITUTION, MACHINE,
+    bgo3_merged_surfo3_glob, case_hist_dir, ensure_dir,
+)
+
+DST  = str(ensure_dir(BGO3_REGRIDDED_1DEG_DIR)) + "/"
+HRLY = str(ensure_dir(BGO3_REGRIDDED_1DEG_HOURLY_DIR)) + "/"
+WGT  = str(WEIGHTS_NE30_TO_1X1)
 
 # ================= cases =================
-CASE = {
- ('BASE',2022):    'f.e22.FCnudged.ne30_ne30_mg17.BGO3.BASEY20220401TY20230401',
- ('BASE',2023):    'f.e22.FCnudged.ne30_ne30_mg17.BGO3.BASEY20230401TY20231101',
- ('noAnthro',2022):'f.e22.FCnudged.ne30_ne30_mg17.BGO3.noANTHROemisCONUS80kmBufferY20220401TY20221101',
- ('noAnthro',2023):'f.e22.FCnudged.ne30_ne30_mg17.BGO3.noANTHROemisCONUS80kmBufferY20230401TY20231101',
- ('noBB',2022):    'f.e22.FCnudged.ne30_ne30_mg17.BGO3.noBBemisCONUS80kmBufferY20220401TY20221101',
- ('noBB',2023):    'f.e22.FCnudged.ne30_ne30_mg17.BGO3.noBBemisCONUS80kmBufferY20230401TY20231101',
-}
-LABEL = {('BASE',2022):'BASE2022',('BASE',2023):'BASE2023',
-         ('noAnthro',2022):'noAnthro2022',('noAnthro',2023):'noAnthro2023',
-         ('noBB',2022):'noBB2022',('noBB',2023):'noBB2023'}
+CASE  = dict(BGO3_CASES)
+LABEL = {k: BGO3_CASE_LABELS[v] for k, v in CASE.items()}
+
+# Any h2 file of the BASE 2022 case provides the ne30 coordinates / grid metadata.
+_h2ex_hist = case_hist_dir(CASE[('BASE', 2022)])
+_h2ex_hits = sorted(glob.glob(str(_h2ex_hist / '*.cam.h2.*.nc')))
+if not _h2ex_hits:
+    raise FileNotFoundError(f'No h2 history files found under {_h2ex_hist}')
+h2ex = _h2ex_hits[0]
+
 def merged_path(cn):
-    import glob
-    hits = glob.glob(OUT+f"h2_surfO3_merged/{cn}.cam.h2.surflev.O3.*.nc")
-    if not hits: raise FileNotFoundError(cn)
+    hits = glob.glob(bgo3_merged_surfo3_glob(cn))
+    if not hits:
+        raise FileNotFoundError(
+            f'No merged surface-O3 file for {cn}; run Merge_h2files_hourlysurfO3.py first.')
     return sorted(hits)[-1]
 
-SCEN = ['BASE','noAnthro','noBB']; YEARS = [2022,2023]
-STARTMMDD, ENDMMDD = '04-01', '10-31'
+SCEN = list(BGO3_SCENARIOS); YEARS = list(BGO3_YEARS)
+STARTMMDD, ENDMMDD = BGO3_START_MMDD, BGO3_END_MMDD
 
 # ================= CONUS 1x1 target =================
 LATMIN,LATMAX,LONMIN,LONMAX = 24,50,235,294   # CONUS; lon 0..360 (=-125..-66)
@@ -125,19 +138,19 @@ def prov(extra):
         project="CONUS Background Ozone (Dan Jaffe collaboration)",
         source=("MUSICAv0 = CESM2.2 CAM-chem (MOZART TS1), ne30np4 (~111 km global) "
                 "spectral-element, FCnudged nudged to MERRA-2"),
-        institution="Smithsonian Astrophysical Observatory (Center for Astrophysics | Harvard & Smithsonian)",
+        institution=INSTITUTION,
         scenarios=("BASE = all emissions; noAnthro = CONUS anthropogenic emissions zeroed (land, 80 km buffer); "
                    "noBB = CONUS biomass-burning emissions zeroed (land, 80 km buffer)"),
         case_names="; ".join(f"{LABEL[k]}: {v}" for k,v in CASE.items()),
         horizontal_regrid="ESMF first-order conservative remap, ne30np4 -> 1x1 deg (dest weight-sums = 1)",
         regrid_weight_file=WGT,
-        regrid_source_scrip=G+"ne30np4_091226_pentagons.nc",
-        regrid_dest_grid=G+"FV1x1grid_info_c20241105.nc",
-        processed_by="Madankui Tao (taoma528)",
+        regrid_source_scrip=str(SCRIP_NE30NP4),
+        regrid_dest_grid=str(FV_GRIDINFO_1X1),
+        processed_by=PROCESSED_BY,
         processing_date=dtmod.now().strftime('%Y-%m-%d %H:%M:%S'),
-        machine="MIT Svante (svante9.mit.edu)",
+        machine=MACHINE,
         conda_env="base (application/MDA8); weights generated with esmpy 8.7 in env rootxesmf",
-        contact="taoma528@mit.edu",
+        contact=CONTACT,
         Conventions="CF-1.9",
     )
     a.update(extra); return a
@@ -181,7 +194,7 @@ for sc in SCEN:
                         'time_note':'UTC timestamps; hours over Apr 1 - Oct 31'}))
         dsh['lat'].attrs.update(units='degrees_north',standard_name='latitude')
         dsh['lon'].attrs.update(units='degrees_east',standard_name='longitude')
-        fpath=HRLY+f'CONUS1x1_UTChourlySurfO3.{lab}.{yr}-{STARTMMDD}T{yr}-{ENDMMDD}.MTao_c{YMD}.nc'
+        fpath=HRLY+f'CONUS1x1_UTChourlySurfO3.{lab}.{yr}-{STARTMMDD}T{yr}-{ENDMMDD}.{AUTHOR_TAG}_c{YMD}.nc'
         dsh.to_netcdf(fpath,format='NETCDF4',
                       encoding={'O3':{'zlib':True,'complevel':4,'_FillValue':np.float32(np.nan)}})
         print("  hourly ->",fpath)
@@ -220,7 +233,7 @@ dsm=xr.Dataset(
 dsm['lat'].attrs.update(units='degrees_north',standard_name='latitude')
 dsm['lon'].attrs.update(units='degrees_east',standard_name='longitude')
 dsm['scenario'].attrs.update(long_name='emission scenario')
-fpath=DST+f'MUSICAv0_ne30_CONUS1x1_MDA8O3_BGO3_2022-2023_AprOct_MTao_c{YMD}.nc'
+fpath=DST+f'MUSICAv0_ne30_CONUS1x1_MDA8O3_BGO3_2022-2023_AprOct_{AUTHOR_TAG}_c{YMD}.nc'
 dsm.to_netcdf(fpath,format='NETCDF4',
               encoding={'MDA8O3':{'zlib':True,'complevel':4,'_FillValue':np.float32(np.nan)}})
 print("\nUNIFIED MDA8 ->",fpath)

@@ -9,17 +9,33 @@ MDA8 O3 over Apr-Oct 2022-2023 —
   (a) BASE (absolute), (b) BASE - noAnthro, (c) BASE - noBB (differences).
 Panels (b)/(c) use independent diverging scales (anthro effect ~= 8x the BB effect).
 
-Run in the `base` env (matplotlib + cartopy). Edit MDA8_FILE / period as needed.
+Run in the `base` env (matplotlib + cartopy). All paths come from
+config/paths.py; the unified MDA8 file is located by glob, so no file name is
+hard-coded here.
 
-    Madankui Tao, 8 Jul 2026
+    8 Jul 2026: VERSION 1.0
+    31 Aug 2026: VERSION 1.1 - paths moved to config/paths.py
 """
+import glob, sys, pathlib
 import numpy as np, xarray as xr
 import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
 import cartopy.crs as ccrs, cartopy.feature as cfeat
 
-OUT="/net/fs09/d0/taoma528/ProcessedData/DanJaffeMUSICAPostprocessing/"
-MDA8_FILE=OUT+"Regridded1deg/MUSICAv0_ne30_CONUS1x1_MDA8O3_BGO3_2022-2023_AprOct_MTao_c20260708.nc"
-FIG="/net/fs09/d0/taoma528/Figures/CESM_analysis/BGO3/regrid_trial/"
+_ROOT = next(p for p in pathlib.Path(__file__).resolve().parents
+             if (p / 'config' / 'paths.py').exists())
+sys.path.insert(0, str(_ROOT))
+import config  # noqa: F401
+from config.paths import (BGO3_REGRIDDED_1DEG_DIR, BGO3_FIGURE_DIR,
+                          bgo3_unified_mda8_glob, ensure_dir)
+
+# Newest unified MDA8 deliverable, whatever provenance tag it carries.
+_hits = sorted(glob.glob(bgo3_unified_mda8_glob()))
+if not _hits:
+    raise FileNotFoundError(
+        f"No unified MDA8 file in {BGO3_REGRIDDED_1DEG_DIR}; "
+        f"run Regrid_ne30_surfO3_to_1x1_conserve.py first.")
+MDA8_FILE=_hits[-1]
+FIG=str(ensure_dir(BGO3_FIGURE_DIR / "regrid_trial")) + "/"
 EXT=[-125,-66,23,50]
 
 m=xr.open_dataset(MDA8_FILE); M=m["MDA8O3"]; lon=m.lon.values; lat=m.lat.values

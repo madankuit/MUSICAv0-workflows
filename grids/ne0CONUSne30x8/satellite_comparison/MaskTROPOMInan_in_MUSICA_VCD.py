@@ -29,13 +29,23 @@ fileheader_dic = {'HCHO':'S5P_RPRO_L2__HCHO___',
               }
 
 # ============================================================
-# USER CONFIGURATION — set these paths before running
+# CONFIGURATION - every path comes from config/paths.py, the single
+# source of truth. Override cluster locations with the MUSICA_ENV_*
+# environment variables documented there. Do not hard-code paths here.
 # ============================================================
-L3ProductFileOut_diri_dic = {'HCHO': '',   # Path to regridded TROPOMI HCHO L3 product directory
-                             'NO2':  '',   # Path to regridded TROPOMI NO2 L3 product directory
-                             'CO':   '',   # Path to regridded TROPOMI CO L3 product directory
-                             }
-MUSICA_regridded_base_diri = ''  # Base path to regridded MUSICA output (parent of per-casename dirs)
+import sys as _sys, pathlib as _pathlib
+_ROOT = next(_p for _p in _pathlib.Path(__file__).resolve().parents
+             if (_p / 'config' / 'paths.py').exists())
+_sys.path.insert(0, str(_ROOT))
+import config  # noqa: F401  - also puts functions/ on sys.path
+from config.paths import (
+    REGRIDDED_2018_ROOT,
+    TROPOMI_015_DIRS,
+)
+
+L3ProductFileOut_diri_dic = {k: str(v) + '/' for k, v in TROPOMI_015_DIRS.items()}
+MUSICA_regridded_base_diri = str(REGRIDDED_2018_ROOT) + '/'
+
 # ============================================================
 
 #--------------------------------------------------------------------------

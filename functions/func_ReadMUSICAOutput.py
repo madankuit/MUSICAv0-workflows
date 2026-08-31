@@ -3,9 +3,9 @@ ReadMUSICAOutput.py
 this code is designed to read in MUSICA model simulation outputs 
 
 MODIFICATION HISTORY:
-    M. Tao, 3, OCT, 2023: VERSION 1.00
+    3, OCT, 2023: VERSION 1.00
     - Initial version
-    M. Tao, 19, FEB, 2024: VERSION 2.00
+    19, FEB, 2024: VERSION 2.00
     - Incorporate the old 'July5Day' ipynb functions here
     
 '''
@@ -27,8 +27,8 @@ import glob
 
 ###########
 # Set the path to your SCRIP grid files, e.g.:
-# SCRIP_CONUS = '/path/to/ne0CONUS_ne30x8_np4_SCRIP.nc'
-# SCRIP_ne30  = '/path/to/ne30np4_091226_pentagons.nc'
+# Both SCRIP grids ship with the repo; take them from config/paths.py:
+#   from config.paths import SCRIP_NE0CONUSNE30X8, SCRIP_NE30NP4
 
 ###########
 import os

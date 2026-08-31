@@ -1,13 +1,21 @@
 #!/usr/bin/env python
 """Generate ne30np4 -> 1x1 FV CONSERVATIVE ESMF weights (esmpy 8.7),
-mirroring the Regridding_ESMF_MTv1 call_ESMF setup. Weight-file only + verify."""
+mirroring the Regridding_ESMF_v1 call_ESMF setup. Weight-file only + verify."""
 import esmpy, numpy as np, xarray as xr, datetime, os
+import sys, pathlib
 
-G = "/net/fs09/d0/taoma528/CESM22/grids/"
-SRC = G + "ne30np4_091226_pentagons.nc"      # SE source SCRIP (corners)
-DST = G + "FV1x1grid_info_c20241105.nc"       # 1x1 global FV grid info (CF bnds)
+# Paths come from config/paths.py - the single source of truth.
+_ROOT = next(p for p in pathlib.Path(__file__).resolve().parents
+             if (p / 'config' / 'paths.py').exists())
+sys.path.insert(0, str(_ROOT))
+import config  # noqa: F401
+from config.paths import SCRIP_NE30NP4, FV_GRIDINFO_1X1, GRIDS_EXTERNAL_DIR, ensure_dir
+
+SRC = str(SCRIP_NE30NP4)      # SE source SCRIP (corners), ships with the repo
+DST = str(FV_GRIDINFO_1X1)    # 1x1 global FV grid info (CF bnds), ships with the repo
 YMD = datetime.datetime.now().strftime("%Y%m%d")
-WGT = G + f"ESMFmap_ne30np4_TO_1x1_conserve_c{YMD}.nc"
+# The weight file is large and derived, so it is written outside the repo.
+WGT = str(ensure_dir(GRIDS_EXTERNAL_DIR) / f"ESMFmap_ne30np4_TO_1x1_conserve_c{YMD}.nc")
 
 print("esmpy", esmpy.__version__)
 # --- source: SE mesh from SCRIP, field on elements ---

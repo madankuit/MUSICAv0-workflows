@@ -12,15 +12,12 @@ NetCDF grid description, mask, and weight files for the ne0CONUSne30x8 grid and 
 | `mask_CanadaProvinces_ne0CONUS_ne30x8.nc` | ~85 MB | Province-level masks for Canadian regions on ne0CONUSne30x8 ncol. Used for biomass burning emission scaling experiments. |
 | `ne0CONUSne30x8_Canadianfire_region_masks.nc` | ~8.7 MB | Regional masks for Canadian wildfire source regions (2023) on ne0CONUSne30x8 ncol. |
 
-## ne30np4 Files (Global Background Grid)
+## ne30np4 Files
 
-These files are useful for lateral boundary condition (LBC) workflows and global analyses that feed into ne0CONUSne30x8 simulations.
-
-| File | Size | Description |
-|------|------|-------------|
-| `ne30np4_091226_pentagons.nc` | ~5.2 MB | SCRIP grid description for the ne30np4 global grid (48,602 columns). |
-| `ne30np4_091226_pentagons_CONUSlandMaskedFalse_80kmBuffer.nc` | ~434 KB | CONUS land mask with 80 km buffer on ne30np4 ncol. |
-| `ne30np4_091226_pentagons_Lower48StatesCoastal50kmMaskedFalse.nc` | ~434 KB | Lower 48 states coastal mask (50 km buffer) on ne30np4 ncol. |
+The ne30np4 SCRIP grid and its CONUS masks now live in
+[`../../ne30np4/grid_files/`](../../ne30np4/grid_files/), alongside the other
+ne30np4 material. Reference them as `SCRIP_NE30NP4`, `MASK_NE30NP4_CONUS_80KM`
+and `MASK_NE30NP4_LOWER48_50KM` from `config/paths.py`.
 
 ## f09 Reference Files
 
@@ -32,13 +29,29 @@ These files are useful for lateral boundary condition (LBC) workflows and global
 
 ## Usage
 
+Take these from `config/paths.py` rather than opening them by a hard-coded path —
+that way the code works from any directory and any checkout:
+
 ```python
+import sys, pathlib
+_ROOT = next(p for p in pathlib.Path(__file__).resolve().parents
+             if (p / 'config' / 'paths.py').exists())
+sys.path.insert(0, str(_ROOT))
+from config.paths import SCRIP_NE0CONUSNE30X8, MASK_NE0CONUS_CONUS_80KM
+
 import xarray as xr
-
-# Load SCRIP grid for se utility functions
-scrip_ds = xr.open_dataset('grid_files/ne0CONUS_ne30x8_np4_SCRIP.nc')
-
-# Load CONUS land mask
-mask_ds = xr.open_dataset('grid_files/ne0CONUSne30x8_np4_CONUSlandMaskedFalse_80kmBuffer.nc')
+scrip_ds = xr.open_dataset(SCRIP_NE0CONUSNE30X8)
+mask_ds  = xr.open_dataset(MASK_NE0CONUS_CONUS_80KM)
 conus_mask = mask_ds['mask']   # shape: (ncol,), dtype: bool
 ```
+
+## Config constants
+
+| Config constant | File |
+|-----------------|------|
+| `SCRIP_NE0CONUSNE30X8` | `ne0CONUS_ne30x8_np4_SCRIP.nc` |
+| `MASK_NE0CONUS_CONUS_80KM` | `ne0CONUSne30x8_np4_CONUSlandMaskedFalse_80kmBuffer.nc` |
+| `MASK_NE0CONUS_US_REGIONS` | `US_region_masks_ne0CONUSne30x8_ncol174098.nc` |
+| `MASK_NE0CONUS_CANADA_PROVINCES` | `mask_CanadaProvinces_ne0CONUS_ne30x8.nc` |
+| `MASK_NE0CONUS_CANADIAN_FIRE` | `ne0CONUSne30x8_Canadianfire_region_masks.nc` |
+| `MASK_F09_CONUS_80KM` | `f09_CONUSlandMaskedFalse_80kmBuffer.nc` |

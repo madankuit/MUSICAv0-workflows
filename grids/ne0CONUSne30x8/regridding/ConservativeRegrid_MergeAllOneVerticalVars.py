@@ -4,13 +4,28 @@ This code is designed to merge all one-vertical-layer variables ('NoVertvars') f
 The MUSICAv0 output has already been mass-conservatively regridded into a resolution of 0.15x0.15 lat-lon but in separate files for each date
 
 MODIFICATION HISTORY:
-    M. Tao, 17, December, 2023: VERSION 1.0
+    17, December, 2023: VERSION 1.0
     - Initial version
 '''
 
 # ============================================================
-# USER CONFIGURATION — set these paths before running
+# CONFIGURATION - every path comes from config/paths.py, the single
+# source of truth. Override cluster locations with the MUSICA_ENV_*
+# environment variables documented there. Do not hard-code paths here.
 # ============================================================
+import sys as _sys, pathlib as _pathlib
+_ROOT = next(_p for _p in _pathlib.Path(__file__).resolve().parents
+             if (_p / 'config' / 'paths.py').exists())
+_sys.path.insert(0, str(_ROOT))
+import config  # noqa: F401  - also puts functions/ on sys.path
+from config.paths import (
+    REGRID_SUBDIR_H2,
+    REGRID_SUBDIR_BYVAR,
+    REGRID_SUBDIR_VERT_BYVAR_DATE,
+    case_regrid_dir,
+    ensure_dir,
+)
+
 # casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1base01'
 # casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1basehourlyNEI2017'
 # casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1basehourlyNOotherJulyMeanNEI2017'
@@ -18,21 +33,11 @@ MODIFICATION HISTORY:
 ### with 6-hr nudging
 casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.6HrNudgeTS1hourlyNEI2017'
 
-# Directory containing per-level regridded h2 files
-# e.g. '/path/to/Regridded_MUSICA_Output/.../MassConserve_latlon015_MUSICAoutput/<casename>/h2/'
-h2files_diri = ''
+h2files_diri = str(case_regrid_dir(casename, REGRID_SUBDIR_H2)) + '/'
+singleDay_diri = str(ensure_dir(case_regrid_dir(casename, REGRID_SUBDIR_VERT_BYVAR_DATE))) + '/'
+FileOutByVar_dir = str(ensure_dir(case_regrid_dir(casename, REGRID_SUBDIR_BYVAR))) + '/'
+MergedVerticalh2files_diri = singleDay_diri
 
-# Directory for single-day merged vertical-variable files
-# e.g. '/path/to/Regridded_MUSICA_Output/.../MassConserve_latlon015_MUSICAoutput/<casename>/h2_VertiVarsByVarDate/'
-singleDay_diri = ''
-
-# Directory for per-variable output files
-# e.g. '/path/to/Regridded_MUSICA_Output/.../MassConserve_latlon015_MUSICAoutput/<casename>/h2_ByVar/'
-FileOutByVar_dir = ''
-
-# Directory for merged-vertical h2 files (often same as singleDay_diri)
-# e.g. '/path/to/Regridded_MUSICA_Output/.../MassConserve_latlon015_MUSICAoutput/<casename>/h2_VertiVarsByVarDate/'
-MergedVerticalh2files_diri = ''
 # ============================================================
 
 GroupedName = 'NoVertvars'

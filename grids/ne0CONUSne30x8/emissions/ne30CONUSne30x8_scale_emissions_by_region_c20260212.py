@@ -25,15 +25,28 @@ Output
 - NetCDF files containing scaled emissions
 
 MODIFICATION HISTORY:
-    M. Tao, Feb, 12, 2026: VERSION 1
+    Feb, 12, 2026: VERSION 1
     - Initial version
 
 """
 # ============================================================
-# USER CONFIGURATION — set these paths before running
+# CONFIGURATION - every path comes from config/paths.py, the single
+# source of truth. Override cluster locations with the MUSICA_ENV_*
+# environment variables documented there. Do not hard-code paths here.
 # ============================================================
-BBEmissions_diri = ''       # Path to directory containing original QFED BB emissions files
-Out_BBEmissions_diri = ''   # Path to directory for scaled output emissions files
+import sys as _sys, pathlib as _pathlib
+_ROOT = next(_p for _p in _pathlib.Path(__file__).resolve().parents
+             if (_p / 'config' / 'paths.py').exists())
+_sys.path.insert(0, str(_ROOT))
+import config  # noqa: F401  - also puts functions/ on sys.path
+from config.paths import (
+    BB_EMIS_NE0CONUS_DIR,
+)
+
+BBEmissions_diri = str(BB_EMIS_NE0CONUS_DIR) + '/'
+# Left empty: derived from BBEmissions_diri + region/scale below.
+Out_BBEmissions_diri = ''
+
 # ============================================================
 
 #================================================================================================

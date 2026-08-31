@@ -3,7 +3,7 @@
 This code is designed to calculate Spearman correlation, Normalized Model Bias and Normalized RMSE for vertical column densities of HCHO, NO2, and CO of h2 MUSICA-V0 outputs approximated at 1:30 PM LT in a regular 0.15x0.15
 
 MODIFICATION HISTORY:
-    M. Tao, Match, 23, 2024: VERSION 1.0
+    Match, 23, 2024: VERSION 1.0
     - Initial version
     
 '''
@@ -12,15 +12,28 @@ MODIFICATION HISTORY:
 varlist = ['NO2','HCHO','CO']
 
 # ============================================================
-# USER CONFIGURATION — set these paths before running
+# CONFIGURATION - every path comes from config/paths.py, the single
+# source of truth. Override cluster locations with the MUSICA_ENV_*
+# environment variables documented there. Do not hard-code paths here.
 # ============================================================
-svante_archive = ''         # Path to your CESM archive directory
-figure_diri = ''            # Path to directory for saving output figures
-L3ProductFileOut_diri_dic = {'HCHO': '',   # Path to regridded TROPOMI HCHO L3 product directory
-                             'NO2':  '',   # Path to regridded TROPOMI NO2 L3 product directory
-                             'CO':   '',   # Path to regridded TROPOMI CO L3 product directory
-                             }
-MUSICA_regridded_base_diri = ''  # Base path to regridded MUSICA output (parent of per-casename dirs)
+import sys as _sys, pathlib as _pathlib
+_ROOT = next(_p for _p in _pathlib.Path(__file__).resolve().parents
+             if (_p / 'config' / 'paths.py').exists())
+_sys.path.insert(0, str(_ROOT))
+import config  # noqa: F401  - also puts functions/ on sys.path
+from config.paths import (
+    ARCHIVE,
+    CESM_FIGURE_DIR,
+    REGRIDDED_2018_ROOT,
+    TROPOMI_015_DIRS,
+    ensure_dir,
+)
+
+svante_archive = str(ARCHIVE) + '/'
+figure_diri = str(ensure_dir(CESM_FIGURE_DIR / 'ModelBiasToTROPOMI')) + '/'
+L3ProductFileOut_diri_dic = {k: str(v) + '/' for k, v in TROPOMI_015_DIRS.items()}
+MUSICA_regridded_base_diri = str(REGRIDDED_2018_ROOT) + '/'
+
 # ============================================================
 
 ### Designated path and files

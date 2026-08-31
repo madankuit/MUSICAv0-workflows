@@ -26,12 +26,28 @@ warnings.filterwarnings('ignore', message='Some warning message')
 warnings.filterwarnings("ignore", category=FutureWarning, message=".*iteritems.*")
 
 # ============================================================
-# USER CONFIGURATION — set these paths before running
+# CONFIGURATION - every path comes from config/paths.py, the single
+# source of truth. Override cluster locations with the MUSICA_ENV_*
+# environment variables documented there. Do not hard-code paths here.
 # ============================================================
-cheyenne_archive = ''   # Path to Cheyenne CESM archive directory
-svante_archive = ''     # Path to Svante CESM archive directory
-figure_diri = ''        # Path to directory for saving output figures
+import sys as _sys, pathlib as _pathlib
+_ROOT = next(_p for _p in _pathlib.Path(__file__).resolve().parents
+             if (_p / 'config' / 'paths.py').exists())
+_sys.path.insert(0, str(_ROOT))
+import config  # noqa: F401  - also puts functions/ on sys.path
+from config.paths import (
+    ARCHIVE,
+    CHEYENNE_ARCHIVE,
+    CESM_FIGURE_DIR,
+    ensure_dir,
+)
+
+cheyenne_archive = str(CHEYENNE_ARCHIVE) + '/'
+svante_archive = str(ARCHIVE) + '/'
+figure_diri = str(ensure_dir(CESM_FIGURE_DIR / 'CompMaps')) + '/'
+
 casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.base.001'
+
 # ============================================================
 
 # Read SCRIP file that has grid information needed to plot values on a map

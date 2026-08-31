@@ -5,22 +5,25 @@ this code is designed to calculate total vertical column densities of HCHO or NO
 process separately for each variable, for the duration of the given period
 
 MODIFICATION HISTORY:
-    M. Tao, May, 29, 2024: VERSION 1.0
+    May, 29, 2024: VERSION 1.0
     - Based on CalcTropVCD_h2_MUSICA_ne30CONUSne30x8_v2.py 
 '''
 # ============================================================
-# USER CONFIGURATION — set these paths before running
+# CONFIGURATION - every path comes from config/paths.py, the single
+# source of truth. Override cluster locations with the MUSICA_ENV_*
+# environment variables documented there. Do not hard-code paths here.
 # ============================================================
-# Path to your CESM archive directory, e.g. '/path/to/CESM/archive/'
-svante_archive = ''
-
-# Path to directory for saving total VCD output files
-# e.g. '/path/to/Calculated_MUSICA_VCD/TotalVCD/<casename>/'
-MUSICAVCDSave_diri = ''
-
-# Path to external meteorology file (PS, PMID, T)
-# e.g. '/path/to/Calculated_MUSICA_VCD/TroposphericVCD/met_<casename>.nc'
-MetPath = ''
+import sys as _sys, pathlib as _pathlib
+_ROOT = next(_p for _p in _pathlib.Path(__file__).resolve().parents
+             if (_p / 'config' / 'paths.py').exists())
+_sys.path.insert(0, str(_ROOT))
+import config  # noqa: F401  - also puts functions/ on sys.path
+from config.paths import (
+    ARCHIVE,
+    MET_FILE_JULY2018,
+    case_total_vcd_dir,
+    ensure_dir,
+)
 
 # ### One-month NEI simulations
 # casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1base01'
@@ -28,11 +31,15 @@ MetPath = ''
 # casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1basehourlyNEI2017'
 # casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1basehourlyNOotherJulyMeanNEI2017'
 # casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1basedailyNOotherJulyMeanNEI2017'
-
 ### 5-day sensitivity simulations
 # casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.July5DaySensiTest.TS1base01'
 # casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.July5DaySensiTest.TS1Anthro70Perct01'
 casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.July5DaySensiTest.TS1BioEmis70Perct01'
+
+svante_archive = str(ARCHIVE) + '/'
+MUSICAVCDSave_diri = str(ensure_dir(case_total_vcd_dir(casename))) + '/'
+MetPath = str(MET_FILE_JULY2018)
+
 # ============================================================
 
 #================================================================================================

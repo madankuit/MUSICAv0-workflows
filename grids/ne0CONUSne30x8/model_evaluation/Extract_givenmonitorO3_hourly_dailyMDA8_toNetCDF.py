@@ -48,14 +48,28 @@ Notes
 - Script prints the saved file paths; no return object.
 
 MODIFICATION HISTORY:
-    M. Tao, 4, Sep, 2025: VERSION 1.0
+    4, Sep, 2025: VERSION 1.0
     - Initial version
 """
 # ============================================================
-# USER CONFIGURATION — set these paths before running
+# CONFIGURATION - every path comes from config/paths.py, the single
+# source of truth. Override cluster locations with the MUSICA_ENV_*
+# environment variables documented there. Do not hard-code paths here.
 # ============================================================
-Output_diri = ''        # Path to output directory for processed data
-svante_archive = ''     # Path to your CESM archive directory
+import sys as _sys, pathlib as _pathlib
+_ROOT = next(_p for _p in _pathlib.Path(__file__).resolve().parents
+             if (_p / 'config' / 'paths.py').exists())
+_sys.path.insert(0, str(_ROOT))
+import config  # noqa: F401  - also puts functions/ on sys.path
+from config.paths import (
+    ARCHIVE,
+    PROCESSED_OUTPUT_DIR,
+    ensure_dir,
+)
+
+Output_diri = str(ensure_dir(PROCESSED_OUTPUT_DIR)) + '/'
+svante_archive = str(ARCHIVE) + '/'
+
 # ============================================================
 
 #================================================================================================

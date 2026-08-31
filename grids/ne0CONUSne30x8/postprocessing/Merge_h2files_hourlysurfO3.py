@@ -3,14 +3,24 @@
 """
 
 # ============================================================
-# USER CONFIGURATION — set these paths before running
+# CONFIGURATION - every path comes from config/paths.py, the single
+# source of truth. Override cluster locations with the MUSICA_ENV_*
+# environment variables documented there. Do not hard-code paths here.
 # ============================================================
-# Path to your CESM archive directory, e.g. '/path/to/CESM/archive/'
-svante_archive = ''
+import sys as _sys, pathlib as _pathlib
+_ROOT = next(_p for _p in _pathlib.Path(__file__).resolve().parents
+             if (_p / 'config' / 'paths.py').exists())
+_sys.path.insert(0, str(_ROOT))
+import config  # noqa: F401  - also puts functions/ on sys.path
+from config.paths import (
+    ARCHIVE,
+    PROCESSED_OUTPUT_DIR,
+    ensure_dir,
+)
 
-# Directory to save the merged surface O3 output files
-# e.g. '/path/to/ProcessedData/DanJaffeMUSICAPostprocessing/'
-Output_diri = ''
+svante_archive = str(ARCHIVE) + '/'
+Output_diri = str(ensure_dir(PROCESSED_OUTPUT_DIR)) + '/'
+
 # ============================================================
 
 # for hourly

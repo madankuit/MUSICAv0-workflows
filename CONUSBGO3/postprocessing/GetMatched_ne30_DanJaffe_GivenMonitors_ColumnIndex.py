@@ -1,21 +1,17 @@
 '''
-This script is used to extract matched column index in the ne30 horizontal grid of MUSICA model simulations matched with a list of provided monitors
+Extract the matched ne30np4 column index for a list of provided monitors.
+
+For every monitor in the CONUSBGO3 monitor list, find the nearest MUSICA
+ne30np4 model column and write the monitor -> column mapping to CSV.
+
+All paths come from config/paths.py; nothing here is hard-coded.
 
 MODIFICATION HISTORY:
-    Madankui Tao, 3, Sep, 2025: VERSION 1.0
+    3 Sep 2025: VERSION 1.0
     - Initial version
+    31 Aug 2026: VERSION 1.1
+    - Paths moved to config/paths.py; SCRIP grid now read from the repo
 '''
-#================================================================================================
-# Specified input
-Output_diri = '/net/fs09/d0/taoma528/ProcessedData/DanJaffeMUSICAPostprocessing/'
-
-MonitorInfo_filepath = f'{Output_diri}MonitorInfo/Lee_Jaffe_GAM_stats.csv'
-
-# Grid
-SCRIP_ne30 = '/home/taoma528/Scripts/CESM_analysis/functions/ne30np4_091226_pentagons.nc'
-
-Savefile_path = f'{Output_diri}MonitorInfo/MatchedMonitors_ne30_ColIdx.csv'
-
 #================================================================================================
 # ### functions import ###
 
@@ -24,7 +20,8 @@ import os
 import os.path
 from os.path import exists
 from os import path
-import sys  
+import sys
+import glob
 from io import BytesIO
 import requests
 from zipfile import ZipFile
@@ -40,11 +37,31 @@ import netCDF4 as nc4
 from netCDF4 import Dataset
 import xarray as xr
 
-# my functions
-import sys
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../functions/'))  # repo-local functions/
+#================================================================================================
+# Configuration - every path is imported from config/paths.py
+import pathlib
+_ROOT = next(p for p in pathlib.Path(__file__).resolve().parents
+             if (p / 'config' / 'paths.py').exists())
+sys.path.insert(0, str(_ROOT))
+import config  # noqa: F401  - also puts functions/ on sys.path
+from config.paths import (
+    BGO3_MONITOR_LIST,
+    BGO3_MONITOR_COLIDX,
+    BGO3_CASES,
+    SCRIP_NE30NP4,
+    case_hist_dir,
+    ensure_dir,
+)
+
+# repo-local shared functions (functions/ is on sys.path via `import config`)
 from func_ModelEval_statistical_tests import *
 from SE_analysis import get_site_index
+
+# Specified input
+MonitorInfo_filepath = BGO3_MONITOR_LIST
+SCRIP_ne30 = str(SCRIP_NE30NP4)
+Savefile_path = BGO3_MONITOR_COLIDX
+ensure_dir(Savefile_path.parent)
 
 #================================================================================================
 ### """Monitor Info"""
@@ -93,7 +110,13 @@ unique_monitor_locations = MonitorInfo_df[['AQS_code', 'lat', 'lon']].drop_dupli
 #================================================================================================
 ## Get an example MUSICA output file
 lev_idx = -1 # for surface
-ex_h2_filepath = '/net/fs09/d0/taoma528/CESM22/archive/f.e22.FCnudged.ne30_ne30_mg17.BGO3.BASEY20220401TY20230401/atm/hist/f.e22.FCnudged.ne30_ne30_mg17.BGO3.BASEY20220401TY20230401.cam.h2.2022-05-04-03600.nc'
+# Any h2 file of the BASE 2022 case serves to read the ne30 lat/lon coordinates.
+_ex_case = BGO3_CASES[('BASE', 2022)]
+_ex_hist = case_hist_dir(_ex_case)
+_ex_files = sorted(glob.glob(str(_ex_hist / '*.cam.h2.*.nc')))
+if not _ex_files:
+    raise FileNotFoundError(f'No h2 history files found under {_ex_hist}')
+ex_h2_filepath = _ex_files[0]
 ds_ne30 = xr.open_dataset(ex_h2_filepath).isel(lev=lev_idx,ilev=lev_idx,time=10) 
 
 #================================================================================================

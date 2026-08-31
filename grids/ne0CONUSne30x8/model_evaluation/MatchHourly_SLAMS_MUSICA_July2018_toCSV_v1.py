@@ -2,7 +2,7 @@
 This script is used to get matched MUSICA outputs in ne0CONUSne30x8 horizontal grid with SLAMS/AQS hourly measurements
 
 MODIFICATION HISTORY:
-    M. Tao, 18, DEC, 2023: VERSION 1.0
+    18, DEC, 2023: VERSION 1.0
     - Initial version
 '''
 #================================================================================================
@@ -21,13 +21,32 @@ enddate = "2018-08-01" #"2018-08-03"
 casename = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.1MJuly.TS1baseJulyMeanNEI2017'
 
 # ============================================================
-# USER CONFIGURATION — set these paths before running
+# CONFIGURATION - every path comes from config/paths.py, the single
+# source of truth. Override cluster locations with the MUSICA_ENV_*
+# environment variables documented there. Do not hard-code paths here.
 # ============================================================
-AQS2018_diri = ''           # Path to AQS data directory for year 2018 (contains hourly zip files)
-AQS_diri = ''               # Path to base AQS data directory (contains parameters.csv)
-Matched_diri = ''           # Path to directory for output matched CSV files
-MUSICA_index_diri = ''      # Path to directory containing MUSICA column-index CSV files
-svante_archive = ''         # Path to your CESM archive directory
+import sys as _sys, pathlib as _pathlib
+_ROOT = next(_p for _p in _pathlib.Path(__file__).resolve().parents
+             if (_p / 'config' / 'paths.py').exists())
+_sys.path.insert(0, str(_ROOT))
+import config  # noqa: F401  - also puts functions/ on sys.path
+from config.paths import (
+    AQS_DIR,
+    AQS_2018_DIR,
+    MUSICA_COLIDX_DIR,
+    ARCHIVE,
+    aqs_matched_dir,
+    ensure_dir,
+)
+
+AQS2018_diri = str(AQS_2018_DIR) + '/'
+AQS_diri = str(AQS_DIR) + '/'
+MUSICA_index_diri = str(MUSICA_COLIDX_DIR) + '/'
+svante_archive = str(ARCHIVE) + '/'
+# Matched-output directory; depends on `casename`, so it is set
+# per case below via aqs_matched_dir(casename, 'hourly').
+Matched_diri = ''
+
 # ============================================================
 
 # Where to store the matched files | since calculation takes too long, store for each date first

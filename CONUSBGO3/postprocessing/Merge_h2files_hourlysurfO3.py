@@ -1,13 +1,20 @@
 """
-    This script merges the h2 files to get the surface O3 for a range of dates
-"""
+    Merge the hourly h2 history files of every CONUSBGO3 case and keep the
+    surface-layer O3 for a range of dates.
 
-Output_diri = '/net/fs09/d0/taoma528/ProcessedData/DanJaffeMUSICAPostprocessing/'
+    All paths and case names come from config/paths.py; nothing is hard-coded.
+
+MODIFICATION HISTORY:
+    VERSION 1.0
+    - Initial version
+    31 Aug 2026: VERSION 1.1
+    - Paths and case list moved to config/paths.py
+"""
 
 # for hourly
 histfreq  = "h2"
 
-# specify the dates
+# specify the dates (MMDD, inclusive)
 startMMDD = "0401"
 endMMDD   = "1101"
 
@@ -31,6 +38,7 @@ warnings.filterwarnings("ignore", category=FutureWarning, message=".*iteritems.*
 
 import os
 import re
+import sys
 import glob
 
 ### Box plot
@@ -38,38 +46,27 @@ import matplotlib.patches as mpatches ### , bbox_inches='tight'
 
 #================================================================================================
 
-svante_archive = '/net/fs09/d0/taoma528/CESM22/archive/'
+# Configuration - every path and case name is imported from config/paths.py
+import pathlib
+_ROOT = next(p for p in pathlib.Path(__file__).resolve().parents
+             if (p / 'config' / 'paths.py').exists())
+sys.path.insert(0, str(_ROOT))
+import config  # noqa: F401  - also puts functions/ on sys.path
+from config.paths import (
+    BGO3_CASES,
+    BGO3_CASE_LABELS,
+    BGO3_MERGED_SURFO3_DIR,
+    case_hist_dir,
+    ensure_dir,
+)
+
 varlist = ['O3']
 lev_idx = -1
 
-# list for all case names
-BASE2022_casename = 'f.e22.FCnudged.ne30_ne30_mg17.BGO3.BASEY20220401TY20230401'
-BASE2023_casename = 'f.e22.FCnudged.ne30_ne30_mg17.BGO3.BASEY20230401TY20231101'
-noBB2022_casename = 'f.e22.FCnudged.ne30_ne30_mg17.BGO3.noBBemisCONUS80kmBufferY20220401TY20221101'
-noBB2023_casename = 'f.e22.FCnudged.ne30_ne30_mg17.BGO3.noBBemisCONUS80kmBufferY20230401TY20231101'
-noAnthro2022_casename = 'f.e22.FCnudged.ne30_ne30_mg17.BGO3.noANTHROemisCONUS80kmBufferY20220401TY20221101'
-noAnthro2023_casename = 'f.e22.FCnudged.ne30_ne30_mg17.BGO3.noANTHROemisCONUS80kmBufferY20230401TY20231101'
+casename_ls = list(BGO3_CASES.values())
+casename_label_dic = dict(BGO3_CASE_LABELS)
 
-casename_ls = [
-               BASE2022_casename,
-               BASE2023_casename,
-               noBB2022_casename,
-               noBB2023_casename,
-               noAnthro2022_casename,
-               noAnthro2023_casename,
-              ]
-
-# label for each casename
-casename_label_dic = {
-                'SLAMS':'SLAMS',
-                BASE2022_casename:'BASE2022',
-                BASE2023_casename:'BASE2023',
-                ### Perturbations
-                noBB2022_casename:'noBB2022',
-                noBB2023_casename:'noBB2023',
-                noAnthro2022_casename:'noAnthro2022',
-                noAnthro2023_casename:'noAnthro2023',
-                }
+ensure_dir(BGO3_MERGED_SURFO3_DIR)
                      
 #================================================================================================
 ### read in hourly mean
@@ -83,10 +80,7 @@ for caseIdx in range(len(casename_ls)):
     # YYYY = casename_label_dic[casename][-4:]
     
     # select the files
-    # RunPath = f'{svante_archive}{casename}/atm/hist/'
-    # RunFiles = sorted(glob.glob(os.path.join(RunPath, f'*{histfreq}*')))
-    
-    RunPath = f"{svante_archive}{casename}/atm/hist/"
+    RunPath = str(case_hist_dir(casename))
     date_re = re.compile(r"\.(\d{4})-(\d{2})-(\d{2})-\d+\.nc$")  # ...YYYY-MM-DD-XXXXX.nc
 
     def extract_mmdd(fname: str) -> str:
@@ -120,7 +114,8 @@ for caseIdx in range(len(casename_ls)):
     startfileDate = RunFiles[0].split('.')[-2][:10]
     endfileDate = RunFiles[-1].split('.')[-2][:10]
     # Save
-    HourlyFilePath = f'{Output_diri}h2_surfO3_merged/{casename}.cam.h2.surflev.O3.{startfileDate}T{endfileDate}.nc'
+    HourlyFilePath = str(BGO3_MERGED_SURFO3_DIR /
+                         f'{casename}.cam.h2.surflev.O3.{startfileDate}T{endfileDate}.nc')
     
     # save to .nc
     surf_da.to_netcdf(HourlyFilePath)
