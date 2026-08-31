@@ -24,6 +24,31 @@ path : $DATA_ROOT/CESM22/archive/<case>/atm/hist/
 **Coverage: 2023-01-01 → 2024-11-30**, which fully spans the requested
 2023-12-01 → 2024-11-30 analysis year. 767 files in the archive.
 
+### What already exists, and what you would generate
+
+**Ready to use now — the raw model output.** Everything the request needs is in
+the `h2` stream: hourly 3-D NO₂, surface NO₂, and the full vertical profile with
+its meteorology. Nothing has to be run first to get at it.
+
+**Not yet computed for this case.** There are no pre-computed VCDs, regridded
+lat/lon fields, or monitor extractions for this run — those directories are empty
+for it. The scripts to produce them are named in the sections below; running them
+is expected to be the collaborator's own step, and the examples are there to work
+from.
+
+A useful reference point: the adjacent case
+`…ne0CONUSne30x8_mt12.BASE.From20230801.01` **has** had tropospheric VCDs computed
+with the very same script, so you can see the expected output format before
+running anything:
+
+```
+$DATA_ROOT/CESM22/Calculated_MUSICA_VCD/TroposphericVCD/<that case>/
+    <case>.cam.h2.TroposphericVCD.HCHO.20240501T20240531.nc
+    -> variables: HCHO_TropVCD, lat, lon   dims: (time=744, ncol=174098)
+```
+
+One monthly file per species, still on the native `ncol` grid.
+
 ### History streams — use `h2`
 
 | Stream | Frequency | Shape | Contents | Use it for |
