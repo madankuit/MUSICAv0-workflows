@@ -29,6 +29,14 @@ MUSICAv0-workflows/
 ### `functions/`
 Reusable utility functions that are **grid-agnostic** or work across multiple SE grids (ne30, ne0CONUSne30x8, etc.). Import these from any analysis script. See [functions/README.md](functions/README.md).
 
+### Guides
+
+- **[Working with the unstructured grid (`ne0CONUSne30x8`)](docs/working_with_ne0CONUSne30x8.md)**
+  — start here if you need hourly 3-D NO₂, surface NO₂ or vertical profiles out of
+  a variable-resolution run: grid conventions, reading, plotting, point
+  extraction, VCDs, and satellite a priori. Written for collaborators new to
+  spectral-element output.
+
 ### `grids/ne0CONUSne30x8/`
 **Grid-specific** workflow scripts for the `ne0CONUSne30x8` variable-resolution CAM-SE grid (174,098 unstructured `ncol` columns; ~14 km over CONUS, ~111 km globally). Each subfolder targets a distinct stage of analysis. See [grids/ne0CONUSne30x8/README.md](grids/ne0CONUSne30x8/README.md).
 
