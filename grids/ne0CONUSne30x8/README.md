@@ -54,11 +54,25 @@ Diagnostic maps for the ne0CONUSne30x8 domain: absolute and relative differences
 
 ---
 
-## General Functions
+## General Functions and paths
 
-The scripts here import from the top-level [`functions/`](../../functions/) directory. Add that directory to your Python path:
+The scripts here import from the top-level [`functions/`](../../functions/)
+directory — but **do not add it to `sys.path` yourself, and never hard-code a
+path to it.** Importing `config` does that for you, so shared utilities are
+available by plain module name:
 
 ```python
-import sys
-sys.path.insert(0, '/path/to/MUSICAv0-workflows/functions')
+import sys, pathlib
+_ROOT = next(p for p in pathlib.Path(__file__).resolve().parents
+             if (p / 'config' / 'paths.py').exists())
+sys.path.insert(0, str(_ROOT))
+import config                       # also puts functions/ on sys.path
+from config.paths import ARCHIVE, SCRIP_NE0CONUSNE30X8
+
+from SE_analysis import get_site_index      # from functions/
 ```
+
+That bootstrap walks up to find the repo root, so it works from any
+subdirectory and any checkout location. Every path these scripts use comes from
+[`config/paths.py`](../../config/paths.py) — see the repository
+[README](../../README.md#2-configure-your-paths).

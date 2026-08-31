@@ -10,13 +10,17 @@ dependencies:
   - xarray
   - netcdf4
   - h5netcdf
+  - h5py               # MaskTROPOMInan_in_MUSICA_VCD.py
   - dask
   - bottleneck
   - scipy
+  - cftime             # Calc_Emis.py, Regridding_ESMF_v1.py
+  - scikit-learn       # MaskTROPOMInan_in_MUSICA_VCD.py
 
   # Plotting
   - matplotlib
   - cartopy
+  - seaborn            # Merge_h2files*.py, Plot_CompMaps.py
 
   # Geospatial (for masks / shapefiles)
   - geopandas
@@ -30,15 +34,29 @@ dependencies:
   - xesmf
   - esmpy
 
+  # Time zones / local-time conversion (EPA MDA8 pipelines)
+  - timezonefinder     # per-site + per-grid-cell UTC offset
+  - pytz
+  - python-dateutil
+
   # I/O + utilities
   - pyyaml
   - tqdm
+  - requests           # AQS download helpers
 
   # Jupyter (optional; remove if you don't plan to ship notebooks)
   - jupyterlab
   - ipykernel
 
 
+  # pip-only
+  - pip
+  - pip:
+      - pylr2          # regress2 (reduced major axis), func_ModelEval_statistical_tests.py
+
 # conda env create -f environment.yml
 # conda activate musica-workflows
-# python -c "import xarray as xr; import geopandas as gpd; print('OK')"
+# python -c "import xarray, geopandas, timezonefinder, pytz, seaborn; print('OK')"
+#
+# NOTE: esmpy is needed only to GENERATE ESMF weights (gen_*_weights.py).
+# Applying existing weights is a sparse mat-mul and needs only scipy.

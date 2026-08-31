@@ -77,6 +77,28 @@ Import these into grid-specific scripts rather than duplicating logic.
 > The conversion requires regridded `AMF_total` and `AMF_trop` fields on the same grid
 > as the AK, produced by the upstream L2→L3 regrid step.
 
+> **⚠️ Status (checked 2026-08-31): the AMF inputs do not exist yet, so the NO₂
+> conversion cannot run.** The code is correct and in place; it has never had
+> inputs. On the reference cluster:
+> - 0.15°: the AK directory holds only `..._AK_Global_Regrid015deg_*.nc` files —
+>   **no** `AMFtotal`, **no** `AMFtrop`;
+> - 0.1°: the `TROPOMI_NO2AMFtotal_01deg` / `TROPOMI_NO2AMFtrop_01deg` directories
+>   are absent (`check_paths.py` reports these two as MISSING).
+>
+> Attempting NO₂ therefore fails: the 0.1° entry point raises `ValueError` if the
+> AMF directories are not supplied, and the 0.15° one raises `FileNotFoundError`.
+> **HCHO and CO are unaffected** — they use their stored AK directly.
+>
+> An AMF-producing regrid exists outside this repo
+> (`TROPOMI_RegridL2HiR_UseOPeNDAP_MultiYear_005LatLon_NO2_withAMF.py`), but it is
+> **not a drop-in**: it writes 0.05° CONUS output to a different directory, with one
+> file per day carrying all AMFs, whereas the loaders here expect 0.15°/0.1° global
+> and separate `AMFtotal_…` / `AMFtrop_…` files with variables
+> `TROPOMI_NO2_AMFtotal` / `TROPOMI_NO2_AMFtrop`. Closing this needs either a
+> 0.15°-global AMF regrid emitting those names, or a loader adapted to the 0.05°
+> CONUS product.
+
+
 ### Utilities
 
 | File | Description |

@@ -65,7 +65,12 @@ MODIFICATION HISTORY:
 ### Module import ###
 import numpy as np
 import xarray as xr
-import ESMF
+# ESMPy renamed its module from `ESMF` to `esmpy` in v8.4 (2023). Import the
+# modern name and alias it, falling back to the old one for legacy installs.
+try:
+    import esmpy as ESMF
+except ImportError:  # ESMPy < 8.4
+    import ESMF
 import datetime, time, os
 import cftime
 from netCDF4 import Dataset

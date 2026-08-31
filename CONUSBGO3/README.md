@@ -220,11 +220,15 @@ Data files (`.nc`, `.csv`, archive output) are **not** version-controlled — th
     `sys.path`; no path juggling is needed. The SCRIP grid and CONUS-mask NetCDFs
     now ship in the repo as well (see [Paths](#paths)), so nothing outside the
     repository is required beyond the model output itself.
-- **Python env**: the repo [`environment.yml`](../environment.yml) (`musica-workflows`),
-  plus `timezonefinder`, `pytz`, and `geopandas` (used by the extraction and mask notebooks).
-  On Svante the point + gridded postprocessing runs in the `base` env; the one-time
-  conservative-weight generation (`regridding/gen_ne30_to_1x1_weights.py`) needs `esmpy`
-  (env `rootxesmf`, esmpy 8.7).
+- **Python env**: the repo [`environment.yml`](../environment.yml)
+  (`musica-workflows`) now covers everything these scripts import, including
+  `timezonefinder` and `pytz` for the local-time MDA8 conversion — no extra
+  manual installs.
+  On Svante the point + gridded postprocessing runs in the `base` env; only the
+  one-time conservative-weight generation
+  (`regridding/gen_ne30_to_1x1_weights.py`) needs `esmpy`, for which a dedicated
+  env exists (`rootxesmf`, esmpy 8.7). Applying the weights afterwards is a
+  sparse mat-mul and does not need esmpy.
 
 ---
 
