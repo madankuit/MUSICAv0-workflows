@@ -230,9 +230,12 @@ TROPOMI_01_NO2_DIR = _TROPOMI_L3_ROOT / 'TROPOMI_NO2_01deg'
 # Required to convert the stored total-column NO2 AK to a tropospheric AK
 # (AK_trop = AK_total * AMF_total / AMF_trop); see functions/README.md.
 #
-# These two do NOT exist yet — they are the only outstanding gap reported by
-# check_paths.py, and NO2 cannot be run until they are produced (HCHO and CO are
-# unaffected). They are deliberately kept HERE, beside TROPOMI_NO2AK_01deg and
+# These two do NOT exist yet — the only outstanding gap reported by check_paths.py.
+# NOT a data-acquisition problem: air_mass_factor_total and
+# air_mass_factor_troposphere are ordinary TROPOMI L2 variables sitting in the
+# same /PRODUCT/ group as averaging_kernel. The L2->L3 regrid that produced the AK
+# files simply carried the AK only, so closing this means re-running that regrid
+# with the two AMF variables added. (HCHO and CO are unaffected.) They are deliberately kept HERE, beside TROPOMI_NO2AK_01deg and
 # the other regridded TROPOMI L3 products, rather than under
 # MUSICA_PROJECT_ROOT: the vertical-regrid code reads AK and AMF together per
 # pixel, so separating them makes the pairing easy to break, and these are

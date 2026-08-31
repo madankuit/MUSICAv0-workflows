@@ -77,43 +77,31 @@ Import these into grid-specific scripts rather than duplicating logic.
 > The conversion requires regridded `AMF_total` and `AMF_trop` fields on the same grid
 > as the AK, produced by the upstream L2→L3 regrid step.
 
-> **⚠️ Status (checked 2026-08-31): the AMF inputs do not exist yet, so the NO₂
-> conversion cannot run.** The code is correct and in place; it has never had
-> inputs. On the reference cluster:
-> - 0.15°: the AK directory holds only `..._AK_Global_Regrid015deg_*.nc` files —
->   **no** `AMFtotal`, **no** `AMFtrop`;
-> - 0.1°: the `TROPOMI_NO2AMFtotal_01deg` / `TROPOMI_NO2AMFtrop_01deg` directories
->   are absent (`check_paths.py` reports these two as MISSING).
+> **⚠️ Status (checked 2026-08-31): the regridded AMF inputs do not exist yet, so
+> the NO₂ conversion cannot run.** The code is correct and in place; it has never
+> had inputs.
 >
-> Attempting NO₂ therefore fails: the 0.1° entry point raises `ValueError` if the
-> AMF directories are not supplied, and the 0.15° one raises `FileNotFoundError`.
+> **This is a small gap, not a data problem.** `AMF_total` and `AMF_trop` are
+> ordinary TROPOMI L2 variables — `air_mass_factor_total` and
+> `air_mass_factor_troposphere` — and they sit in the **same `/PRODUCT/` group as
+> `averaging_kernel`**, with the same per-pixel dimensions
+> `(time, scanline, ground_pixel)`. Nothing extra has to be obtained or derived.
+>
+> What happened is simply that the L2→L3 regrid which produced the AK files
+> carried the AK only: the regridded products hold `TROPOMI_NO2_AK` and no AMF, at
+> both 0.15° and 0.1°. So **closing the gap means re-running that same regrid with
+> the two AMF variables added to its variable list**, written on the AK's grid
+> under the names this code expects (`TROPOMI_NO2_AMFtotal` /
+> `TROPOMI_NO2_AMFtrop`).
+>
+> That is already demonstrated: the 0.05° CONUS `withAMF` product
+> (`TROPOMI_005_WITHAMF_DIRS` in the config) carries them through as
+> `total_air_mass_factor` / `tropospheric_air_mass_factor`, alongside the clear,
+> cloudy and stratospheric AMFs and `tm5_tropopause_layer_index`. It is not a
+> drop-in for this code — different grid, different variable names — but it shows
+> the regrid change is a variable-list edit, not new work.
+>
 > **HCHO and CO are unaffected** — they use their stored AK directly.
->
-> **AMF fields that DO exist.** A 0.05° CONUS product with air-mass factors has
-> already been produced — 34 daily files per species — and is addressed in the
-> config as `TROPOMI_005_WITHAMF_DIRS`:
->
-> ```
-> $DATA_ROOT/Datasets/S5P_L2__NO2____HiR_2/withAMF_CONUS_005/
-> $DATA_ROOT/Datasets/S5P_L2__HCHO___HiR_2/withAMF_CONUS_005/
-> ```
->
-> It is **not a drop-in** for the loaders here, which is why NO₂ still cannot run
-> unmodified. The differences:
->
-> | | the 0.05° product | what the loaders expect |
-> |---|---|---|
-> | grid | 0.05° CONUS | 0.15° (or 0.1°) global |
-> | layout | one file per day, all AMFs (trop/strat/total/clear/cloud) | separate `AMFtotal_…` / `AMFtrop_…` files |
-> | variables | TROPOMI L2 AMF names | `TROPOMI_NO2_AMFtotal` / `TROPOMI_NO2_AMFtrop` |
->
-> So closing the gap needs either a 0.15°-global AMF regrid emitting those names,
-> or a loader adapted to read the 0.05° CONUS files. **Neither has been done** —
-> this note exists so the available data can be found, not because a path is
-> wired up. The producing script is
-> `TROPOMI_RegridL2HiR_UseOPeNDAP_MultiYear_005LatLon_{NO2,HCHO}_withAMF.py`,
-> which lives outside this repository.
-
 
 ### Utilities
 

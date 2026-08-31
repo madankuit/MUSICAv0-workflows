@@ -292,10 +292,13 @@ The full chain is implemented:
   `AK_trop = AK_total × (AMF_total / AMF_trop)` (TROPOMI ATBD
   S5P-KNMI-L2-0005-RP). This applies to **NO₂ only** — HCHO and CO use their
   stored kernel directly.
-- That rescaling needs regridded `AMF_total`/`AMF_trop` fields, and **those do
-  not currently exist** at the required grid. See the status note in
-  [`functions/README.md`](../functions/README.md) for what is missing and what
-  0.05° CONUS AMF data *is* available. HCHO and CO are unaffected.
+- That rescaling needs `AMF_total`/`AMF_trop` on the same grid as the AK, and the
+  **regridded versions do not exist yet**. It is a small gap rather than a data
+  problem: both are ordinary TROPOMI L2 variables (`air_mass_factor_total`,
+  `air_mass_factor_troposphere`) sitting in the same `/PRODUCT/` group as
+  `averaging_kernel`, so the fix is to re-run the existing L2→L3 regrid with those
+  two added to its variable list. See the status note in
+  [`functions/README.md`](../functions/README.md). HCHO and CO are unaffected.
 
 ---
 
