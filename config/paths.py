@@ -243,6 +243,19 @@ TROPOMI_01_NO2_AMF_TROP_DIR = _TROPOMI_L3_ROOT / 'TROPOMI_NO2AMFtrop_01deg'
 # TM5-MP surface pressure, used when regridding TROPOMI AKs vertically
 TM5_SURFACE_P_DIR = DATASETS_ROOT / 'TM5MP_Model'
 
+# TROPOMI products regridded WITH air-mass factors, 0.05 deg over CONUS.
+# These DO exist (34 daily files per species) and are the only AMF fields
+# currently available anywhere. They are NOT what the vertical-regrid loaders
+# read: those expect 0.15 deg (or 0.1 deg) GLOBAL fields in separate
+# AMFtotal_/AMFtrop_ files, whereas these are 0.05 deg CONUS with all AMFs
+# (trop/strat/total/clear/cloud) in one file per day. Using them for the NO2
+# tropospheric-AK conversion would mean adapting the loader; that has
+# deliberately not been done. Recorded here so the data can be found.
+TROPOMI_005_WITHAMF_DIRS = {
+    'NO2': DATASETS_ROOT / 'S5P_L2__NO2____HiR_2' / 'withAMF_CONUS_005',
+    'HCHO': DATASETS_ROOT / 'S5P_L2__HCHO___HiR_2' / 'withAMF_CONUS_005',
+}
+
 # Species-keyed view of the 0.15 deg regridded TROPOMI L3 products,
 # for scripts that loop over species.
 TROPOMI_015_DIRS = {

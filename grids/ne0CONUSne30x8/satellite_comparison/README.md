@@ -33,7 +33,10 @@ All scripts operate on **0.15°×0.15° conservatively regridded** model output 
 
 - TROPOMI averaging kernels: from TROPOMI L2 offline products, mapped to 0.15°×0.15° (see `functions/func_VerticalRegrid_TROPOMIAK_toMUSICAlevs_015latlon.py`)
 - TROPOMI AMF fields (NO₂ only): regridded `AMF_total` and `AMF_trop` on the same 0.15° grid as the AK, used to convert the stored total-column AK to a tropospheric AK. Configure via `L3_015AMF_diri_dic` in `func_VerticalRegrid_TROPOMIAK_toMUSICAlevs_015latlon.py`. Produced by the upstream L2→L3 regrid step alongside the AK.
-  **⚠️ These files do not exist yet — NO₂ cannot be run until they are produced.**
+  **⚠️ These files do not exist — NO₂ cannot be run until they are produced.**
+  A 0.05° CONUS AMF product *does* exist (`TROPOMI_005_WITHAMF_DIRS` in the
+  config) but is not a drop-in; see the comparison table in
+  [`functions/README.md`](../../../functions/README.md).
   See the status note in [`functions/README.md`](../../../functions/README.md) for
   what is missing and why the existing `_withAMF` regrid is not a drop-in
   replacement. HCHO and CO are unaffected.

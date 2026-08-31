@@ -89,14 +89,30 @@ Import these into grid-specific scripts rather than duplicating logic.
 > AMF directories are not supplied, and the 0.15° one raises `FileNotFoundError`.
 > **HCHO and CO are unaffected** — they use their stored AK directly.
 >
-> An AMF-producing regrid exists outside this repo
-> (`TROPOMI_RegridL2HiR_UseOPeNDAP_MultiYear_005LatLon_NO2_withAMF.py`), but it is
-> **not a drop-in**: it writes 0.05° CONUS output to a different directory, with one
-> file per day carrying all AMFs, whereas the loaders here expect 0.15°/0.1° global
-> and separate `AMFtotal_…` / `AMFtrop_…` files with variables
-> `TROPOMI_NO2_AMFtotal` / `TROPOMI_NO2_AMFtrop`. Closing this needs either a
-> 0.15°-global AMF regrid emitting those names, or a loader adapted to the 0.05°
-> CONUS product.
+> **AMF fields that DO exist.** A 0.05° CONUS product with air-mass factors has
+> already been produced — 34 daily files per species — and is addressed in the
+> config as `TROPOMI_005_WITHAMF_DIRS`:
+>
+> ```
+> $DATA_ROOT/Datasets/S5P_L2__NO2____HiR_2/withAMF_CONUS_005/
+> $DATA_ROOT/Datasets/S5P_L2__HCHO___HiR_2/withAMF_CONUS_005/
+> ```
+>
+> It is **not a drop-in** for the loaders here, which is why NO₂ still cannot run
+> unmodified. The differences:
+>
+> | | the 0.05° product | what the loaders expect |
+> |---|---|---|
+> | grid | 0.05° CONUS | 0.15° (or 0.1°) global |
+> | layout | one file per day, all AMFs (trop/strat/total/clear/cloud) | separate `AMFtotal_…` / `AMFtrop_…` files |
+> | variables | TROPOMI L2 AMF names | `TROPOMI_NO2_AMFtotal` / `TROPOMI_NO2_AMFtrop` |
+>
+> So closing the gap needs either a 0.15°-global AMF regrid emitting those names,
+> or a loader adapted to read the 0.05° CONUS files. **Neither has been done** —
+> this note exists so the available data can be found, not because a path is
+> wired up. The producing script is
+> `TROPOMI_RegridL2HiR_UseOPeNDAP_MultiYear_005LatLon_{NO2,HCHO}_withAMF.py`,
+> which lives outside this repository.
 
 
 ### Utilities
