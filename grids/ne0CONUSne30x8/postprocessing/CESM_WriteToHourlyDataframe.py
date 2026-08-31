@@ -34,19 +34,15 @@ Datelist = ['20180601','20180602','20180603','20180604','20180605','20180625','2
 import sys, os, glob
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../functions/'))
 
-# Legacy imports from the original functions directory; these may not be available in all environments
-try:
-    from external_packages import *
-except ImportError:
-    pass  # optional legacy import — install or provide external_packages.py if needed
-try:
-    from plot_settings import *
-except ImportError:
-    pass  # optional legacy import — install or provide plot_settings.py if needed
-try:
-    from statistics_func import *
-except ImportError:
-    pass  # optional legacy import — install or provide statistics_func.py if needed
+# numpy / pandas / xarray used to arrive only via `from external_packages import *`,
+# a module that is not part of this repository. That import sat in a
+# `try/except ImportError: pass`, so on any machine without it the script did not
+# fail at import - it failed later with `NameError: name 'pd' is not defined`.
+# Import them explicitly instead. (Checked: np, pd and xr were the ONLY names the
+# three legacy star-imports supplied, so nothing else is lost by dropping them.)
+import numpy as np
+import pandas as pd
+import xarray as xr
 
 # additional library for writing MATLAB files
 import scipy.io as sio
