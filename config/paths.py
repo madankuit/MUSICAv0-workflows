@@ -11,6 +11,24 @@ Rules
    processed output) are built from the *runtime* user name, so this file
    contains no personal name and is correct for whoever runs it.
 
+Where new cluster output belongs
+--------------------------------
+Cluster paths fall into two groups, and the distinction matters when adding one:
+
+* **This project's own data** -> under ``MUSICA_PROJECT_ROOT``
+  (``$DATA_ROOT/MUSICAv0-workflows/{data,figures}/``), mirroring the layout the
+  TEMPO_OTR_2024O3Events project uses. **Put new MUSICA-specific outputs here.**
+* **Shared, cross-project data** -> the data-type folders (``CESM22/``,
+  ``Datasets/``, ``ncar_copies/``): the model archive, raw and regridded
+  satellite products, emission inventories. These are inputs other projects also
+  read, so they are not project-scoped.
+
+Some existing outputs predate this convention and deliberately stay where they
+are, because moving them would break paths for no scientific gain --
+``BGO3_ROOT`` (``ProcessedData/DanJaffeMUSICAPostprocessing/``),
+``TROP_VCD_ROOT``/``TOTAL_VCD_ROOT`` and ``REGRIDDED_2018_ROOT`` (under
+``CESM22/``). Follow the rule above for anything new rather than matching them.
+
 Overriding the cluster locations
 --------------------------------
 Everything under "MACHINE-SPECIFIC ROOTS" is derived from two roots that can be

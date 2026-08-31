@@ -78,6 +78,25 @@ No script hard-codes a path — they all import from here. The file separates tw
   outside the repo. These are built from the *runtime* user name, so the defaults are
   already correct if your data sits under `/net/fs09/d0/$USER`.
 
+**Where new cluster output belongs.** Cluster paths split into two kinds, and the
+difference matters when you add one:
+
+| Kind | Goes under | Examples |
+|------|-----------|----------|
+| **This project's own data** | `MUSICA_PROJECT_ROOT` — `$DATA_ROOT/MUSICAv0-workflows/{data,figures}/` | `MUSICA_COLIDX_DIR` (AQS monitor → column-index CSVs) |
+| **Shared, cross-project data** | the data-type folders — `CESM22/`, `Datasets/`, `ncar_copies/` | model archive, TROPOMI L2/L3 products, emission inventories |
+
+Put **new** MUSICA-specific outputs under `MUSICA_PROJECT_ROOT`. Satellite and
+emission inputs stay in the shared folders — other projects read them too, and
+splitting related products apart (the NO₂ AK and AMF files, say) is how pairings
+get broken.
+
+A few existing outputs predate this convention and deliberately stay put, because
+moving them would break paths for no scientific gain: `BGO3_ROOT`
+(`ProcessedData/DanJaffeMUSICAPostprocessing/`), `TROP_VCD_ROOT`/`TOTAL_VCD_ROOT`
+and `REGRIDDED_2018_ROOT` (under `CESM22/`). Follow the rule above for anything
+new rather than matching them.
+
 If your data lives somewhere else, override it with an environment variable rather than
 editing the file:
 
