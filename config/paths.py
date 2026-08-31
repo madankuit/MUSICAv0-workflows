@@ -52,6 +52,17 @@ Any script in this repo reaches the config with a depth-independent bootstrap
     import config                      # also puts functions/ on sys.path
     from config.paths import ARCHIVE, SCRIP_NE30NP4
 
+Catalogue entries
+-----------------
+A handful of constants are declared here but not read by any committed script or
+notebook: ``CAMS_V51_ORIG_DIR``, ``CAMS_V62_ORIG_DIR``,
+``CAMS_V62_NE30NP4_NONAN_DIR``, ``CAMS_NEI2017_MERGED_ROOT``, ``NEI2017_01_DIR``,
+``NEI2022V2_01_DIR``, ``TROPOMI_L2_HCHO_DIR``, ``MUSICA_PROJECT_FIGURES``.
+They are **not dead code** — they are inherited from the reference file this
+module replaced, they record where those inputs actually live, and they all
+resolve on the reference cluster (verified via ``check_paths.py``). Keep them
+unless the underlying data genuinely moves or disappears.
+
 MODIFICATION HISTORY:
     VERSION 1.0
     - Initial version; replaces svante_MUSICA_paths.py. All paths consolidated
