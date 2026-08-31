@@ -199,7 +199,15 @@ TROPOMI_01_NO2_AK_DIR = _TROPOMI_L3_ROOT / 'TROPOMI_NO2AK_01deg'
 TROPOMI_01_HCHO_AK_DIR = _TROPOMI_L3_ROOT / 'TROPOMI_HCHOAK_01deg'
 TROPOMI_01_NO2_DIR = _TROPOMI_L3_ROOT / 'TROPOMI_NO2_01deg'
 # Required to convert the stored total-column NO2 AK to a tropospheric AK
-# (AK_trop = AK_total * AMF_total / AMF_trop); see functions/README.md
+# (AK_trop = AK_total * AMF_total / AMF_trop); see functions/README.md.
+#
+# These two do NOT exist yet — they are the only outstanding gap reported by
+# check_paths.py, and NO2 cannot be run until they are produced (HCHO and CO are
+# unaffected). They are deliberately kept HERE, beside TROPOMI_NO2AK_01deg and
+# the other regridded TROPOMI L3 products, rather than under
+# MUSICA_PROJECT_ROOT: the vertical-regrid code reads AK and AMF together per
+# pixel, so separating them makes the pairing easy to break, and these are
+# shared satellite inputs rather than MUSICA outputs.
 TROPOMI_01_NO2_AMF_TOTAL_DIR = _TROPOMI_L3_ROOT / 'TROPOMI_NO2AMFtotal_01deg'
 TROPOMI_01_NO2_AMF_TROP_DIR = _TROPOMI_L3_ROOT / 'TROPOMI_NO2AMFtrop_01deg'
 
