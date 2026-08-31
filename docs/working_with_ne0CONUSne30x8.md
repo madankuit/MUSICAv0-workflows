@@ -245,10 +245,12 @@ then
 (the latter also shows the UTC → local-time conversion, which must happen
 *before* any daily statistic is computed).
 
-> **`NO2` at `lev=-1` vs `NO2_SRF`.** `NO2.isel(lev=-1)` is the lowest model layer
-> mid-point (~993 hPa, tens of metres thick); `NO2_SRF` is the model's own surface
-> diagnostic. They are close but not identical. Pick one and state which — for
-> column:surface ratios, the lowest-layer value is the usual choice.
+> **`NO2` at `lev=-1` and `NO2_SRF` are the same field.** Checked on this run:
+> the two arrays are **bitwise identical** (max difference exactly 0.0), both in
+> mol/mol. `NO2_SRF` is just the lowest model layer written out as a 2-D
+> convenience variable, so use whichever is easier — there is no choice to
+> justify. That lowest layer spans roughly 1500 Pa (~130 m), with its mid-point
+> around 77 m above the surface.
 
 ---
 
@@ -290,17 +292,28 @@ for a column being compared against a retrieval:
 
 ## 7. 3-D NO₂ as satellite a priori
 
-The model layer pressures you need are already in the file — `PMID` (Pa,
-mid-layer) and `PS`, plus `hyai`/`hybi` if you want interfaces:
+The model layer pressures are already in the file, so a per-column a priori
+profile is simply `NO2(time, :, ncol)` paired with `PMID(time, :, ncol)`, both
+`(lev=32)`, plus `PS` for the surface.
+
+> **Use the stored `PMID`; do not reconstruct mid-layer pressures.** `P0` is not
+> in `h2` (assume the CAM standard 100000 Pa), and with that value neither
+> reconstruction reproduces the stored field exactly — checked on this run,
+> `hyam·P0 + hybm·PS` differs from `PMID` by up to **142 Pa** and the
+> interface-mean by up to **112 Pa**, i.e. ~0.1 % of surface pressure. Small, but
+> there is no reason to introduce it when `PMID` is right there. Mixing a
+> reconstructed grid with the stored one is worse still.
+
+If you genuinely need **interfaces** (for layer thicknesses or partial columns),
+the standard hybrid form is correct and reproduces surface pressure exactly:
 
 ```
-P_interface(k) = hyai(k)·P0 + hybi(k)·PS
+P_interface(k) = hyai(k)·P0 + hybi(k)·PS      # P0 = 100000 Pa
 ```
 
-(`P0` is not stored in `h2`; use the CAM standard 100000 Pa.)
-
-So a per-column a priori profile is `NO2(time, :, ncol)` with `PMID(time, :, ncol)`
-— no reconstruction needed.
+Verified: the bottom interface equals `PS` to within 0.01 Pa, and the profile is
+monotonic from TOA to surface. Alternatively use `PDELDRY`, the dry-mass layer
+thickness the model itself carries.
 
 ### TROPOMI — examples exist here
 
