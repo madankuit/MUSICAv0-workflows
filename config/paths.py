@@ -93,6 +93,14 @@ USER = os.environ.get('USER') or os.environ.get('LOGNAME') or getpass.getuser()
 DATA_ROOT = _env_path('MUSICA_ENV_DATA_ROOT', f'/net/fs09/d0/{USER}')
 HOME_ROOT = _env_path('MUSICA_ENV_HOME_ROOT', Path.home())
 
+# Project folder for this repository's own data and figures, mirroring the
+# TEMPO_OTR_2024O3Events layout (data/ + figures/). New MUSICA-specific outputs
+# belong here rather than in the shared data-type folders below.
+MUSICA_PROJECT_ROOT = _env_path('MUSICA_ENV_PROJECT_ROOT',
+                                DATA_ROOT / 'MUSICAv0-workflows')
+MUSICA_PROJECT_DATA = MUSICA_PROJECT_ROOT / 'data'
+MUSICA_PROJECT_FIGURES = MUSICA_PROJECT_ROOT / 'figures'
+
 CESM22_ROOT = DATA_ROOT / 'CESM22'
 DATASETS_ROOT = DATA_ROOT / 'Datasets'
 PROCESSED_DATA_ROOT = DATA_ROOT / 'ProcessedData'
@@ -232,7 +240,7 @@ SITE_HOURLY_JJA2018_DIR = DATASETS_ROOT / 'Sitei_Hourly_JJA2018'
 # SLAMS scripts. Small (~580 KB) and regenerable, but only by re-running the
 # matching against the AQS data and a spin-up h1 file.
 MUSICA_COLIDX_DIR = _env_path('MUSICA_ENV_COLIDX_DIR',
-                              PROCESSED_DATA_ROOT / 'AQS_colidxCSV')
+                              MUSICA_PROJECT_DATA / 'AQS_colidxCSV')
 
 
 def aqs_matched_dir(casename, freq='hourly'):
