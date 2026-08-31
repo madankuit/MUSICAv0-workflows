@@ -113,9 +113,13 @@ CONUSBGO3/
   land mask with an 80 km buffer on `ne30np4`, then writes perturbed emission files with
   anthropogenic (CAMS-GLOB-ANT v6.2) **or** biomass-burning (QFED/FINN) emissions set to zero
   over CONUS land. It also tallies the removed CONUS emission totals per species.
-  - Mask files produced (data, on Svante — not in this repo):
-    `ne30np4_091226_pentagons_CONUSlandMaskedFalse_{50,80}kmBuffer.nc`, stored alongside the
-    SCRIP grid in `~/Scripts/CESM_analysis/functions/`.
+  - Mask files produced: `ne30np4_091226_pentagons_CONUSlandMaskedFalse_80kmBuffer.nc`
+    and `..._Lower48StatesCoastal50kmMaskedFalse.nc`. These now **ship with the
+    repository** at [`grids/ne30np4/grid_files/`](../grids/ne30np4/grid_files/) —
+    reference them as `MASK_NE30NP4_CONUS_80KM` / `MASK_NE30NP4_LOWER48_50KM`
+    from `config/paths.py`. (They previously lived in a personal
+    `~/Scripts/CESM_analysis/functions/` directory on Svante, which was deleted
+    on 2026-08-31.)
 - `EditANT6.2files.ipynb` strips residual NaNs from the CAMS-GLOB-ANT v6.2 `ne30np4` files.
 - Run **noAnthro** and **noBB** for each season with the matching namelists.
 
