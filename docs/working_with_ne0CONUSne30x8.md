@@ -183,19 +183,49 @@ The nearest model column to a monitor is found with `get_site_index()` from
 [`functions/SE_analysis.py`](../functions/SE_analysis.py). **Note the argument
 order — longitude first**, and pass longitude in the model's 0–360 convention:
 
+It is boundary-aware rather than a naive nearest-centre lookup, which matters
+where resolution changes — in a test over 60 random CONUS points it chose a
+*different* column from nearest-centre in about a quarter of cases.
+
+> **It can return `None`, and you must check for it.** The containment test needs
+> a cell corner lying past the site in both latitude and longitude; when a site
+> falls between corners it returns `None` rather than raising. Measured over 60
+> random CONUS points, **~8 % returned `None`** — New York City among them. Pass
+> the result straight into `.isel()` and you get an opaque
+> `TypeError: invalid indexer array` far from the real cause. The repo's own
+> scripts handle this explicitly (see the `'Find None'` branch in
+> `GetMatched_ne30_DanJaffe_GivenMonitors_ColumnIndex.py`).
+
 ```python
+import numpy as np, xarray as xr
 from SE_analysis import get_site_index
 from config.paths import SCRIP_NE0CONUSNE30X8
 
-idx = get_site_index(site_lon=360 + monitor_lon,   # monitor_lon negative in CONUS
-                     site_lat=monitor_lat,
-                     scrip_file=str(SCRIP_NE0CONUSNE30X8))
+scrip = xr.open_dataset(SCRIP_NE0CONUSNE30X8)      # open once, reuse for all sites
 
+def column_index(lat, lon, scrip=scrip):
+    """ncol index for a site. lon may be -180..180 or 0-360."""
+    lon360 = lon % 360
+    idx = get_site_index(site_lon=lon360, site_lat=lat, scrip_file=scrip)
+    if idx is not None:
+        return int(idx)
+    # fall back to nearest centre by great-circle distance
+    clat = scrip['grid_center_lat'].values
+    clon = scrip['grid_center_lon'].values
+    dlat = np.radians(clat - lat)
+    dlon = np.radians(clon - lon360)
+    a = (np.sin(dlat / 2) ** 2
+         + np.cos(np.radians(lat)) * np.cos(np.radians(clat)) * np.sin(dlon / 2) ** 2)
+    return int(np.argmin(2 * 6371.0 * np.arcsin(np.sqrt(a))))
+
+idx = column_index(40.7128, -74.0060)               # New York
 no2_ppbv = ds['NO2'].isel(lev=-1, ncol=idx) * 1e9   # hourly surface NO2 at that site
 ```
 
-It accounts for grid-cell boundaries rather than taking a naive nearest-centre,
-which matters where resolution changes.
+Note the arguments are **longitude first** and in the model's 0–360 convention —
+`lon % 360` handles either input. Open the SCRIP file once and pass the
+`Dataset`; `get_site_index` accepts it directly, and re-opening a 33 MB file per
+site is slow.
 
 **Worked examples in this repository:**
 
