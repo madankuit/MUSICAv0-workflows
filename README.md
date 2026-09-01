@@ -57,7 +57,7 @@ Reusable utility functions that are **grid-agnostic** or work across multiple SE
 Grid files for the `ne30np4` standard-resolution global CAM-SE grid (48,602 `ncol` columns; ~111 km globally): the SCRIP description and the CONUS land masks, all shipped in the repo. Used for global simulations and as a lateral boundary condition source for ne0CONUS runs. The workflow that runs *on* this grid is [`CONUSBGO3/`](CONUSBGO3/README.md). See [grids/ne30np4/README.md](grids/ne30np4/README.md).
 
 ### `CONUSBGO3/`
-Emission-zeroing experiments estimating the U.S. background contribution to surface ozone, on `ne30np4` — BASE / noAnthro / noBB for Apr–Oct 2022 and 2023, with point (monitor) and gridded 1° MDA8 deliverables. See [CONUSBGO3/README.md](CONUSBGO3/README.md).
+**A worked example of extracting surface ozone** from a MUSICAv0 `ne30np4` run — hourly surface O₃ and daily MDA8, at monitor points and on a regular 1° grid — built around a set of emission-zeroing sensitivity runs. Useful as a template for point extraction on an unstructured grid, local-time MDA8, and conservative SE → lat/lon regridding. See [CONUSBGO3/README.md](CONUSBGO3/README.md).
 
 ### `grids/target_grids/`
 Regular lat/lon grid descriptions used as the **destination** of ESMF regridding (1°, 0.15°, 0.1° CAMS). Small files, shipped in the repo. See [grids/target_grids/README.md](grids/target_grids/README.md).

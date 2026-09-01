@@ -1,14 +1,23 @@
 # CONUSBGO3 — CONUS Background Ozone with MUSICAv0 (ne30)
 
-**Method:** emission-zeroing sensitivity experiments with **MUSICAv0**, and the
-postprocessing needed to turn them into hourly surface O₃ and daily **MDA8 O₃**,
-both at a supplied list of monitor locations and on a regular 1° CONUS grid.
+**A worked example of extracting surface ozone from MUSICAv0** — hourly surface
+O₃ and daily **MDA8 O₃**, both at a supplied list of monitor locations and on a
+regular 1° CONUS grid — set up here around emission-zeroing sensitivity runs.
 
-Three runs are configured — a **BASE** run and two perturbations in which
-anthropogenic (**noAnthro**) or biomass-burning (**noBB**) emissions are zeroed
-over CONUS land — for the ozone seasons **April–October of 2022 and 2023**.
-Differencing `BASE − perturbation` isolates the O₃ attributable to the zeroed
-emission sector.
+Read it as a template. The pieces that generalise are:
+
+| Step | Reusable for |
+|------|--------------|
+| map a monitor list onto SE `ncol` indices | extracting any variable at any point on an unstructured grid |
+| merge hourly `h2` files and keep one level | building a surface time series from CAM-SE output |
+| convert UTC → local time, then compute MDA8 | any EPA-convention ozone metric |
+| mass-conservative SE → regular lat/lon regrid | putting SE output on a grid for comparison |
+
+The specific experiment configured here is a **BASE** run plus two perturbations
+with anthropogenic (**noAnthro**) or biomass-burning (**noBB**) emissions zeroed
+over CONUS land, for **April–October 2022 and 2023**; `BASE − perturbation`
+isolates the O₃ attributable to the zeroed sector. Swap the case list in
+`config/paths.py` (`BGO3_CASES`) to point the same pipeline at other runs.
 
 This directory documents the workflow and the code. Results and their
 interpretation are not included.
