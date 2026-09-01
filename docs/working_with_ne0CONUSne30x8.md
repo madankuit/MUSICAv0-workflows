@@ -194,7 +194,7 @@ where resolution changes — in a test over 60 random CONUS points it chose a
 > the result straight into `.isel()` and you get an opaque
 > `TypeError: invalid indexer array` far from the real cause. The repo's own
 > scripts handle this explicitly (see the `'Find None'` branch in
-> `GetMatched_ne30_DanJaffe_GivenMonitors_ColumnIndex.py`).
+> `GetMatched_ne30_GivenMonitors_ColumnIndex.py`).
 
 ```python
 import numpy as np, xarray as xr
@@ -239,7 +239,7 @@ site is slow.
 
 A simpler end-to-end pair, on the global `ne30np4` grid but structurally
 identical and easier to read first:
-[`CONUSBGO3/postprocessing/GetMatched_ne30_DanJaffe_GivenMonitors_ColumnIndex.py`](../CONUSBGO3/postprocessing/GetMatched_ne30_DanJaffe_GivenMonitors_ColumnIndex.py)
+[`CONUSBGO3/postprocessing/GetMatched_ne30_GivenMonitors_ColumnIndex.py`](../CONUSBGO3/postprocessing/GetMatched_ne30_GivenMonitors_ColumnIndex.py)
 then
 [`CONUSBGO3/postprocessing/Extract_givenmonitorO3_hourly_dailyMDA8_toNetCDF.py`](../CONUSBGO3/postprocessing/Extract_givenmonitorO3_hourly_dailyMDA8_toNetCDF.py)
 (the latter also shows the UTC → local-time conversion, which must happen

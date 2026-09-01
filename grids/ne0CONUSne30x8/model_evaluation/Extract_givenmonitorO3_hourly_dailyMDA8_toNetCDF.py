@@ -64,6 +64,8 @@ import config  # noqa: F401  - also puts functions/ on sys.path
 from config.paths import (
     ARCHIVE,
     PROCESSED_OUTPUT_DIR,
+    BGO3_MONITOR_LIST,
+    BGO3_MONITOR_COLIDX,
     ensure_dir,
 )
 
@@ -75,8 +77,10 @@ svante_archive = str(ARCHIVE) + '/'
 #================================================================================================
 import os
 
-MonitorInfo_filepath = f'{Output_diri}MonitorInfo/Lee_Jaffe_GAM_stats.csv'
-Monitorne30Idx_filepath = f'{Output_diri}MonitorInfo/MatchedMonitors_ne30_ColIdx.csv'
+# Monitor list and its matched column-index CSV, from config (the last two
+# hard-coded file names in this script).
+MonitorInfo_filepath = str(BGO3_MONITOR_LIST)
+Monitorne30Idx_filepath = str(BGO3_MONITOR_COLIDX)
 
 # Variable Resolution Grid
 SCRIP_ne30 = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../grid_files/ne30np4_091226_pentagons.nc')

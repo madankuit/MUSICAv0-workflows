@@ -120,7 +120,7 @@ get broken.
 
 A few existing outputs predate this convention and deliberately stay put, because
 moving them would break paths for no scientific gain: `BGO3_ROOT`
-(`ProcessedData/DanJaffeMUSICAPostprocessing/`), `TROP_VCD_ROOT`/`TOTAL_VCD_ROOT`
+(under `ProcessedData/`), `TROP_VCD_ROOT`/`TOTAL_VCD_ROOT`
 and `REGRIDDED_2018_ROOT` (under `CESM22/`). Follow the rule above for anything
 new rather than matching them.
 

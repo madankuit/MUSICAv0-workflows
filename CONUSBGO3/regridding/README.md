@@ -47,7 +47,7 @@ glob (`bgo3_unified_mda8_glob()`), so none hard-codes its name or tag.
 conservative one that was adopted and the linear-interpolation one that was
 rejected. See its README for why.
 
-## Outputs (Svante, `…/DanJaffeMUSICAPostprocessing/Regridded1deg/`)
+## Outputs (`BGO3_REGRIDDED_1DEG_DIR`)
 
 - `hourly/CONUS1x1_UTChourlySurfO3.<label>.<start>T<end>.<tag>_c<YMD>.nc` — 6 files,
   hourly surface O3 `(time, lat, lon)` in **ppb**, **UTC** timestamps.
@@ -66,17 +66,24 @@ Every file carries provenance in its global attributes (`processed_by`, `process
 
 ## Validation
 
-Gridded MDA8 sampled at the nearest cell to each of the 781 monitors, vs the point
-`LocalTimeMDA8O3` deliverable (BASE 2022): **mean bias −0.11 ppb, median |bias| 0.38 ppb,
-median correlation 0.994** (98 % of sites r>0.9) — confirming the local-time-adjusted EPA
-MDA8 is applied consistently with the point pipeline.
+Cross-check the gridded MDA8 by sampling the nearest cell to each monitor and
+comparing against the point `LocalTimeMDA8O3` deliverable. The two pipelines
+implement the local-time EPA method independently, so close agreement is evidence
+the convention is applied consistently rather than a guarantee either is right.
+`check_gridded_MDA8_deliverable.py` prints the comparison alongside a
+per-(scenario, year) coverage and NaN report.
 
-**Note:** ~24 of 1620 cells (Southern California; a few in ID/OR) show MDA8 > 150 ppb.
-These reflect the **model's** surface-O3 extremes (present in the point files too — the
-gridded/point agreement is r≈0.99), not a regrid artifact; the bulk field is realistic
-(p99 ≈ 77 ppb). A single unrecoverable edge exists — Oct 31 in western time zones for
-BASE-2023 and noBB-2022 is NaN (those merged inputs stop at Nov 1 00 UTC, so the last local
-day has <13 valid 8-h windows and is correctly dropped) — 0.2 % of values.
+Two behaviours to expect, neither a regrid artefact:
+
+- **A small number of cells carry very high MDA8**, concentrated in the
+  Southern-California basin and a few interior-West locations. These are the
+  model's own surface-O₃ extremes — they are present in the point files too, and
+  the gridded/point agreement is unaffected. Check the distribution rather than
+  the maximum before concluding anything about the field.
+- **The final local day is NaN in western time zones for any case whose merged
+  input stops at 00 UTC the following day.** With fewer than 13 of the 17 valid
+  8-h windows available, the day is correctly dropped rather than computed from a
+  partial record.
 
 ## Figures
 
@@ -85,7 +92,8 @@ All figures land in `Figures/CESM_analysis/BGO3/regrid_trial/`.
 `plot_gridded_MDA8_scenarios.py` → `MDA8_BASE_and_diffs_seasonmean_2022-2023.png`:
 three CONUS panels — **(a) BASE**, **(b) BASE − noAnthro**, **(c) BASE − noBB** — as the
 seasonal-mean MDA8 over Apr–Oct 2022–2023. Panels (b)/(c) use independent diverging scales
-because the anthropogenic contribution (~30 ppb) is ~8× the biomass-burning contribution (~4 ppb).
+because the two emission sectors differ enough in magnitude that a shared
+scale renders one of them flat.
 
 `plot_gridded_MDA8_3scenarios.py` → `MDA8_3scenarios_seasonmean_2022-2023.png`:
 the same period, but **BASE / noAnthro / noBB as absolute fields** on a single shared

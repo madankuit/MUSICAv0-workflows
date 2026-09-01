@@ -25,7 +25,7 @@ Cluster paths fall into two groups, and the distinction matters when adding one:
 
 Some existing outputs predate this convention and deliberately stay where they
 are, because moving them would break paths for no scientific gain --
-``BGO3_ROOT`` (``ProcessedData/DanJaffeMUSICAPostprocessing/``),
+``BGO3_ROOT`` (under ``ProcessedData/``),
 ``TROP_VCD_ROOT``/``TOTAL_VCD_ROOT`` and ``REGRIDDED_2018_ROOT`` (under
 ``CESM22/``). Follow the rule above for anything new rather than matching them.
 
@@ -341,10 +341,14 @@ def cams_nei_merged_byspecies_dir(year, root=None):
 #    Emission-zeroing experiments; Apr-Oct 2022 and 2023.
 # ============================================================
 
-BGO3_ROOT = PROCESSED_DATA_ROOT / 'DanJaffeMUSICAPostprocessing'
+# Directory names below are the existing on-disk locations; override with the
+# env vars if your copy is laid out differently.
+BGO3_ROOT = _env_path('MUSICA_ENV_BGO3_ROOT',
+                      PROCESSED_DATA_ROOT / 'DanJaffeMUSICAPostprocessing')
 
 BGO3_MONITOR_INFO_DIR = BGO3_ROOT / 'MonitorInfo'
-BGO3_MONITOR_LIST = BGO3_MONITOR_INFO_DIR / 'Lee_Jaffe_GAM_stats.csv'
+BGO3_MONITOR_LIST = _env_path('MUSICA_ENV_BGO3_MONITOR_LIST',
+                              BGO3_MONITOR_INFO_DIR / 'Lee_Jaffe_GAM_stats.csv')
 BGO3_MONITOR_COLIDX = BGO3_MONITOR_INFO_DIR / 'MatchedMonitors_ne30_ColIdx.csv'
 
 BGO3_MERGED_SURFO3_DIR = BGO3_ROOT / 'h2_surfO3_merged'

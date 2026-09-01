@@ -4,7 +4,7 @@
 Regrid_ne30_surfO3_to_1x1_conserve.py
 
 Mass-conservative (ESMF first-order) regrid of MUSICAv0 ne30np4 surface O3 to a
-regular 1x1 deg CONUS grid, for the CONUS Background-O3 (Dan Jaffe) experiments
+regular 1x1 deg CONUS grid, for the CONUS background-O3 experiments
 (BASE / noAnthro / noBB, 2022 & 2023, Apr-Oct). Produces:
 
   Regridded1deg/hourly/CONUS1x1_UTChourlySurfO3.<label>.<start>T<end>.nc   (6 files, ppb)
@@ -135,7 +135,7 @@ YMD = dtmod.now().strftime('%Y%m%d')
 def prov(extra):
     a = dict(
         title="MUSICAv0 ne30 CONUS Background-O3: surface O3 regridded to 1x1 deg (mass-conservative)",
-        project="CONUS Background Ozone (Dan Jaffe collaboration)",
+        project="CONUS background ozone: emission-zeroing sensitivity experiments",
         source=("MUSICAv0 = CESM2.2 CAM-chem (MOZART TS1), ne30np4 (~111 km global) "
                 "spectral-element, FCnudged nudged to MERRA-2"),
         institution=INSTITUTION,

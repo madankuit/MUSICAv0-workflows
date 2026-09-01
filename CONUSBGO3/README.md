@@ -1,16 +1,17 @@
 # CONUSBGO3 — CONUS Background Ozone with MUSICAv0 (ne30)
 
-Emission-zeroing sensitivity experiments with **MUSICAv0** to estimate the
-**U.S. background contribution to surface ozone** at a network of monitors
-provided by the **Dan Jaffe** group (Univ. of Washington Bothell). For each
-monitor we produce simulated hourly surface O₃ and daily **MDA8 O₃** for a
-**BASE** run and two perturbation runs in which anthropogenic (**noAnthro**)
-or biomass-burning (**noBB**) emissions are removed over CONUS, for the
-ozone seasons **April–October of 2022 and 2023**.
+**Method:** emission-zeroing sensitivity experiments with **MUSICAv0**, and the
+postprocessing needed to turn them into hourly surface O₃ and daily **MDA8 O₃**,
+both at a supplied list of monitor locations and on a regular 1° CONUS grid.
 
-The difference `BASE − perturbation` isolates the O₃ **produced from** CONUS
-anthropogenic / fire emissions; what remains in the perturbation run is the
-**background** (imported + biogenic + non-CONUS) contribution.
+Three runs are configured — a **BASE** run and two perturbations in which
+anthropogenic (**noAnthro**) or biomass-burning (**noBB**) emissions are zeroed
+over CONUS land — for the ozone seasons **April–October of 2022 and 2023**.
+Differencing `BASE − perturbation` isolates the O₃ attributable to the zeroed
+emission sector.
+
+This directory documents the workflow and the code. Results and their
+interpretation are not included.
 
 ---
 
@@ -77,7 +78,7 @@ CONUSBGO3/
 │   └── archive/                         # superseded v1/v2 of the mask/removal notebook
 │
 ├── postprocessing/            # monitor matching + MDA8 extraction  (main deliverable)
-│   ├── GetMatched_ne30_DanJaffe_GivenMonitors_ColumnIndex.py   # 1. map monitors → ne30 column index
+│   ├── GetMatched_ne30_GivenMonitors_ColumnIndex.py   # 1. map monitors → ne30 column index
 │   ├── Merge_h2files_hourlysurfO3.py                           # 2. merge hourly surface O3 per case
 │   ├── Extract_givenmonitorO3_hourly_dailyMDA8_toNetCDF.py     # 3. extract hourly + compute MDA8 → NetCDF
 │   └── Extract_MDA8O3_givenMonitors.ipynb                      # development notebook for step 3
@@ -124,8 +125,9 @@ CONUSBGO3/
 - Run **noAnthro** and **noBB** for each season with the matching namelists.
 
 ### 3. Postprocessing — `postprocessing/`  (run in order)
-1. **`GetMatched_ne30_DanJaffe_GivenMonitors_ColumnIndex.py`**
-   Reads the monitor list `MonitorInfo/Lee_Jaffe_GAM_stats.csv` and, using
+1. **`GetMatched_ne30_GivenMonitors_ColumnIndex.py`**
+   Reads the supplied monitor list (`BGO3_MONITOR_LIST`; columns `lon`, `lat`,
+   `site_name`, `AQS_code`) and, using
    `get_site_index` (from `functions/SE_analysis.py`) on the `ne30np4` SCRIP grid,
    finds the nearest model column for each AQS monitor.
    → `MonitorInfo/MatchedMonitors_ne30_ColIdx.csv`
@@ -147,15 +149,17 @@ CONUSBGO3/
 Spatial companion to step 3: the same surface O₃ / MDA8, but for the **entire CONUS** on a
 regular **1°×1°** grid via **mass-conservative** ESMF remap (ne30np4 → 1° FV). See
 [regridding/README.md](regridding/README.md). Products land in
-`…/DanJaffeMUSICAPostprocessing/Regridded1deg/`:
+`BGO3_REGRIDDED_1DEG_DIR`:
 - 6 per-case hourly gridded surface O₃ files (`hourly/`, UTC, ppb);
 - one **unified** daily-MDA8 file `MDA8O3(scenario={BASE,noAnthro,noBB}, time, lat, lon)`
   spanning Apr–Oct 2022 + 2023 — the shareable product.
 
-The gridded MDA8 uses the identical local-time-adjusted EPA method as step 3 and was
-validated against the point deliverable (nearest cell vs monitor: r = 0.994, bias −0.11 ppb).
-Before sharing, run `check_gridded_MDA8_deliverable.py` for the per-(scenario, year)
-coverage and NaN report.
+The gridded MDA8 uses the identical local-time-adjusted EPA method as step 3, and
+should be cross-checked against the point deliverable by sampling the nearest cell
+to each monitor — the two pipelines implement the method independently, so close
+agreement is evidence it is applied consistently. Run
+`check_gridded_MDA8_deliverable.py` for the per-(scenario, year) coverage and NaN
+report.
 
 ### 5. Analysis — `analysis/`
 - `ResultAnalysis_v20250707.ipynb` — monthly-mean surface-O₃ differences between scenarios
@@ -186,8 +190,8 @@ script hard-codes a location. Paths come in two kinds:
 | Purpose | Config constant | Default location |
 |---------|-----------------|------------------|
 | Model archive (case output) | `ARCHIVE` | `$DATA_ROOT/CESM22/archive/` |
-| Project processed-data root | `BGO3_ROOT` | `$DATA_ROOT/ProcessedData/DanJaffeMUSICAPostprocessing/` |
-| ↳ Monitor list (input) | `BGO3_MONITOR_LIST` | `…/MonitorInfo/Lee_Jaffe_GAM_stats.csv` |
+| Project processed-data root | `BGO3_ROOT` | under `$DATA_ROOT/ProcessedData/` (override `MUSICA_ENV_BGO3_ROOT`) |
+| ↳ Monitor list (input) | `BGO3_MONITOR_LIST` | a CSV of monitor lon/lat/ID under `…/MonitorInfo/` (override `MUSICA_ENV_BGO3_MONITOR_LIST`) |
 | ↳ Matched column index | `BGO3_MONITOR_COLIDX` | `…/MonitorInfo/MatchedMonitors_ne30_ColIdx.csv` |
 | ↳ Merged hourly surface O₃ | `BGO3_MERGED_SURFO3_DIR` | `…/h2_surfO3_merged/` |
 | ↳ Per-monitor deliverables | `BGO3_GIVEN_MONITORS_DIR` | `…/ForGivenMonitors/` |
