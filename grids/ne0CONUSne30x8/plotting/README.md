@@ -36,3 +36,20 @@ To plot a new diagnostic:
 2. Instantiate `Plot_2D` with the SCRIP file
 3. Call `.plot_SE()` for unstructured SE data or `.plot_FV()` for regridded lat/lon data
 4. Customize projection, colormap, and region as needed
+
+---
+
+## `Demo_Plot_UnstructuredMUSICAoutput.ipynb`
+
+**Start here if you have never plotted unstructured output.** A short, runnable
+notebook that reads one monthly-mean (`h0`) file from each of the two SE grids —
+`ne30np4` (~1° global) and `ne0CONUSne30x8` (~14 km over CONUS) — and maps surface
+O₃ with `Plot_2D`, showing how the SCRIP file supplies the cell geometry that
+`pcolormesh` cannot.
+
+Both SCRIP grids ship with this repository and all paths resolve through
+`config/paths.py`, so nothing outside the repo is needed except the model output
+itself. Point `case_ne30np4` / `case_ne30CONUS` at any case in your archive.
+
+The two rendered maps are kept in the notebook so the result is visible without
+running it — the only stored outputs anywhere in this repository, deliberately.

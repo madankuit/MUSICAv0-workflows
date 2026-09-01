@@ -154,8 +154,12 @@ the SCRIP file and a polygon collection. That is what
 finite-volume and SE (including regionally-refined) output, with projections,
 custom colormaps, log/symlog scaling and difference maps.
 
-A worked example using it:
-[`grids/ne0CONUSne30x8/plotting/Plot_CompMaps.py`](../grids/ne0CONUSne30x8/plotting/Plot_CompMaps.py).
+Two worked examples:
+[`grids/ne0CONUSne30x8/plotting/Demo_Plot_UnstructuredMUSICAoutput.ipynb`](../grids/ne0CONUSne30x8/plotting/Demo_Plot_UnstructuredMUSICAoutput.ipynb)
+— a short runnable notebook that maps surface O₃ on both SE grids and keeps its
+rendered figures, so you can see the result before running anything — and
+[`Plot_CompMaps.py`](../grids/ne0CONUSne30x8/plotting/Plot_CompMaps.py) for a
+production script.
 
 **Quick-look alternative.** For a fast look without the polygon machinery, a
 scatter of the column centres is usually enough and is honest about the grid:
