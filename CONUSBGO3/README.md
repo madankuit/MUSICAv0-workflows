@@ -232,7 +232,7 @@ Data files (`.nc`, `.csv`, archive output) are **not** version-controlled — th
 
 - **Shared functions** in the repo's top-level [`functions/`](../functions/):
   - `SE_analysis.py` → `get_site_index` (nearest SE column for a lat/lon via SCRIP)
-  - `func_ModelEval_statistical_tests.py`, `func_MUSICA_DefineRegion.py` (analysis)
+  - `func_MUSICA_DefineRegion.py` (region bounds and UTC offsets)
   - Scripts reach `functions/` by importing `config`, which puts the directory on
     `sys.path`; no path juggling is needed. The SCRIP grid and CONUS-mask NetCDFs
     now ship in the repo as well (see [Paths](#paths)), so nothing outside the

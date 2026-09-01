@@ -49,11 +49,6 @@ dependencies:
   - ipykernel
 
 
-  # pip-only
-  - pip
-  - pip:
-      - pylr2          # regress2 (reduced major axis), func_ModelEval_statistical_tests.py
-
 # conda env create -f environment.yml
 # conda activate musica-workflows
 # python -c "import xarray, geopandas, timezonefinder, pytz, seaborn; print('OK')"

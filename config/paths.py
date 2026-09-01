@@ -289,7 +289,7 @@ SITE_HOURLY_JJA2018_DIR = DATASETS_ROOT / 'Sitei_Hourly_JJA2018'
 # These used to live under a personal ~/Scripts/ tree, which was deleted on
 # 2026-08-31; they now sit with the other processed data on the data volume.
 # Written by model_evaluation/GetMatched_*_ColumnIndex.py and
-# model_evaluation/func_MUSICAvsSLAMS_surf.py; read by the Match{Daily,Hourly}
+# model_evaluation/GetMatched_*_ColumnIndex.py; read by the Match{Daily,Hourly}
 # SLAMS scripts. Small (~580 KB) and regenerable, but only by re-running the
 # matching against the AQS data and a spin-up h1 file.
 MUSICA_COLIDX_DIR = _env_path('MUSICA_ENV_COLIDX_DIR',

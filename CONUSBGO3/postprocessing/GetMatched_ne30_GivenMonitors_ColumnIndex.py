@@ -54,7 +54,6 @@ from config.paths import (
 )
 
 # repo-local shared functions (functions/ is on sys.path via `import config`)
-from func_ModelEval_statistical_tests import *
 from SE_analysis import get_site_index
 
 # Specified input

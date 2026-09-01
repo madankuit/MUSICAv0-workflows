@@ -25,7 +25,6 @@ All scripts operate on **0.15°×0.15° conservatively regridded** model output 
 
 | File | Description |
 |------|-------------|
-| `WriteNCfile_ModelBiasToTROPOMI.TemporalCorrelation_CONUS.py` | Compute Spearman correlation, NMBE (normalized mean bias error), and NRMSE (normalized RMSE) between model and TROPOMI VCDs by US region and across CONUS. Outputs results to NetCDF. |
 
 ---
 
@@ -53,9 +52,8 @@ regridding/ConservativeRegrid_TROPOMITime_MUSICAOutputs.py
 ConservativeRegrid_CalcTropVCD_approx1330LT_h2_MUSICA015deglatlon.py
     ↓
 MaskTROPOMInan_in_MUSICA_VCD.py
-    ↓
-WriteNCfile_ModelBiasToTROPOMI.TemporalCorrelation_CONUS.py
-    ↓  regional bias / correlation metrics (.nc)
+    ↓  model and retrieval on a common grid, masked to valid pixels
+       (regional bias / correlation statistics are left to the user)
 ```
 
 ---

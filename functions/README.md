@@ -40,11 +40,6 @@ Import these into grid-specific scripts rather than duplicating logic.
 |------|-------------|
 | `func_ReadMUSICAOutput.py` | Read MUSICAv0 history files. `BasicRead_ds()` for simple loading; `Read_histh1_Runds()` / `Read_histh2_Runds()` for time/level-sliced extraction from h1 (daily) and h2 (hourly) output files. |
 
-### Model Evaluation — Statistics
-
-| File | Description |
-|------|-------------|
-| `func_ModelEval_statistical_tests.py` | Statistical metrics for model–observation comparison: Pearson/Spearman correlation, Reduced Major Axis regression, and one-sided Wilcoxon signed-rank test. |
 
 ### Regional Definitions
 

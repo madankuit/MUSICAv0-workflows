@@ -49,8 +49,6 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../functions/'))
 
 from func_MUSICA_DefineRegion import *
-from func_ModelEval_statistical_tests import *
-from func_MUSICAvsSLAMS_surf import *
 # from func_ReadMUSICAOutput import *
 
 from Plot_2D import Plot_2D # To draw a map

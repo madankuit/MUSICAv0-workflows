@@ -69,7 +69,6 @@ import xarray as xr
 # my functions
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../functions/'))
-from func_ModelEval_statistical_tests import *
 from SE_analysis import get_site_index
 
 # Grid

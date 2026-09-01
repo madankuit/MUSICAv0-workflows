@@ -208,14 +208,11 @@ python -c "import xarray, geopandas, timezonefinder, pytz, seaborn; print('OK')"
 ```
 
 Beyond the usual scientific stack (xarray / numpy / pandas / matplotlib / cartopy /
-scipy / geopandas), two groups are easy to overlook:
+scipy / geopandas), one group is easy to overlook:
 
 - **`timezonefinder` + `pytz`** — required by every EPA MDA8 pipeline, which converts
   UTC to local time *before* computing the 8-hour maxima. Without them the ozone
   postprocessing cannot run at all.
-- **`pylr2`** (pip) — provides `regress2`, the reduced-major-axis regression used in
-  `functions/func_ModelEval_statistical_tests.py`.
-
 **`esmpy` is only needed to _generate_ ESMF weights** (the `gen_*_weights.py`
 scripts). Applying weights that already exist is a sparse matrix multiply and needs
 nothing beyond scipy — which is why the production regrid runs in a plain
