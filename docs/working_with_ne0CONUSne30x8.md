@@ -392,9 +392,11 @@ conda activate musica-workflows
 - [`NCAR/musica-tutorial`](https://github.com/NCAR/musica-tutorial) — NCAR's own
   notebooks for analysing MUSICAv0 output. Two of the regridding scripts in this
   repository descend from it.
-- The repository [README](../README.md#resources) has the full resource list,
-  including the distinction between MUSICAv0 and the separate `NCAR/musica` /
-  MusicBox chemistry software.
+- [`NCAR/MELODIES-MONET`](https://github.com/NCAR/MELODIES-MONET)
+  ([docs](https://melodies-monet.readthedocs.io/en/stable/)) — the NCAR–NOAA
+  framework for evaluating models against surface, aircraft and satellite
+  observations. Worth checking before writing new comparison code.
+- The repository [README](../README.md#resources) has the full resource list.
 
 See the repository [README](../README.md) for how paths are configured — every
 path resolves through [`config/paths.py`](../config/paths.py), and

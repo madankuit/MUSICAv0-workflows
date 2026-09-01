@@ -225,34 +225,59 @@ environment while weight generation needs a dedicated one (`rootxesmf` on Svante
 
 ## Resources
 
-### MUSICAv0 — what this repository works with
+### The model
 
-| Resource | |
+MUSICA is NSF NCAR's framework for representing chemistry across atmosphere
+models. **MUSICAv0** — the part this repository works with — is the CAM-chem
+configuration on a regionally-refined spectral-element grid, ~1° globally
+refining to ~14 km over CONUS, available in CESM2.2.
+
+| | |
 |---|---|
-| [MUSICAv0 overview](https://www2.acom.ucar.edu/sections/musica-v0) | NCAR/ACOM page for the CAM-chem configuration on the regionally-refined spectral-element grid — 1° global refining to ~14 km over CONUS, available in CESM2.2 |
-| [MUSICA wiki](https://wiki.ucar.edu/display/MUSICA/MUSICA+Home) | the primary documentation for setting up and running the model |
-| [MUSICA projects](https://www2.acom.ucar.edu/sections/musica-projects) | current projects and community activity |
-| [`NCAR/musica-tutorial`](https://github.com/NCAR/musica-tutorial) | tutorial notebooks for **analysing** MUSICAv0 output (Nov 2021 tutorial) — see the attribution note below |
-| [`NCAR/MUSICA-Tools`](https://github.com/NCAR/MUSICA-Tools) | NCAR's input (IPT) and output (TPO) processing code for CAM-chem — Python, NCL and Fortran |
-| [`ESCOMP/CAM`](https://github.com/ESCOMP/CAM) | the atmosphere model itself |
+| [MUSICA project page](https://www2.acom.ucar.edu/sections/musica) | the umbrella project and its components |
+| [MUSICAv0](https://www2.acom.ucar.edu/sections/musica-v0) | the configuration used here |
+| [MUSICA wiki](https://wiki.ucar.edu/display/MUSICA/MUSICA+Home) | **the documentation for setting up and running it** |
+| [MUSICA projects](https://www2.acom.ucar.edu/sections/musica-projects) | community activity |
+| [CAM-chem](https://www2.acom.ucar.edu/gcm/cam-chem) · [wiki](https://wiki.ucar.edu/display/camchem/Home) | the chemistry model MUSICAv0 configures |
+| [`ESCOMP/CAM`](https://github.com/ESCOMP/CAM) | the atmosphere model source |
+
+### Learning and analysing the output
+
+| | |
+|---|---|
+| [`NCAR/musica-tutorial`](https://github.com/NCAR/musica-tutorial) | NCAR's tutorial notebooks for working with MUSICAv0 output — the closest upstream analogue to this repository |
+| [`NCAR/MUSICA-Tools`](https://github.com/NCAR/MUSICA-Tools) | NCAR's input (IPT) and output (TPO) processing code for CAM-chem |
 
 > **Attribution.** Two scripts here descend directly from the Nov 2021 MUSICA
-> tutorial: `grids/ne0CONUSne30x8/regridding/Regrid_SE_015FV.py` (from
+> tutorial — `grids/ne0CONUSne30x8/regridding/Regrid_SE_015FV.py` (from
 > `Rewrite_output.ipynb`) and `.../ConservativeRegrid_TROPOMITime_MUSICAOutputs.py`
-> (from `ConservativeRegrid_MUSICAOutputs.ipynb`), as their docstrings record.
+> (from `ConservativeRegrid_MUSICAOutputs.ipynb`) — as their docstrings record.
 
-### The wider MUSICA software family — *not* used by this repository
+### Evaluating against observations
 
-Worth knowing about, but a different line of software. "MUSICA" names both the
-CESM configuration above **and** a chemistry-infrastructure project; they are not
-interchangeable, and nothing in this repository depends on the ones below.
+**MELODIES MONET** is the NCAR–NOAA diagnostic framework for comparing model
+output against surface, aircraft and satellite observations. It covers much of the
+same ground as `model_evaluation/` here, in a model-agnostic package, and is worth
+reaching for before writing new comparison code.
 
-| Resource | |
+| | |
 |---|---|
-| [`NCAR/musica`](https://github.com/NCAR/musica) | *Multi-Scale Infrastructure for Chemistry and Aerosols* — the chemistry library (MICM solver, TUV-x photolysis) with Python/Fortran/C++/JS interfaces. **Not** the CESM configuration this repo processes. |
-| [`NCAR/music-box`](https://github.com/NCAR/music-box) | **MusicBox** — a box/column model that runs MICM chemistry standalone. (Often written "MUSICA-Box"; the project is `music-box`.) |
-| [MusicBox docs](https://ncar.github.io/music-box/branch/main/) · [ACOM page](https://www2.acom.ucar.edu/modeling/musicbox) · [wiki](https://wiki.ucar.edu/spaces/MusicBox/overview) | MusicBox documentation, overview and wiki |
-| [`NCAR/music-box-interactive-desktop`](https://github.com/NCAR/music-box-interactive-desktop) | MusicBox desktop application |
+| [`NCAR/MELODIES-MONET`](https://github.com/NCAR/MELODIES-MONET) | the tool |
+| [documentation](https://melodies-monet.readthedocs.io/en/stable/) | user and developer guides |
+| [MELODIES tutorial 2024](https://www2.acom.ucar.edu/events/melodies-tutorial-2024) | tutorial materials |
+| [NOAA CSL page](https://csl.noaa.gov/groups/csl4/modeldata/melodies-monet/) | the NOAA side of the project |
+
+### Elsewhere in the MUSICA family
+
+Chemistry software developed alongside MUSICAv0. Nothing here depends on it, but
+it shares the name and is the natural next stop if you move from a configured
+CESM run toward the chemistry itself.
+
+| | |
+|---|---|
+| [`NCAR/musica`](https://github.com/NCAR/musica) | *Multi-Scale Infrastructure for Chemistry and Aerosols* — the MICM solver and TUV-x photolysis, with Python/Fortran/C++/JS interfaces |
+| [`NCAR/music-box`](https://github.com/NCAR/music-box) | **MusicBox**, NCAR's box/column model running MICM chemistry standalone — [docs](https://ncar.github.io/music-box/branch/main/) · [ACOM page](https://www2.acom.ucar.edu/modeling/musicbox) · [wiki](https://wiki.ucar.edu/spaces/MusicBox/overview) |
+| [`NCAR/music-box-interactive-desktop`](https://github.com/NCAR/music-box-interactive-desktop) | MusicBox as a desktop application |
 
 ---
 
