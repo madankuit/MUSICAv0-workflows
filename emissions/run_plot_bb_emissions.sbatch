@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=bb_emis_check
-#SBATCH --partition=edr
+#SBATCH --partition=hdr200   # edr nodes have glibc < 2.28 (pyproj ImportError)
 #SBATCH --ntasks=1
 #SBATCH --mem=24G
 #SBATCH --time=01:00:00
