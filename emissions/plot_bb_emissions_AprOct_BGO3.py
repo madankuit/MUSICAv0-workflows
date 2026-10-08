@@ -175,9 +175,9 @@ for ax, yr in zip(np.atleast_1d(axs), BGO3_YEARS):
 fig.colorbar(pc, ax=axs, orientation="horizontal", shrink=.5, pad=.03,
              extend="both").set_label(f"Mean fire {SP0} emission (kg km$^{{-2}}$ day$^{{-1}}$)")
 fig.suptitle(f"QFED2.6 fire {SP0} emissions in the BASE run; dashed = region zeroed in noBB",
-             fontsize=12, fontweight="bold")
+             fontsize=12, fontweight="bold", y=1.06)
 out = FIG / f"BB_{SP0}_summary_map_AprOct.png"
-fig.savefig(out, dpi=200); plt.close(fig); print("saved", out)
+fig.savefig(out, dpi=200, bbox_inches="tight"); plt.close(fig); print("saved", out)
 
 # --- daily totals by region ---------------------------------------------------
 fig, axs = plt.subplots(len(args.species), len(BGO3_YEARS), sharex="col",
