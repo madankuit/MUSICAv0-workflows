@@ -68,8 +68,8 @@ inbox = ((lon >= EXT[0] - 5) & (lon <= EXT[1] + 5) & (lat >= EXT[2] - 5) &
 polys = np.stack([clon[inbox], clat[inbox]], axis=-1)
 
 mk = xr.open_dataset(MASK_NE30NP4_CONUS_80KM)
-keep = mk[list(mk.data_vars)[0]].values.astype(bool)       # False = zeroed
-zeroed = ~keep
+zeroed = mk[list(mk.data_vars)[0]].values.astype(bool)     # True = zeroed in noBB
+keep = ~zeroed
 NA_BOX = (lon >= -170) & (lon <= -50) & (lat >= 10) & (lat <= 75)
 REGIONS = {"removed (CONUS + 80 km)": zeroed,
            "kept, N of 49N (Canada+Alaska)": NA_BOX & keep & (lat >= 49),
