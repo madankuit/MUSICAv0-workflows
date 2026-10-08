@@ -16,6 +16,8 @@ shows what was in each run and what was actually removed.
 Outputs (EMISSIONS_CHECK_FIGURE_DIR):
   BB_<SP>_meanflux_AprOct_2022-2023.png   per species, rows 2022 / 2023 /
         2022-2023, columns BASE input / noBB input / removed (BASE - noBB)
+  BB_CO_summary_map_AprOct.png            one row (2022, 2023) of BASE fire CO with
+        removed / kept totals, for sharing
   BB_daily_totals_by_region_AprOct.png    daily emission totals, removed region
         vs outside it north of 49N (Canada + Alaska) vs the rest of the box
   BB_emission_totals_AprOct.csv           Apr-Oct totals (Gg) per species/year/region
@@ -114,7 +116,7 @@ def cellmap(ax, field, norm, cmap):
     ax.add_collection(pc); return pc
 
 
-rows, daily = [], {}
+rows, daily, summary = [], {}, {}
 for sp in args.species:
     full = read(BB_EMIS_NE30NP4_DIR, sp)
     masked = read(BB_EMIS_NE30NP4_CONUSMASKED_DIR, sp)
@@ -137,6 +139,7 @@ for sp in args.species:
     vmax = np.nanpercentile(means[f"{BGO3_YEARS[0]}-{BGO3_YEARS[-1]}"][0][inbox], 99.9)
     norm = LogNorm(vmin=vmax / 1e3, vmax=vmax)
     cmap = plt.get_cmap("YlOrRd").copy(); cmap.set_bad("white")
+    summary[sp] = (means, norm, cmap)
 
     fig, axs = plt.subplots(len(means), 3, figsize=(15, 3.3 * len(means)),
                             subplot_kw={"projection": ccrs.PlateCarree()},
@@ -153,6 +156,28 @@ for sp in args.species:
                  f"(dashed = zeroed region in noBB)", fontsize=13, fontweight="bold")
     out = FIG / f"BB_{sp}_meanflux_AprOct_{BGO3_YEARS[0]}-{BGO3_YEARS[-1]}.png"
     fig.savefig(out, dpi=150); plt.close(fig); print("saved", out)
+
+# --- one-row summary for sharing: BASE fires per year, totals in each box ----
+SP0 = "CO" if "CO" in summary else args.species[0]
+means, norm, cmap = summary[SP0]
+fig, axs = plt.subplots(1, len(BGO3_YEARS), figsize=(6.2 * len(BGO3_YEARS), 4.4),
+                        subplot_kw={"projection": ccrs.PlateCarree()},
+                        constrained_layout=True)
+for ax, yr in zip(np.atleast_1d(axs), BGO3_YEARS):
+    pc = cellmap(ax, means[str(yr)][0], norm, cmap)
+    deco(ax, f"Apr$-$Oct {yr}")
+    tot = {reg: daily[(SP0, yr, reg)].sum() / 1e3 for reg in REGIONS}       # Tg
+    reg_rm, reg_ca = list(REGIONS)[:2]
+    ax.text(.02, .03, f"Removed in noBB (inside dashed): {tot[reg_rm]:.1f} Tg\n"
+                      f"Kept in both runs, Canada + Alaska: {tot[reg_ca]:.1f} Tg",
+            transform=ax.transAxes, fontsize=9, va="bottom",
+            bbox=dict(fc="white", ec="0.6", alpha=.9))
+fig.colorbar(pc, ax=axs, orientation="horizontal", shrink=.5, pad=.03,
+             extend="both").set_label(f"Mean fire {SP0} emission (kg km$^{{-2}}$ day$^{{-1}}$)")
+fig.suptitle(f"QFED2.6 fire {SP0} emissions in the BASE run; dashed = region zeroed in noBB",
+             fontsize=12, fontweight="bold")
+out = FIG / f"BB_{SP0}_summary_map_AprOct.png"
+fig.savefig(out, dpi=200); plt.close(fig); print("saved", out)
 
 # --- daily totals by region ---------------------------------------------------
 fig, axs = plt.subplots(len(args.species), len(BGO3_YEARS), sharex="col",
