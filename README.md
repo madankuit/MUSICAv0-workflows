@@ -26,6 +26,7 @@ MUSICAv0-workflows/
 ├── docs/
 │   └── working_with_ne0CONUSne30x8.md   # guide to the unstructured grid
 ├── functions/                   # General-purpose, grid-agnostic utility functions
+├── emissions/                   # checks of emission inputs (e.g. BB emissions behind CONUSBGO3 smoke O3)
 ├── CONUSBGO3/                   # Project: CONUS background ozone (ne30np4)
 │   ├── experiment_setup/        # CESM namelists + input preparation
 │   ├── emissions_perturbation/  # build the noAnthro / noBB emission inputs

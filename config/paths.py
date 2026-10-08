@@ -136,6 +136,7 @@ PROCESSED_DATA_ROOT = DATA_ROOT / 'ProcessedData'
 NCAR_COPIES_ROOT = DATA_ROOT / 'ncar_copies'
 FIGURES_ROOT = DATA_ROOT / 'Figures'
 CESM_FIGURE_DIR = FIGURES_ROOT / 'CESM_analysis'
+EMISSIONS_CHECK_FIGURE_DIR = FIGURES_ROOT / 'EmissionsCheck'
 
 
 # ============================================================
@@ -310,6 +311,8 @@ _EMIS_ROOT = NCAR_COPIES_ROOT / 'acom' / 'MUSICA' / 'emissions'
 # Biomass burning (QFED 2.6 / FINN)
 BB_EMIS_NE0CONUS_DIR = _EMIS_ROOT / 'qfed2.6_finn' / 'ne0conus30x8'
 BB_EMIS_NE30NP4_DIR = _EMIS_ROOT / 'qfed2.6_finn' / 'ne30np4'
+# Same files with CONUS land + 80 km buffer zeroed (the CONUSBGO3 noBB input)
+BB_EMIS_NE30NP4_CONUSMASKED_DIR = _EMIS_ROOT / 'qfed2.6_finn' / 'ne30np4_CONUSlandMasked_80kmBuffer'
 
 # Anthropogenic (CAMS-GLOB-ANT)
 CAMS_V51_ORIG_DIR = _EMIS_ROOT / 'cams' / 'CAMS-GLOB-ANTv5.1' / 'CAMS-GLOB-ANT_v5.1_orig'
