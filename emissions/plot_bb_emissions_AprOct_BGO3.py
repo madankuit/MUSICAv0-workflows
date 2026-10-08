@@ -50,6 +50,10 @@ R_EARTH = 6.37122e6                  # m, CESM shr_const_rearth
 NA = 6.02214076e23
 # molecules cm-2 s-1 -> kg km-2 day-1 is MW[g/mol]/NA * 1e10 cm2/km2 * 86400 s / 1e3
 TO_KG_KM2_DAY = 1e10 * 86400 / 1e3 / NA
+# g/mol. Not taken from the files: the NO and NO2 files carry a global
+# molecular_weight of 184 and no emiss attribute.
+MW = {"CO": 28.01, "NO": 30.01, "NO2": 46.01, "CH2O": 30.03, "SO2": 64.07,
+      "NH3": 17.03, "C2H6": 30.07, "C3H8": 44.10, "CH3OH": 32.04, "ISOP": 68.12}
 
 ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
 ap.add_argument("--species", nargs="+", default=["CO", "NO", "NO2", "CH2O"])
@@ -85,7 +89,8 @@ def season_idx(date, yr):
 def read(d, sp):
     """Daily flux (kg km-2 day-1) for each ozone season; dict yr -> (dates, arr)."""
     ds = xr.open_dataset(d / FNAME.format(sp=sp), decode_times=False)
-    mw = float(ds.emiss.attrs["molecular_weight"])
+    mw = MW.get(sp) or float(ds.emiss.attrs.get("molecular_weight",
+                                               ds.attrs["molecular_weight"]))
     date = ds.date.values
     out = {}
     for yr in BGO3_YEARS:
