@@ -37,23 +37,19 @@ _ROOT = next(p for p in pathlib.Path(__file__).resolve().parents
              if (p / 'config' / 'paths.py').exists())
 sys.path.insert(0, str(_ROOT))
 import config  # noqa: F401
-from config.paths import BGO3_FIGURE_DIR, bgo3_unified_mda8_glob, ensure_dir
+from config.paths import BGO3_FIGURE_DIR, bgo3_unified_mda8_latest, ensure_dir
 
-_hits = sorted(glob.glob(bgo3_unified_mda8_glob()))
-if not _hits:
-    raise FileNotFoundError(
-        "No unified MDA8 file found; run Regrid_ne30_surfO3_to_1x1_conserve.py first.")
-MDA8_FILE = _hits[-1]
+MDA8_FILE = bgo3_unified_mda8_latest()    # newest by c<YYYYMMDD> stamp
 FIG = str(ensure_dir(BGO3_FIGURE_DIR / "regrid_trial")) + "/"
 EXT = [-125, -66, 23, 50]
 # ============================================================
 
 m = xr.open_dataset(MDA8_FILE)
 M = m["MDA8O3"]; lon = m.lon.values; lat = m.lat.values
-names = [str(s) for s in m.scenario.values]                      # BASE, noAnthro, noBB
+names = [str(s) for s in m.scenario.values]                      # BASE, noAnthro, noBBCONUS, noBBGlobal
 means = [M.isel(scenario=i).mean("time") for i in range(len(names))]   # 2-yr Apr-Oct mean
 
-# One shared scale across all three scenarios
+# One shared scale across all scenarios
 allv = np.concatenate([mn.values.ravel() for mn in means])
 vmin = float(np.floor(np.nanpercentile(allv, 2)))
 vmax = float(np.ceil(np.nanpercentile(allv, 98)))
@@ -63,7 +59,7 @@ for n, mn in zip(names, means):
     print(f"  {n:9s} 2yr-mean MDA8 ppb: mean={float(mn.mean()):.1f} "
           f"min={float(mn.min()):.1f} max={float(mn.max()):.1f}")
 
-fig, axs = plt.subplots(1, 3, figsize=(16, 4.9),
+fig, axs = plt.subplots(1, len(names), figsize=(5.4 * len(names), 4.9),
                         subplot_kw={"projection": ccrs.PlateCarree()})
 for ax, mn, n in zip(axs, means, names):
     pc = ax.pcolormesh(lon, lat, mn, cmap="YlOrRd", vmin=vmin, vmax=vmax,

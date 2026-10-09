@@ -24,10 +24,10 @@ Inputs
 - Output_diri: str
     Directory where output NetCDF files are written (config.paths
     BGO3_GIVEN_MONITORS_DIR).
-- casename_label_dic: dict
-    Maps casename to string label (last 4 chars = year).
-- mergedh2_surfO3filepath_dic: dict
-    Maps casename to merged hourly surface O3 file path.
+- BGO3_CASE_LABELS: dict
+    Maps (scenario, year) to string label, e.g. 'noBBGlobal2023'.
+- bgo3_merged_surfo3_path(casename, year):
+    Merged hourly surface O3 file for one case and year.
 - compute_mda8_UTCoffset: function
     Computes daily MDA8 O3 from UTC hourly series given UTC offset (hours).
 - get_summer_offset: function
@@ -53,6 +53,12 @@ MODIFICATION HISTORY:
     - Initial version
     31 Aug 2026: VERSION 1.1
     - Paths, case names and the merged-file lookup moved to config/paths.py
+    9 Oct 2026: VERSION 1.2
+    - Loops over (scenario, year) and finds the merged file by (case, year):
+      the noBBGlobal case is one run serving both years
+    - --scenarios to process a subset; case/scenario/source file in attrs
+
+    python Extract_givenmonitorO3_hourly_dailyMDA8_toNetCDF.py --scenarios noBBGlobal
 """
 #================================================================================================
 #================================================================================================
@@ -66,17 +72,22 @@ import config  # noqa: F401  - also puts functions/ on sys.path
 from config.paths import (
     BGO3_CASES,
     BGO3_CASE_LABELS,
+    BGO3_SCENARIOS,
     BGO3_MONITOR_LIST,
     BGO3_MONITOR_COLIDX,
     BGO3_GIVEN_MONITORS_DIR,
     BGO3_START_MMDD,
     BGO3_END_MMDD,
     SCRIP_NE30NP4,
-    bgo3_merged_surfo3_glob,
+    bgo3_merged_surfo3_path,
     ensure_dir,
 )
 
-import glob as _glob
+import argparse
+ap = argparse.ArgumentParser()
+ap.add_argument('--scenarios', nargs='+', default=list(BGO3_SCENARIOS),
+                choices=list(BGO3_SCENARIOS))
+args = ap.parse_args()
 
 MonitorInfo_filepath = BGO3_MONITOR_LIST
 Monitorne30Idx_filepath = BGO3_MONITOR_COLIDX
@@ -84,33 +95,11 @@ Monitorne30Idx_filepath = BGO3_MONITOR_COLIDX
 # Variable Resolution Grid (ships with the repo)
 SCRIP_ne30 = str(SCRIP_NE30NP4)
 
-# label for each casename
-casename_label_dic = dict(BGO3_CASE_LABELS)
-
-
-def _newest_merged_surfo3(casename):
-    """Newest merged hourly surface-O3 file for `casename`.
-
-    The date span is part of the file name and differs per case, so resolve it
-    by globbing rather than hard-coding each name.
-    """
-    hits = sorted(_glob.glob(bgo3_merged_surfo3_glob(casename)))
-    if not hits:
-        raise FileNotFoundError(
-            f'No merged surface-O3 file for {casename}; '
-            f'run Merge_h2files_hourlysurfO3.py first.')
-    return hits[-1]
-
-
-# merged h2 surface file for each case
-mergedh2_surfO3filepath_dic = {cn: _newest_merged_surfo3(cn)
-                               for cn in BGO3_CASES.values()}
-
 #================================================================================================
 ### Specified input:
-# For a given case
-# Cases to process; default is every CONUSBGO3 case.
-case_ls = list(BGO3_CASES.values())
+# (scenario, year) pairs to process; default is every CONUSBGO3 case.
+# The merged file is resolved per (case, year) by bgo3_merged_surfo3_path.
+run_ls = [k for k in BGO3_CASES if k[0] in args.scenarios]
 
 startMMDD = BGO3_START_MMDD
 endMMDD = BGO3_END_MMDD
@@ -217,17 +206,19 @@ MonitorIdx_df["MUSICA0_colIndex"] = MonitorIdx_df["MUSICA0_colIndex"].astype(int
 
 #================================================================================================
 # Main function to calculate and save MDA8O3 and hourlyO3
-def casei_build_and_save_all_sites(casename, MonitorIdx_df, startMMDD, endMMDD, Output_diri):
+def casei_build_and_save_all_sites(scen, yr, MonitorIdx_df, startMMDD, endMMDD, Output_diri):
     """
     Build and save NetCDF datasets for daily local-time MDA8 O3 and hourly UTC O3
-    at all monitor sites for one case/year, using AQS_code as the site dimension.
+    at all monitor sites for one (scenario, year), using AQS_code as the site dimension.
     """
     import pandas as pd
     import xarray as xr
     import numpy as np
 
     # ---- Build local-date range (inclusive) for target year ----
-    YYYY = casename_label_dic[casename][-4:]
+    casename = BGO3_CASES[(scen, yr)]
+    label = BGO3_CASE_LABELS[(scen, yr)]
+    YYYY = str(yr)
     startfileDate = f"{YYYY}-{startMMDD}"  # 'YYYY-MM-DD'
     endfileDate   = f"{YYYY}-{endMMDD}"    # 'YYYY-MM-DD'
     tdays = pd.date_range(start=startfileDate, end=endfileDate, freq="D")
@@ -237,8 +228,13 @@ def casei_build_and_save_all_sites(casename, MonitorIdx_df, startMMDD, endMMDD, 
     print("First few v1:", datesv1[:5])
 
     # ---- Open merged hourly surface O3 (UTC timestamps) ----
-    HourlyFilePath = mergedh2_surfO3filepath_dic[casename]
+    HourlyFilePath = bgo3_merged_surfo3_path(casename, yr)
+    print(f"{label}: {casename}\n  merged file: {HourlyFilePath}")
     HourlyO3_da = xr.open_dataset(HourlyFilePath)["O3"]  # expects dims incl. 'time' and 'ncol'
+    _t = pd.DatetimeIndex(HourlyO3_da.time.values)
+    assert (_t.year == yr).all() and _t.min() <= pd.Timestamp(f"{startfileDate} 01:00") \
+        and _t.max() >= pd.Timestamp(f"{endfileDate} 23:00"), \
+        f"{label}: merged file spans {_t.min()} .. {_t.max()}"
 
     # ---- Ensure AQS_code uniqueness and as string ----
     MonitorIdx_df = MonitorIdx_df.copy()
@@ -309,6 +305,10 @@ def casei_build_and_save_all_sites(casename, MonitorIdx_df, startMMDD, endMMDD, 
         ds["lon"].attrs.update({"units": "degrees_east",  "standard_name": "longitude"})
         ds["AQS_code"].attrs.update({"long_name": "AQS site identifier"})
 
+    _src = {"case_name": casename, "scenario": scen, "year": yr,
+            "merged_input_file": os.path.basename(HourlyFilePath)}
+    ds_all_mda8.attrs.update(_src)
+    ds_all_hourly.attrs.update(_src)
     ds_all_mda8.attrs.update({
         "title": "Daily MDA8 O3 at point monitors (local-time dates)",
         "Conventions": "CF-1.9",
@@ -338,11 +338,11 @@ def casei_build_and_save_all_sites(casename, MonitorIdx_df, startMMDD, endMMDD, 
     }
 
     allMonitors_MDA8O3_filename = (
-        f"{Output_diri}LocalTimeMDA8O3.{casename_label_dic[casename]}."
+        f"{Output_diri}LocalTimeMDA8O3.{label}."
         f"GivenMonitors.{startfileDate}T{endfileDate}.nc"
     )
     allMonitors_HourlyO3_filename = (
-        f"{Output_diri}UTChourlyO3.{casename_label_dic[casename]}."
+        f"{Output_diri}UTChourlyO3.{label}."
         f"GivenMonitors.{startfileDate}T{endfileDate}.nc"
     )
 
@@ -354,9 +354,9 @@ def casei_build_and_save_all_sites(casename, MonitorIdx_df, startMMDD, endMMDD, 
 
 #================================================================================================
 # Apply this function to a selected list of case and provided dates
-for casename in case_ls:
-    print(f'Processing {casename}')
+for scen, yr in run_ls:
+    print(f'Processing {scen} {yr}')
     #------------------------------
     saveto_diri = str(ensure_dir(BGO3_GIVEN_MONITORS_DIR)) + '/'
-    casei_build_and_save_all_sites(casename, MonitorIdx_df, startMMDD, endMMDD, saveto_diri)
+    casei_build_and_save_all_sites(scen, yr, MonitorIdx_df, startMMDD, endMMDD, saveto_diri)
 print("Done!")

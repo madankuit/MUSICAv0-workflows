@@ -5,11 +5,14 @@ Regrid_ne30_surfO3_to_1x1_conserve.py
 
 Mass-conservative (ESMF first-order) regrid of MUSICAv0 ne30np4 surface O3 to a
 regular 1x1 deg CONUS grid, for the CONUS background-O3 experiments
-(BASE / noAnthro / noBB, 2022 & 2023, Apr-Oct). Produces:
+(BASE / noAnthro / noBBCONUS / noBBGlobal, 2022 & 2023, Apr-Oct). Produces:
 
-  Regridded1deg/hourly/CONUS1x1_UTChourlySurfO3.<label>.<start>T<end>.nc   (6 files, ppb)
-  Regridded1deg/MUSICAv0_ne30_CONUS1x1_MDA8O3_BGO3_2022-2023_AprOct_<tag>_c<YMD>.nc
+  Regridded1deg/hourly/CONUS1x1_UTChourlySurfO3.<label>.<start>T<end>.<tag>_c<YMD>.nc  (ppb)
+  Regridded1deg/MUSICAv0_ne30_CONUS1x1_MDA8O3_2022-2023_AprOct_c<YMD>.nc
         -> MDA8O3(scenario, time, lat, lon)  [ppb]  (unified, shareable)
+
+With --append-to, only --scenarios are computed and the other scenarios are copied
+unchanged from an existing unified file (its 'noBB' is renamed noBBCONUS).
 
 Conservative weights (ne30np4 -> 1x1) are read from CESM22/grids/; they were
 generated once with esmpy 8.7 (rootxesmf env). Application here is a sparse
@@ -23,6 +26,17 @@ MODIFICATION HISTORY:
     8 Jul 2026: VERSION 1.0
     31 Aug 2026: VERSION 1.1
     - Paths, case names and provenance moved to config/paths.py
+    9 Oct 2026: VERSION 1.2
+    - 4th scenario noBBGlobal; 'noBB' renamed noBBCONUS. Merged files are found
+      per (case, year) because the noBBGlobal case serves both years
+    - --scenarios / --append-to / --cdate; --check-against for a regression test
+
+    # add noBBGlobal to the delivered 3-scenario file
+    python Regrid_ne30_surfO3_to_1x1_conserve.py --scenarios noBBGlobal \
+        --append-to <old unified file> --cdate 20261010
+    # regression: recompute BASE 2022 and require equality with the old file
+    python Regrid_ne30_surfO3_to_1x1_conserve.py --scenarios BASE --years 2022 \
+        --check-against <old unified file> --no-write
 """
 import os, datetime
 import numpy as np, pandas as pd, xarray as xr
@@ -44,8 +58,21 @@ from config.paths import (
     BGO3_REGRIDDED_1DEG_DIR, BGO3_REGRIDDED_1DEG_HOURLY_DIR,
     SCRIP_NE30NP4, FV_GRIDINFO_1X1, WEIGHTS_NE30_TO_1X1,
     AUTHOR_TAG, PROCESSED_BY, CONTACT, INSTITUTION, MACHINE,
-    bgo3_merged_surfo3_glob, case_hist_dir, ensure_dir,
+    bgo3_merged_surfo3_path, bgo3_unified_mda8_name, case_hist_dir, ensure_dir,
 )
+import argparse
+ap = argparse.ArgumentParser()
+ap.add_argument('--scenarios', nargs='+', default=list(BGO3_SCENARIOS), choices=list(BGO3_SCENARIOS),
+                help='scenarios to compute (hourly files are written for these)')
+ap.add_argument('--years', nargs='+', type=int, default=list(BGO3_YEARS))
+ap.add_argument('--append-to', default=None,
+                help='existing unified MDA8 file; scenarios not computed are copied from it')
+ap.add_argument('--check-against', default=None,
+                help='unified MDA8 file; computed MDA8 must equal it (regression test)')
+ap.add_argument('--no-write', action='store_true', help='write nothing (use with --check-against)')
+ap.add_argument('--cdate', default=None, help='YYYYMMDD stamp for output names (default today)')
+args = ap.parse_args()
+OLD_NAMES = {'noBB': 'noBBCONUS'}         # scenario names in files delivered before Oct 2026
 
 DST  = str(ensure_dir(BGO3_REGRIDDED_1DEG_DIR)) + "/"
 HRLY = str(ensure_dir(BGO3_REGRIDDED_1DEG_HOURLY_DIR)) + "/"
@@ -53,7 +80,7 @@ WGT  = str(WEIGHTS_NE30_TO_1X1)
 
 # ================= cases =================
 CASE  = dict(BGO3_CASES)
-LABEL = {k: BGO3_CASE_LABELS[v] for k, v in CASE.items()}
+LABEL = dict(BGO3_CASE_LABELS)            # (scenario, year) -> e.g. noBBGlobal2023
 
 # Any h2 file of the BASE 2022 case provides the ne30 coordinates / grid metadata.
 _h2ex_hist = case_hist_dir(CASE[('BASE', 2022)])
@@ -62,14 +89,8 @@ if not _h2ex_hits:
     raise FileNotFoundError(f'No h2 history files found under {_h2ex_hist}')
 h2ex = _h2ex_hits[0]
 
-def merged_path(cn):
-    hits = glob.glob(bgo3_merged_surfo3_glob(cn))
-    if not hits:
-        raise FileNotFoundError(
-            f'No merged surface-O3 file for {cn}; run Merge_h2files_hourlysurfO3.py first.')
-    return sorted(hits)[-1]
-
 SCEN = list(BGO3_SCENARIOS); YEARS = list(BGO3_YEARS)
+RUN_SCEN = [sc for sc in SCEN if sc in args.scenarios]; RUN_YEARS = [y for y in YEARS if y in args.years]
 STARTMMDD, ENDMMDD = BGO3_START_MMDD, BGO3_END_MMDD
 
 # ================= CONUS 1x1 target =================
@@ -131,7 +152,7 @@ def compute_mda8(o3_hourly_utc, datesv1, utc_off, min_hours=6, min_blocks=13):
     return mda8.reindex(day=tgt).rename({'day':'time'}).assign_coords(time=('time',tgt))
 
 # ================= common provenance attrs =================
-YMD = dtmod.now().strftime('%Y%m%d')
+YMD = args.cdate or dtmod.now().strftime('%Y%m%d')
 def prov(extra):
     a = dict(
         title="MUSICAv0 ne30 CONUS Background-O3: surface O3 regridded to 1x1 deg (mass-conservative)",
@@ -139,8 +160,18 @@ def prov(extra):
         source=("MUSICAv0 = CESM2.2 CAM-chem (MOZART TS1), ne30np4 (~111 km global) "
                 "spectral-element, FCnudged nudged to MERRA-2"),
         institution=INSTITUTION,
-        scenarios=("BASE = all emissions; noAnthro = CONUS anthropogenic emissions zeroed (land, 80 km buffer); "
-                   "noBB = CONUS biomass-burning emissions zeroed (land, 80 km buffer)"),
+        scenarios=("BASE = all emissions; "
+                   "noAnthro = CONUS anthropogenic emissions zeroed (land, 80 km buffer); "
+                   "noBBCONUS = QFED2.6 biomass-burning emissions zeroed over CONUS land + 80 km buffer only "
+                   "(fires in Canada/Alaska/Mexico kept, so BASE - noBBCONUS = O3 from US fires; "
+                   "called noBB in files delivered before Oct 2026); "
+                   "noBBGlobal = biomass-burning emissions zeroed globally (QFED2.6 plus CMIP6 fire DMS and "
+                   "num_so4_a1), so BASE - noBBGlobal = O3 from all fires incl. transported smoke and the "
+                   "hemispheric fire background"),
+        scenario_notes=("noBBGlobal is one continuous run from 2022-04-01, so its 2023 season starts from a "
+                        "no-fire state; BASE2023, noAnthro2023 and noBBCONUS2023 branch from BASE2022 at "
+                        "2023-04-01. Grid, MERRA-2 nudging, all other emissions and the 2022 initial "
+                        "condition are identical across scenarios."),
         case_names="; ".join(f"{LABEL[k]}: {v}" for k,v in CASE.items()),
         horizontal_regrid="ESMF first-order conservative remap, ne30np4 -> 1x1 deg (dest weight-sums = 1)",
         regrid_weight_file=WGT,
@@ -173,13 +204,18 @@ def to_map(vec_cell_time):   # (ntime, ncell) -> (ntime, nlat, nlon)
 
 # ================= main =================
 lon_out=np.where(lonc>180,lonc-360.0,lonc).astype('float64')     # -128..-64 for output
+merged_used={}  # label -> merged input file
 mda8_all={}   # (scenario,year) -> (214, ncell)
 mda8_dates={}
-for sc in SCEN:
-    for yr in YEARS:
-        cn=CASE[(sc,yr)]; lab=LABEL[(sc,yr)]; p=merged_path(cn)
-        print(f"\n=== {lab} === {os.path.basename(p)}")
+for sc in RUN_SCEN:
+    for yr in RUN_YEARS:
+        cn=CASE[(sc,yr)]; lab=LABEL[(sc,yr)]; p=bgo3_merged_surfo3_path(cn,yr)
+        print(f"\n=== {lab} === {cn}\n    merged: {os.path.basename(p)}")
+        merged_used[lab]=os.path.basename(p)
         times,hourly=regrid_hourly(p)                            # (nt, ncell) ppb, UTC
+        _t=pd.DatetimeIndex(times)
+        assert (_t.year==yr).all() and _t.min()<=pd.Timestamp(f'{yr}-{STARTMMDD}T01') \
+            and _t.max()>=pd.Timestamp(f'{yr}-{ENDMMDD}T23'), f"{lab}: merged spans {_t.min()}..{_t.max()}"
 
         # ---- save hourly gridded (season subset 04-01..10-31 UTC) ----
         tmask=(pd.DatetimeIndex(times)>=pd.Timestamp(f'{yr}-{STARTMMDD}T00')) & \
@@ -190,14 +226,16 @@ for sc in SCEN:
                    {'units':'ppb','long_name':'Hourly surface O3 (UTC), conservatively regridded to 1x1'})},
             coords={'time':htimes,'lat':latc.astype('float64'),'lon':lon_out},
             attrs=prov({'title':f'MUSICAv0 ne30 {lab} hourly surface O3 on 1x1 CONUS grid (UTC)',
-                        'case_name':cn,'scenario':sc,'year':yr,
+                        'case_name':cn,'scenario':sc,'year':yr,'merged_input_file':os.path.basename(p),
                         'time_note':'UTC timestamps; hours over Apr 1 - Oct 31'}))
         dsh['lat'].attrs.update(units='degrees_north',standard_name='latitude')
         dsh['lon'].attrs.update(units='degrees_east',standard_name='longitude')
         fpath=HRLY+f'CONUS1x1_UTChourlySurfO3.{lab}.{yr}-{STARTMMDD}T{yr}-{ENDMMDD}.{AUTHOR_TAG}_c{YMD}.nc'
-        dsh.to_netcdf(fpath,format='NETCDF4',
-                      encoding={'O3':{'zlib':True,'complevel':4,'_FillValue':np.float32(np.nan)}})
-        print("  hourly ->",fpath)
+        if not args.no_write:
+            assert not os.path.exists(fpath), f"{fpath} exists"
+            dsh.to_netcdf(fpath,format='NETCDF4',
+                          encoding={'O3':{'zlib':True,'complevel':4,'_FillValue':np.float32(np.nan)}})
+            print("  hourly ->",fpath)
 
         # ---- MDA8 (use full hourly for local-time completeness; target 04-01..10-31) ----
         datesv1=pd.date_range(f'{yr}-{STARTMMDD}',f'{yr}-{ENDMMDD}',freq='D')
@@ -210,30 +248,66 @@ for sc in SCEN:
         mda8_all[(sc,yr)]=mda8; mda8_dates[yr]=datesv1
         print(f"  MDA8 ppb: min={np.nanmin(mda8):.1f} max={np.nanmax(mda8):.1f} nan%={100*np.isnan(mda8).mean():.0f}")
 
+# ================= regression check against an existing unified file =================
+def _open_unified(path):
+    m=xr.open_dataset(path)
+    return m.assign_coords(scenario=[OLD_NAMES.get(str(v),str(v)) for v in m.scenario.values])
+
+if args.check_against:
+    ref=_open_unified(args.check_against)
+    for (sc,yr),mda8 in mda8_all.items():
+        r=ref['MDA8O3'].sel(scenario=sc,time=str(yr)).values
+        new=to_map(mda8)
+        same=np.array_equal(np.isnan(r),np.isnan(new)) and np.array_equal(r[~np.isnan(r)],new[~np.isnan(new)])
+        dmax=np.nanmax(np.abs(r-new))
+        print(f"CHECK {LABEL[(sc,yr)]} vs {os.path.basename(args.check_against)}: "
+              f"{'IDENTICAL' if same else 'DIFFERENT'} (max |diff| {dmax:.3g} ppb)")
+        assert same, f"{LABEL[(sc,yr)]} differs from {args.check_against}"
+if args.no_write:
+    print("--no-write: done."); sys.exit(0)
+
 # ================= unified MDA8 file =================
+assert RUN_YEARS==YEARS, "the unified file needs both years"
 time_all=pd.DatetimeIndex(np.concatenate([mda8_dates[y].values for y in YEARS]))
 arr=np.full((len(SCEN),len(time_all),nlat,nlon),np.nan,dtype='float32')
+copied=[]
+if args.append_to:
+    base=_open_unified(args.append_to)
+    assert np.array_equal(pd.DatetimeIndex(base.time.values),time_all), "time axis differs from --append-to"
+    assert np.array_equal(base.lat.values,latc) and np.array_equal(base.lon.values,lon_out), "grid differs"
 for si,sc in enumerate(SCEN):
-    blk=0
-    for yr in YEARS:
-        n=len(mda8_dates[yr])
-        arr[si,blk:blk+n]=to_map(mda8_all[(sc,yr)]); blk+=n
+    if sc in RUN_SCEN:
+        blk=0
+        for yr in YEARS:
+            n=len(mda8_dates[yr])
+            arr[si,blk:blk+n]=to_map(mda8_all[(sc,yr)]); blk+=n
+    else:
+        assert args.append_to and sc in base.scenario.values, f"{sc}: not computed and not in --append-to"
+        arr[si]=base['MDA8O3'].sel(scenario=sc).values; copied.append(sc)
+case_names="; ".join(f"{LABEL[k]}: {v}" for k,v in CASE.items())
+extra_src=(f"{', '.join(copied)} copied unchanged from {os.path.basename(args.append_to)} "
+           f"(its 'noBB' renamed noBBCONUS); {', '.join(RUN_SCEN)} computed here" if copied else
+           "all scenarios computed here")
 dsm=xr.Dataset(
     {'MDA8O3':(('scenario','time','lat','lon'),arr,
         {'units':'ppb','long_name':'Daily maximum 8-hour average surface O3 (MDA8), local-time dates',
          'cell_methods':'time: mean (interval: 8 hours) time: maximum within days'})},
     coords={'scenario':np.array(SCEN),'time':time_all,
             'lat':latc.astype('float64'),'lon':lon_out},
-    attrs=prov({'title':'MUSICAv0 ne30 CONUS Background-O3: 1x1 deg daily MDA8 O3, 3 scenarios, 2022-2023 (Apr-Oct)',
+    attrs=prov({'title':f'MUSICAv0 ne30 CONUS Background-O3: 1x1 deg daily MDA8 O3, {len(SCEN)} scenarios, 2022-2023 (Apr-Oct)',
+                'case_names':case_names,
                 'mda8_method':('EPA convention: 8-h rolling mean (>=6 valid hours); daily max over windows '
                                'ending 07-23 local; day valid if >=13 of 17 windows'),
                 'local_time':'per-grid-cell summertime (DST) UTC offset from timezonefinder',
-                'scenario_dim':'BASE, noAnthro, noBB',
+                'scenario_dim':', '.join(SCEN),
+                'scenario_source':extra_src,
+                'merged_input_files':'; '.join(f'{k}: {v}' for k,v in merged_used.items()),
                 'time_note':'428 daily dates = Apr1-Oct31 2022 (214) + Apr1-Oct31 2023 (214)'}))
 dsm['lat'].attrs.update(units='degrees_north',standard_name='latitude')
 dsm['lon'].attrs.update(units='degrees_east',standard_name='longitude')
 dsm['scenario'].attrs.update(long_name='emission scenario')
-fpath=DST+f'MUSICAv0_ne30_CONUS1x1_MDA8O3_BGO3_2022-2023_AprOct_{AUTHOR_TAG}_c{YMD}.nc'
+fpath=DST+bgo3_unified_mda8_name(YMD)
+assert not os.path.exists(fpath), f"{fpath} exists; pass another --cdate or remove it"
 dsm.to_netcdf(fpath,format='NETCDF4',
               encoding={'MDA8O3':{'zlib':True,'complevel':4,'_FillValue':np.float32(np.nan)}})
 print("\nUNIFIED MDA8 ->",fpath)

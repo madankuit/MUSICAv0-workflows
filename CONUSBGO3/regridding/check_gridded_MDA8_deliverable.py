@@ -44,13 +44,9 @@ _ROOT = next(p for p in pathlib.Path(__file__).resolve().parents
 sys.path.insert(0, str(_ROOT))
 import config  # noqa: F401
 from config.paths import (BGO3_FIGURE_DIR, BGO3_YEARS,
-                          bgo3_unified_mda8_glob, ensure_dir)
+                          bgo3_unified_mda8_latest, ensure_dir)
 
-_hits = sorted(glob.glob(bgo3_unified_mda8_glob()))
-if not _hits:
-    raise FileNotFoundError(
-        "No unified MDA8 file found; run Regrid_ne30_surfO3_to_1x1_conserve.py first.")
-MDA8_FILE = _hits[-1]
+MDA8_FILE = bgo3_unified_mda8_latest()    # newest by c<YYYYMMDD> stamp
 FIG = str(ensure_dir(BGO3_FIGURE_DIR / "regrid_trial")) + "/"
 
 CHECK_YEAR = 2022          # year mapped in the per-year figures
@@ -100,7 +96,7 @@ plt.tight_layout()
 plt.savefig(FIG + f"DELIV_BASE_MDA8_seasonmean_{CHECK_YEAR}.png", dpi=130)
 plt.close()
 
-for k in ["noAnthro", "noBB"]:
+for k in [str(v) for v in m.scenario.values if str(v) != "BASE"]:
     d = sm["BASE"] - sm[k]
     vmax = float(np.nanpercentile(np.abs(d), 99))
     fig, ax = plt.subplots(figsize=(8, 5), subplot_kw=proj)

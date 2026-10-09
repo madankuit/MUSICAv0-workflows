@@ -365,43 +365,90 @@ BGO3_FIGURE_DIR = FIGURES_ROOT / 'CESM_analysis' / 'BGO3'
 # Keyed by (scenario, year); the case name is the CESM case directory name.
 BGO3_CASE_PREFIX = 'f.e22.FCnudged.ne30_ne30_mg17.BGO3.'
 
+# The two no-BB scenarios differ in WHERE biomass burning was removed:
+#   noBBCONUS  - QFED zeroed over CONUS land + 80 km buffer only (fires in
+#                Canada/Alaska/Mexico stay on, so BASE - noBBCONUS = US fires).
+#                One run per season; 2023 branches from BASE2022 at 2023-04-01.
+#   noBBGlobal - QFED (and the CMIP6 fire DMS / num_so4_a1) zeroed everywhere.
+#                ONE continuous run 2022-04-01 -> 2023-11-14 (MPI abort after
+#                the window), so both years map to the same case name.
+# (Was 'noBB' before 2026-10-09; files delivered earlier carry noBB2022/2023.)
 BGO3_CASES = {
     ('BASE', 2022): BGO3_CASE_PREFIX + 'BASEY20220401TY20230401',
     ('BASE', 2023): BGO3_CASE_PREFIX + 'BASEY20230401TY20231101',
     ('noAnthro', 2022): BGO3_CASE_PREFIX + 'noANTHROemisCONUS80kmBufferY20220401TY20221101',
     ('noAnthro', 2023): BGO3_CASE_PREFIX + 'noANTHROemisCONUS80kmBufferY20230401TY20231101',
-    ('noBB', 2022): BGO3_CASE_PREFIX + 'noBBemisCONUS80kmBufferY20220401TY20221101',
-    ('noBB', 2023): BGO3_CASE_PREFIX + 'noBBemisCONUS80kmBufferY20230401TY20231101',
+    ('noBBCONUS', 2022): BGO3_CASE_PREFIX + 'noBBemisCONUS80kmBufferY20220401TY20221101',
+    ('noBBCONUS', 2023): BGO3_CASE_PREFIX + 'noBBemisCONUS80kmBufferY20230401TY20231101',
+    ('noBBGlobal', 2022): BGO3_CASE_PREFIX + 'noBBemisGlobalY20220401TY20231231',
+    ('noBBGlobal', 2023): BGO3_CASE_PREFIX + 'noBBemisGlobalY20220401TY20231231',
 }
 
-BGO3_SCENARIOS = ['BASE', 'noAnthro', 'noBB']
+BGO3_SCENARIOS = ['BASE', 'noAnthro', 'noBBCONUS', 'noBBGlobal']
 BGO3_YEARS = [2022, 2023]
 
-# Short label per case, e.g. 'BASE2022'; used in output file names.
-BGO3_CASE_LABELS = {case: f'{scen}{yr}' for (scen, yr), case in BGO3_CASES.items()}
+# Short label per (scenario, year), e.g. 'BASE2022'; used in output file names.
+# Keyed by (scenario, year), not case name: one case can serve two years.
+BGO3_CASE_LABELS = {(scen, yr): f'{scen}{yr}' for (scen, yr) in BGO3_CASES}
 
 # Ozone-season window (MM-DD, inclusive) analysed for every case
 BGO3_START_MMDD = '04-01'
 BGO3_END_MMDD = '10-31'
 
 
-def bgo3_unified_mda8_glob():
-    """Glob pattern for the unified gridded-MDA8 deliverable.
+def bgo3_unified_mda8_name(ymd):
+    """File name of the unified gridded-MDA8 deliverable created on `ymd` (YYYYMMDD)."""
+    return f'MUSICAv0_ne30_CONUS1x1_MDA8O3_2022-2023_AprOct_c{ymd}.nc'
 
-    The provenance tag and creation date are part of the file name, so callers
-    glob and take the newest match rather than assuming an exact name.
+
+def bgo3_unified_mda8_glob():
+    """Glob pattern matching every unified gridded-MDA8 deliverable.
+
+    Also matches the older '..._BGO3_2022-2023_AprOct_<tag>_c<YMD>.nc' name.
     """
     return str(BGO3_REGRIDDED_1DEG_DIR /
-               'MUSICAv0_ne30_CONUS1x1_MDA8O3_BGO3_2022-2023_AprOct_*.nc')
+               'MUSICAv0_ne30_CONUS1x1_MDA8O3_*2022-2023_AprOct_*c[0-9]*.nc')
 
 
-def bgo3_merged_surfo3_glob(casename):
-    """Glob pattern for the merged hourly surface-O3 file of `casename`.
+def bgo3_unified_mda8_latest():
+    """Path of the newest unified gridded-MDA8 deliverable, by its c<YYYYMMDD> stamp.
+
+    Sorting by name would be wrong: the old '_BGO3_' name sorts after the new one.
+    """
+    import glob, re
+    hits = glob.glob(bgo3_unified_mda8_glob())
+    if not hits:
+        raise FileNotFoundError(f'No unified MDA8 file in {BGO3_REGRIDDED_1DEG_DIR}; '
+                                'run Regrid_ne30_surfO3_to_1x1_conserve.py first.')
+    return max(hits, key=lambda h: re.search(r'_c(\d{8})\.nc$', h).group(1))
+
+
+def bgo3_merged_surfo3_glob(casename, year=None):
+    """Glob pattern for the merged hourly surface-O3 file(s) of `casename`.
 
     The date span is part of the file name and differs per case, so callers
-    glob and take the newest match rather than assuming an exact name.
+    glob and take the newest match rather than assuming an exact name. With
+    `year`, only files whose span starts in that year match (needed for the
+    one noBBGlobal case, which has one merged file per year).
     """
-    return str(BGO3_MERGED_SURFO3_DIR / f'{casename}.cam.h2.surflev.O3.*.nc')
+    span = f'{year}-*' if year is not None else '*'
+    return str(BGO3_MERGED_SURFO3_DIR / f'{casename}.cam.h2.surflev.O3.{span}.nc')
+
+
+def bgo3_merged_surfo3_path(casename, year):
+    """Merged surface-O3 file for (`casename`, `year`); newest if several.
+
+    Checks the name really belongs to that case and starts on `year`-04-01.
+    """
+    import glob, os
+    hits = sorted(glob.glob(bgo3_merged_surfo3_glob(casename, year)))
+    if not hits:
+        raise FileNotFoundError(f'No merged surface-O3 file for {casename} {year}; '
+                                'run Merge_h2files_hourlysurfO3.py first.')
+    p = hits[-1]
+    base = os.path.basename(p)
+    assert base.startswith(casename + '.cam.h2.surflev.O3.' + f'{year}-04-01T'), base
+    return p
 
 
 # ============================================================
