@@ -58,10 +58,29 @@ All cases are named `f.e22.FCnudged.ne30_ne30_mg17.BGO3.<scenario>`, archived un
 | **noAnthro2023** | `noANTHROemisCONUS80kmBufferY20230401TY20231101` | 2023 season | CONUS anthropogenic emissions = 0 |
 | **noBB2022** | `noBBemisCONUS80kmBufferY20220401TY20221101` | 2022 season | CONUS biomass-burning emissions = 0 |
 | **noBB2023** | `noBBemisCONUS80kmBufferY20230401TY20231101` | 2023 season | CONUS biomass-burning emissions = 0 |
-| _(aux)_ | `noBBemisGlobalY20220401TY20231231` | 2022-04 → 2023-12 | Global BB removed — extra sensitivity check |
+| _(aux)_ | `noBBemisGlobalY20220401TY20231231` | 2022-04-01 → 2023-11-14 (MPI abort; Apr–Oct of both years complete) | Global BB removed — extra sensitivity check |
 
 "CONUS 80 km buffer" = the lower-48 states polygon (US Census `cb_2018_us_state_500k`)
 dilated by an 80 km buffer; emissions are zeroed only inside this mask.
+
+**What BASE − noBB measures.** Fires outside the mask (Canada, Alaska, Mexico) are on in
+both BASE and noBB, so their O₃ cancels: BASE − noBB is O₃ from **US fires only**. In
+Apr–Oct 2023, Canada + Alaska emitted 53.1 Tg fire CO against 6.4 Tg removed inside the mask
+(2022: 9.2 vs 9.8 Tg). Compared with observation-based smoke O₃, which counts smoke from any
+source, MUSICA comes out low downwind of Canadian fires. See
+[`emissions/`](../emissions/README.md) for the maps and totals.
+
+**noBB (CONUS) vs the global no-BB run.** The only differences:
+
+1. Fire removal: QFED2.6 zeroed everywhere vs only inside the CONUS + 80 km mask.
+2. The CMIP6 fire DMS and `num_so4_a1` inputs are dropped in the global run; noBB (CONUS)
+   keeps them everywhere, without the mask.
+3. 2023 initial state: the global run is one continuous run from 2022-04-01, so 2023 starts
+   with no fire influence. noBB2023 branches from BASE2022 at 2023-04-01.
+
+Grid, nudging/meteorology, all other emissions and the 2022 initial condition are identical,
+and hourly O₃ exists for every Apr–Oct day of both years. BASE − global run also removes
+the hemispheric fire background, about 1 ppb O₃ and 7 ppb CO even at remote sites.
 
 ---
 
