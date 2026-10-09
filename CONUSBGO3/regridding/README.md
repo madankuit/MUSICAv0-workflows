@@ -1,7 +1,7 @@
 # CONUSBGO3/regridding/
 
 Mass-conservative regrid of MUSICAv0 **ne30np4 surface O3** to a regular **1°×1°
-CONUS grid**, and derivation of **daily MDA8 O3**, for the BASE / noAnthro / noBB
+CONUS grid**, and derivation of **daily MDA8 O3**, for the BASE / noAnthro / noBBCONUS / noBBGlobal
 experiments (2022 & 2023, Apr–Oct). Companion to [../postprocessing/](../postprocessing/)
 (which extracts the same quantities at point monitors).
 
@@ -34,14 +34,14 @@ UTC offset via `timezonefinder`), **then** the EPA MDA8 is computed — 8-h roll
 | Script | Env | Purpose |
 |--------|-----|---------|
 | `gen_ne30_to_1x1_weights.py` | `rootxesmf` (esmpy 8.7) | One-time: generate + verify the ne30np4→1° conservative weight file. |
-| `Regrid_ne30_surfO3_to_1x1_conserve.py` | `base` | Regrid the 6 merged surface-O3 files → hourly gridded + unified MDA8. Weight application is a sparse mat-mul (no esmpy needed). |
-| `check_gridded_MDA8_deliverable.py` | `base` | **QC before sharing**: per-(scenario, year) day counts and NaN fractions, the Oct-31 local-time edge case, plus single-year BASE / BASE−noAnthro / BASE−noBB maps. |
-| `plot_gridded_MDA8_scenarios.py` | `base` | 3-panel CONUS figure from the unified MDA8: (a) BASE, (b) BASE−noAnthro, (c) BASE−noBB, seasonal-mean over Apr–Oct 2022–2023. Independent diverging scales. |
-| `plot_gridded_MDA8_3scenarios.py` | `base` | 3-panel CONUS figure of BASE / noAnthro / noBB as **absolute** seasonal means on one shared colour scale — the scenarios side by side rather than their differences. |
+| `Regrid_ne30_surfO3_to_1x1_conserve.py` | `base` | Regrid the merged surface-O3 files → hourly gridded + unified MDA8. Weight application is a sparse mat-mul (no esmpy needed). `--scenarios` computes a subset; `--append-to <file>` copies the other scenarios from an existing unified file; `--check-against <file> --no-write` is a regression test; `--cdate` sets the file stamp. |
+| `check_gridded_MDA8_deliverable.py` | `base` | **QC before sharing**: per-(scenario, year) day counts and NaN fractions, the Oct-31 local-time edge case, plus single-year BASE and BASE − each perturbation maps. |
+| `plot_gridded_MDA8_scenarios.py` | `base` | 4-panel CONUS figure from the unified MDA8: (a) BASE, (b) BASE−noAnthro, (c) BASE−noBBCONUS, (d) BASE−noBBGlobal, seasonal-mean over Apr–Oct 2022–2023. (b) has its own diverging scale; (c) and (d) share one. |
+| `plot_gridded_MDA8_3scenarios.py` | `base` | Every scenario as **absolute** seasonal means on one shared colour scale — the scenarios side by side rather than their differences. |
 
 Run order: `gen_…_weights` (once) → `Regrid_…_conserve` → `check_…_deliverable`
-→ either plotting script. All three consumers locate the unified MDA8 file by
-glob (`bgo3_unified_mda8_glob()`), so none hard-codes its name or tag.
+→ either plotting script. All three consumers take the newest unified MDA8 file by
+its `c<YYYYMMDD>` stamp (`bgo3_unified_mda8_latest()`), so none hard-codes its name.
 
 [`archive/`](archive/) holds the two single-day method-development trials — the
 conservative one that was adopted and the linear-interpolation one that was
@@ -49,16 +49,18 @@ rejected. See its README for why.
 
 ## Outputs (`BGO3_REGRIDDED_1DEG_DIR`)
 
-- `hourly/CONUS1x1_UTChourlySurfO3.<label>.<start>T<end>.<tag>_c<YMD>.nc` — 6 files,
-  hourly surface O3 `(time, lat, lon)` in **ppb**, **UTC** timestamps.
-- `MUSICAv0_ne30_CONUS1x1_MDA8O3_BGO3_2022-2023_AprOct_<tag>_c<YMD>.nc` — **the shareable
-  product**: `MDA8O3(scenario, time, lat, lon)` in ppb; `scenario ∈ {BASE, noAnthro, noBB}`,
+- `hourly/CONUS1x1_UTChourlySurfO3.<label>.<start>T<end>.<tag>_c<YMD>.nc` — one per
+  (scenario, year), hourly surface O3 `(time, lat, lon)` in **ppb**, **UTC** timestamps.
+- `MUSICAv0_ne30_CONUS1x1_MDA8O3_2022-2023_AprOct_c<YMD>.nc` — **the shareable
+  product**: `MDA8O3(scenario, time, lat, lon)` in ppb;
+  `scenario ∈ {BASE, noAnthro, noBBCONUS, noBBGlobal}`,
   `time` = 428 daily local-time dates (Apr–Oct 2022 + Apr–Oct 2023), grid lat 24–50 °N,
   lon −125…−66 °W.
 
 `<tag>` is `AUTHOR_TAG` from `config/paths.py` (defaults to the runtime `$USER`;
-set `MUSICA_ENV_AUTHOR_TAG` to pin it). The plotting script locates the unified
-file by glob, so it finds it whatever tag it carries.
+set `MUSICA_ENV_AUTHOR_TAG` to pin it). The first unified file (Jul 2026) was named
+`MUSICAv0_ne30_CONUS1x1_MDA8O3_BGO3_2022-2023_AprOct_<tag>_c20260708.nc` with three
+scenarios (`noBB` = today's noBBCONUS); `bgo3_unified_mda8_glob()` matches both names.
 
 Every file carries provenance in its global attributes (`processed_by`, `processing_date`,
 `machine`, `source`, `horizontal_regrid`, `regrid_weight_file`, `mda8_method`, `local_time`,
@@ -90,16 +92,16 @@ Two behaviours to expect, neither a regrid artefact:
 All figures land in `Figures/CESM_analysis/BGO3/regrid_trial/`.
 
 `plot_gridded_MDA8_scenarios.py` → `MDA8_BASE_and_diffs_seasonmean_2022-2023.png`:
-three CONUS panels — **(a) BASE**, **(b) BASE − noAnthro**, **(c) BASE − noBB** — as the
-seasonal-mean MDA8 over Apr–Oct 2022–2023. Panels (b)/(c) use independent diverging scales
-because the two emission sectors differ enough in magnitude that a shared
-scale renders one of them flat.
+CONUS panels — **(a) BASE**, **(b) BASE − noAnthro**, **(c) BASE − noBBCONUS**,
+**(d) BASE − noBBGlobal** — as the seasonal-mean MDA8 over Apr–Oct 2022–2023. Panel (b)
+has its own diverging scale because the anthropogenic effect is much larger; (c) and (d)
+share one so US-fire and all-fire O₃ compare directly.
 
 `plot_gridded_MDA8_3scenarios.py` → `MDA8_3scenarios_seasonmean_2022-2023.png`:
-the same period, but **BASE / noAnthro / noBB as absolute fields** on a single shared
-colour scale (2nd–98th percentile of all three together), so the scenarios can be read
+the same period, but **every scenario as an absolute field** on a single shared
+colour scale (2nd–98th percentile of all of them together), so the scenarios can be read
 against one another directly instead of through their differences.
 
 `check_gridded_MDA8_deliverable.py` → `DELIV_BASE_MDA8_seasonmean_<year>.png` and
-`DELIV_BASE_minus_{noAnthro,noBB}_MDA8_seasonmean_<year>.png`: single-year versions used
+`DELIV_BASE_minus_{noAnthro,noBBCONUS,noBBGlobal}_MDA8_seasonmean_<year>.png`: single-year versions used
 as a sanity check on the deliverable, alongside the coverage report it prints.

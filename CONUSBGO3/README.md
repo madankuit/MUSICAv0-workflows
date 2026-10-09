@@ -13,10 +13,11 @@ Read it as a template. The pieces that generalise are:
 | convert UTC → local time, then compute MDA8 | any EPA-convention ozone metric |
 | mass-conservative SE → regular lat/lon regrid | putting SE output on a grid for comparison |
 
-The specific experiment configured here is a **BASE** run plus two perturbations
-with anthropogenic (**noAnthro**) or biomass-burning (**noBB**) emissions zeroed
-over CONUS land, for **April–October 2022 and 2023**; `BASE − perturbation`
-isolates the O₃ attributable to the zeroed sector. Swap the case list in
+The specific experiment configured here is a **BASE** run plus perturbations with
+anthropogenic (**noAnthro**) or biomass-burning (**noBBCONUS**) emissions zeroed over
+CONUS land, and biomass burning zeroed globally (**noBBGlobal**), for
+**April–October 2022 and 2023**; `BASE − perturbation` isolates the O₃ attributable
+to the zeroed sector. Swap the case list in
 `config/paths.py` (`BGO3_CASES`) to point the same pipeline at other runs.
 
 This directory documents the workflow and the code. Results and their
@@ -56,27 +57,30 @@ All cases are named `f.e22.FCnudged.ne30_ne30_mg17.BGO3.<scenario>`, archived un
 | **BASE2023** | `BASEY20230401TY20231101` | 2023-04-01 → 2023-11-01 | Baseline, all emissions on |
 | **noAnthro2022** | `noANTHROemisCONUS80kmBufferY20220401TY20221101` | 2022 season | CONUS anthropogenic emissions = 0 |
 | **noAnthro2023** | `noANTHROemisCONUS80kmBufferY20230401TY20231101` | 2023 season | CONUS anthropogenic emissions = 0 |
-| **noBB2022** | `noBBemisCONUS80kmBufferY20220401TY20221101` | 2022 season | CONUS biomass-burning emissions = 0 |
-| **noBB2023** | `noBBemisCONUS80kmBufferY20230401TY20231101` | 2023 season | CONUS biomass-burning emissions = 0 |
-| _(aux)_ | `noBBemisGlobalY20220401TY20231231` | 2022-04-01 → 2023-11-14 (MPI abort; Apr–Oct of both years complete) | Global BB removed — extra sensitivity check |
+| **noBBCONUS2022** | `noBBemisCONUS80kmBufferY20220401TY20221101` | 2022 season | CONUS biomass-burning emissions = 0 |
+| **noBBCONUS2023** | `noBBemisCONUS80kmBufferY20230401TY20231101` | 2023 season | CONUS biomass-burning emissions = 0 |
+| **noBBGlobal2022**, **noBBGlobal2023** | `noBBemisGlobalY20220401TY20231231` (one run, both seasons) | 2022-04-01 → 2023-11-14 (MPI abort after the window; Apr–Oct of both years complete) | Biomass-burning emissions = 0 globally |
+
+noBBCONUS was labelled **noBB** until Oct 2026; files delivered before then
+(`…noBB2022…`, scenario `noBB`) are the same simulations.
 
 "CONUS 80 km buffer" = the lower-48 states polygon (US Census `cb_2018_us_state_500k`)
 dilated by an 80 km buffer; emissions are zeroed only inside this mask.
 
-**What BASE − noBB measures.** Fires outside the mask (Canada, Alaska, Mexico) are on in
-both BASE and noBB, so their O₃ cancels: BASE − noBB is O₃ from **US fires only**. In
+**What BASE − noBBCONUS measures.** Fires outside the mask (Canada, Alaska, Mexico) are on in
+both BASE and noBBCONUS, so their O₃ cancels: BASE − noBBCONUS is O₃ from **US fires only**. In
 Apr–Oct 2023, Canada + Alaska emitted 53.1 Tg fire CO against 6.4 Tg removed inside the mask
 (2022: 9.2 vs 9.8 Tg). Compared with observation-based smoke O₃, which counts smoke from any
 source, MUSICA comes out low downwind of Canadian fires. See
 [`emissions/`](../emissions/README.md) for the maps and totals.
 
-**noBB (CONUS) vs the global no-BB run.** The only differences:
+**noBBCONUS vs noBBGlobal.** The only differences:
 
 1. Fire removal: QFED2.6 zeroed everywhere vs only inside the CONUS + 80 km mask.
-2. The CMIP6 fire DMS and `num_so4_a1` inputs are dropped in the global run; noBB (CONUS)
+2. The CMIP6 fire DMS and `num_so4_a1` inputs are dropped in the global run; noBBCONUS
    keeps them everywhere, without the mask.
 3. 2023 initial state: the global run is one continuous run from 2022-04-01, so 2023 starts
-   with no fire influence. noBB2023 branches from BASE2022 at 2023-04-01.
+   with no fire influence. noBBCONUS2023 branches from BASE2022 at 2023-04-01.
 
 Grid, nudging/meteorology, all other emissions and the 2022 initial condition are identical,
 and hourly O₃ exists for every Apr–Oct day of both years. BASE − global run also removes
@@ -113,10 +117,10 @@ CONUSBGO3/
 │
 ├── regridding/                # ne30 → 1° mass-conservative CONUS grid + gridded MDA8
 │   ├── gen_ne30_to_1x1_weights.py             # one-time: ESMF conservative weights (rootxesmf env)
-│   ├── Regrid_ne30_surfO3_to_1x1_conserve.py  # ★ regrid 6 cases → hourly gridded + unified MDA8
+│   ├── Regrid_ne30_surfO3_to_1x1_conserve.py  # ★ regrid cases → hourly gridded + unified MDA8
 │   ├── check_gridded_MDA8_deliverable.py      # QC: coverage/NaN report + single-year maps
-│   ├── plot_gridded_MDA8_scenarios.py         # BASE + (BASE−noAnthro)/(BASE−noBB) figure
-│   ├── plot_gridded_MDA8_3scenarios.py        # BASE/noAnthro/noBB absolute, shared scale
+│   ├── plot_gridded_MDA8_scenarios.py         # BASE + BASE−{noAnthro,noBBCONUS,noBBGlobal} figure
+│   ├── plot_gridded_MDA8_3scenarios.py        # every scenario absolute, shared scale
 │   ├── archive/                               # single-day method trials (conservative vs linear)
 │   └── README.md
 │
@@ -150,7 +154,8 @@ CONUSBGO3/
     `~/Scripts/CESM_analysis/functions/` directory on Svante, which was deleted
     on 2026-08-31.)
 - `EditANT6.2files.ipynb` strips residual NaNs from the CAMS-GLOB-ANT v6.2 `ne30np4` files.
-- Run **noAnthro** and **noBB** for each season with the matching namelists.
+- Run **noAnthro** and **noBBCONUS** for each season, and **noBBGlobal** once across
+  both seasons, with the matching namelists.
 
 ### 3. Postprocessing — `postprocessing/`  (run in order)
 1. **`GetMatched_ne30_GivenMonitors_ColumnIndex.py`**
@@ -178,9 +183,15 @@ Spatial companion to step 3: the same surface O₃ / MDA8, but for the **entire 
 regular **1°×1°** grid via **mass-conservative** ESMF remap (ne30np4 → 1° FV). See
 [regridding/README.md](regridding/README.md). Products land in
 `BGO3_REGRIDDED_1DEG_DIR`:
-- 6 per-case hourly gridded surface O₃ files (`hourly/`, UTC, ppb);
-- one **unified** daily-MDA8 file `MDA8O3(scenario={BASE,noAnthro,noBB}, time, lat, lon)`
-  spanning Apr–Oct 2022 + 2023 — the shareable product.
+- one hourly gridded surface O₃ file per (scenario, year) (`hourly/`, UTC, ppb);
+- one **unified** daily-MDA8 file
+  `MDA8O3(scenario={BASE,noAnthro,noBBCONUS,noBBGlobal}, time, lat, lon)` spanning
+  Apr–Oct 2022 + 2023 — the shareable product
+  (`MUSICAv0_ne30_CONUS1x1_MDA8O3_2022-2023_AprOct_c<YMD>.nc`).
+
+noBBGlobal was added in Oct 2026 without recomputing the other three scenarios: see
+[`jobs/submit_noBBGlobal.sh`](jobs/submit_noBBGlobal.sh) (merge → points; a BASE2022
+regression check against the delivered file; regrid with `--append-to`).
 
 The gridded MDA8 uses the identical local-time-adjusted EPA method as step 3, and
 should be cross-checked against the point deliverable by sampling the nearest cell
