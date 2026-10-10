@@ -94,7 +94,8 @@ def get_site_index_exact(site_lat, site_lon, ds_scrip, ncand=30):
 # Specified input
 MonitorInfo_filepath = BGO3_MONITOR_LIST
 SCRIP_ne30 = str(EXP['scrip'])          # SE grid of this experiment (name kept from v1.0)
-Savefile_path = EXP['colidx']
+# the legacy ne30 file stays untouched; exact ne30 matches go to their own file
+Savefile_path = EXP['colidx_exact'] if (MATCH == 'exact' and 'colidx_exact' in EXP) else EXP['colidx']
 ensure_dir(Savefile_path.parent)
 
 #================================================================================================

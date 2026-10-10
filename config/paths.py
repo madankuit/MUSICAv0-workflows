@@ -479,7 +479,9 @@ BGO3_EXPERIMENTS = {
         label_prefix='',                      # file labels e.g. BASE2022
         cases=BGO3_CASES, scenarios=BGO3_SCENARIOS, years=BGO3_YEARS,
         merged_dir=BGO3_MERGED_SURFO3_DIR, points_dir=BGO3_GIVEN_MONITORS_DIR,
-        colidx=BGO3_MONITOR_COLIDX,
+        colidx=BGO3_MONITOR_COLIDX,           # legacy get_site_index; delivered point files
+        # exact point-in-polygon (Oct 2026): also matches the 22 edge sites legacy missed
+        colidx_exact=BGO3_MONITOR_INFO_DIR / 'MatchedMonitors_ne30_ColIdx_exact.csv',
         regrid_dir=BGO3_REGRIDDED_1DEG_DIR, hourly_dir=BGO3_REGRIDDED_1DEG_HOURLY_DIR,
         targets={'1x1': (FV_GRIDINFO_1X1, WEIGHTS_NE30_TO_1X1, 'CONUS1x1')},
         unified_stem='MUSICAv0_ne30_CONUS1x1_MDA8O3_2022-2023_AprOct',

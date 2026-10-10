@@ -63,6 +63,11 @@ MODIFICATION HISTORY:
       (column indices from GetMatched_..._ColumnIndex.py --experiment ne0CONUS)
 
     python Extract_givenmonitorO3_hourly_dailyMDA8_toNetCDF.py --experiment ne0CONUS
+    - --match exact uses the exact point-in-polygon column indices (ne30: the
+      _exact file); --file-tag goes after 'GivenMonitors' in output names so new
+      files never overwrite delivered ones
+
+    python Extract_givenmonitorO3_hourly_dailyMDA8_toNetCDF.py --match exact --file-tag All803
 """
 #================================================================================================
 #================================================================================================
@@ -92,6 +97,9 @@ import argparse
 ap = argparse.ArgumentParser()
 ap.add_argument('--experiment', default='ne30', choices=list(BGO3_EXPERIMENTS))
 ap.add_argument('--scenarios', nargs='+', default=None)
+ap.add_argument('--match', choices=['legacy', 'exact'], default=None,
+                help='column-index file: legacy (ne30 default, as delivered) or exact')
+ap.add_argument('--file-tag', default='', help="inserted after 'GivenMonitors' in output names")
 args = ap.parse_args()
 EXP = BGO3_EXPERIMENTS[args.experiment]
 CASES = EXP['cases']; LABELS = {k: f"{EXP['label_prefix']}{k[0]}{k[1]}" for k in CASES}
@@ -99,7 +107,10 @@ args.scenarios = args.scenarios or list(EXP['scenarios'])
 assert set(args.scenarios) <= set(EXP['scenarios']), args.scenarios
 
 MonitorInfo_filepath = BGO3_MONITOR_LIST
-Monitorne30Idx_filepath = EXP['colidx']      # column indices on this experiment's grid
+# column indices on this experiment's grid
+_match = args.match or ('legacy' if args.experiment == 'ne30' else 'exact')
+Monitorne30Idx_filepath = EXP['colidx_exact'] if (_match == 'exact' and 'colidx_exact' in EXP) else EXP['colidx']
+print("column indices:", Monitorne30Idx_filepath)
 
 # Variable Resolution Grid (ships with the repo)
 SCRIP_ne30 = str(SCRIP_NE30NP4)
@@ -350,11 +361,11 @@ def casei_build_and_save_all_sites(scen, yr, MonitorIdx_df, startMMDD, endMMDD, 
 
     allMonitors_MDA8O3_filename = (
         f"{Output_diri}LocalTimeMDA8O3.{label}."
-        f"GivenMonitors.{startfileDate}T{endfileDate}.nc"
+        f"GivenMonitors{args.file_tag}.{startfileDate}T{endfileDate}.nc"
     )
     allMonitors_HourlyO3_filename = (
         f"{Output_diri}UTChourlyO3.{label}."
-        f"GivenMonitors.{startfileDate}T{endfileDate}.nc"
+        f"GivenMonitors{args.file_tag}.{startfileDate}T{endfileDate}.nc"
     )
 
     ds_all_mda8.to_netcdf(allMonitors_MDA8O3_filename, format="NETCDF4", encoding=enc_mda8)
