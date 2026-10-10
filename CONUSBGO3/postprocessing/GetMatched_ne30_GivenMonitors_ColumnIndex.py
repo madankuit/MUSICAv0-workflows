@@ -11,6 +11,11 @@ MODIFICATION HISTORY:
     - Initial version
     31 Aug 2026: VERSION 1.1
     - Paths moved to config/paths.py; SCRIP grid now read from the repo
+    9 Oct 2026: VERSION 1.2
+    - --experiment ne0CONUS matches the same monitors on the ne0CONUSne30x8 grid;
+      prints the monitor-to-column-centre distance as a sanity check
+
+    python GetMatched_ne30_GivenMonitors_ColumnIndex.py --experiment ne0CONUS
 '''
 #================================================================================================
 # ### functions import ###
@@ -46,20 +51,22 @@ sys.path.insert(0, str(_ROOT))
 import config  # noqa: F401  - also puts functions/ on sys.path
 from config.paths import (
     BGO3_MONITOR_LIST,
-    BGO3_MONITOR_COLIDX,
-    BGO3_CASES,
-    SCRIP_NE30NP4,
+    BGO3_EXPERIMENTS,
     case_hist_dir,
     ensure_dir,
 )
+import argparse
+ap = argparse.ArgumentParser()
+ap.add_argument('--experiment', default='ne30', choices=list(BGO3_EXPERIMENTS))
+EXP = BGO3_EXPERIMENTS[ap.parse_args().experiment]
 
 # repo-local shared functions (functions/ is on sys.path via `import config`)
 from SE_analysis import get_site_index
 
 # Specified input
 MonitorInfo_filepath = BGO3_MONITOR_LIST
-SCRIP_ne30 = str(SCRIP_NE30NP4)
-Savefile_path = BGO3_MONITOR_COLIDX
+SCRIP_ne30 = str(EXP['scrip'])          # SE grid of this experiment (name kept from v1.0)
+Savefile_path = EXP['colidx']
 ensure_dir(Savefile_path.parent)
 
 #================================================================================================
@@ -109,14 +116,15 @@ unique_monitor_locations = MonitorInfo_df[['AQS_code', 'lat', 'lon']].drop_dupli
 #================================================================================================
 ## Get an example MUSICA output file
 lev_idx = -1 # for surface
-# Any h2 file of the BASE 2022 case serves to read the ne30 lat/lon coordinates.
-_ex_case = BGO3_CASES[('BASE', 2022)]
+# Any h2 file of the experiment's first BASE case serves to read the lat/lon coordinates.
+_ex_case = EXP['cases'][('BASE', EXP['years'][0])]
 _ex_hist = case_hist_dir(_ex_case)
 _ex_files = sorted(glob.glob(str(_ex_hist / '*.cam.h2.*.nc')))
 if not _ex_files:
     raise FileNotFoundError(f'No h2 history files found under {_ex_hist}')
 ex_h2_filepath = _ex_files[0]
 ds_ne30 = xr.open_dataset(ex_h2_filepath).isel(lev=lev_idx,ilev=lev_idx,time=10) 
+assert ds_ne30.sizes['ncol'] == EXP['ncol'], (ex_h2_filepath, ds_ne30.sizes['ncol'])
 
 #================================================================================================
 # Get the MUSICA column index for hourly dataframe
@@ -158,6 +166,12 @@ unique_monitor_locations['Approx_MUSICA0_lat'] = ls_Model_lati
 unique_monitor_locations['Approx_MUSICA0_lon'] = ls_Model_loni
 
 # Save the DataFrame to a CSV file
+_ok = unique_monitor_locations['MUSICA0_colIndex'] != 'Find None'
+_m = unique_monitor_locations[_ok]
+_dlon = (((_m['Approx_MUSICA0_lon'].astype(float) - _m['lon'] + 180) % 360) - 180) * np.cos(np.deg2rad(_m['lat']))
+_d_km = 111.2 * np.hypot(_m['Approx_MUSICA0_lat'].astype(float) - _m['lat'], _dlon)
+print(f"{EXP['grid']}: matched {_ok.sum()}/{len(_ok)} monitors; monitor-to-column-centre distance "
+      f"median {_d_km.median():.1f} km, p99 {_d_km.quantile(.99):.1f} km, max {_d_km.max():.1f} km")
 unique_monitor_locations.to_csv(Savefile_path, index=False)
 
 print("Saved to:",Savefile_path)

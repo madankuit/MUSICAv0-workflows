@@ -59,6 +59,10 @@ MODIFICATION HISTORY:
     - --scenarios to process a subset; case/scenario/source file in attrs
 
     python Extract_givenmonitorO3_hourly_dailyMDA8_toNetCDF.py --scenarios noBBGlobal
+    - --experiment ne0CONUS: same monitors and MDA8 code on the ne0CONUSne30x8 runs
+      (column indices from GetMatched_..._ColumnIndex.py --experiment ne0CONUS)
+
+    python Extract_givenmonitorO3_hourly_dailyMDA8_toNetCDF.py --experiment ne0CONUS
 """
 #================================================================================================
 #================================================================================================
@@ -73,6 +77,7 @@ from config.paths import (
     BGO3_CASES,
     BGO3_CASE_LABELS,
     BGO3_SCENARIOS,
+    BGO3_EXPERIMENTS,
     BGO3_MONITOR_LIST,
     BGO3_MONITOR_COLIDX,
     BGO3_GIVEN_MONITORS_DIR,
@@ -85,12 +90,16 @@ from config.paths import (
 
 import argparse
 ap = argparse.ArgumentParser()
-ap.add_argument('--scenarios', nargs='+', default=list(BGO3_SCENARIOS),
-                choices=list(BGO3_SCENARIOS))
+ap.add_argument('--experiment', default='ne30', choices=list(BGO3_EXPERIMENTS))
+ap.add_argument('--scenarios', nargs='+', default=None)
 args = ap.parse_args()
+EXP = BGO3_EXPERIMENTS[args.experiment]
+CASES = EXP['cases']; LABELS = {k: f"{EXP['label_prefix']}{k[0]}{k[1]}" for k in CASES}
+args.scenarios = args.scenarios or list(EXP['scenarios'])
+assert set(args.scenarios) <= set(EXP['scenarios']), args.scenarios
 
 MonitorInfo_filepath = BGO3_MONITOR_LIST
-Monitorne30Idx_filepath = BGO3_MONITOR_COLIDX
+Monitorne30Idx_filepath = EXP['colidx']      # column indices on this experiment's grid
 
 # Variable Resolution Grid (ships with the repo)
 SCRIP_ne30 = str(SCRIP_NE30NP4)
@@ -99,7 +108,7 @@ SCRIP_ne30 = str(SCRIP_NE30NP4)
 ### Specified input:
 # (scenario, year) pairs to process; default is every CONUSBGO3 case.
 # The merged file is resolved per (case, year) by bgo3_merged_surfo3_path.
-run_ls = [k for k in BGO3_CASES if k[0] in args.scenarios]
+run_ls = [k for k in CASES if k[0] in args.scenarios]
 
 startMMDD = BGO3_START_MMDD
 endMMDD = BGO3_END_MMDD
@@ -216,8 +225,8 @@ def casei_build_and_save_all_sites(scen, yr, MonitorIdx_df, startMMDD, endMMDD, 
     import numpy as np
 
     # ---- Build local-date range (inclusive) for target year ----
-    casename = BGO3_CASES[(scen, yr)]
-    label = BGO3_CASE_LABELS[(scen, yr)]
+    casename = CASES[(scen, yr)]
+    label = LABELS[(scen, yr)]
     YYYY = str(yr)
     startfileDate = f"{YYYY}-{startMMDD}"  # 'YYYY-MM-DD'
     endfileDate   = f"{YYYY}-{endMMDD}"    # 'YYYY-MM-DD'
@@ -228,9 +237,10 @@ def casei_build_and_save_all_sites(scen, yr, MonitorIdx_df, startMMDD, endMMDD, 
     print("First few v1:", datesv1[:5])
 
     # ---- Open merged hourly surface O3 (UTC timestamps) ----
-    HourlyFilePath = bgo3_merged_surfo3_path(casename, yr)
+    HourlyFilePath = bgo3_merged_surfo3_path(casename, yr, EXP['merged_dir'])
     print(f"{label}: {casename}\n  merged file: {HourlyFilePath}")
     HourlyO3_da = xr.open_dataset(HourlyFilePath)["O3"]  # expects dims incl. 'time' and 'ncol'
+    assert HourlyO3_da.sizes["ncol"] == EXP["ncol"], (HourlyFilePath, HourlyO3_da.sizes["ncol"])
     _t = pd.DatetimeIndex(HourlyO3_da.time.values)
     assert (_t.year == yr).all() and _t.min() <= pd.Timestamp(f"{startfileDate} 01:00") \
         and _t.max() >= pd.Timestamp(f"{endfileDate} 23:00"), \
@@ -305,7 +315,8 @@ def casei_build_and_save_all_sites(scen, yr, MonitorIdx_df, startMMDD, endMMDD, 
         ds["lon"].attrs.update({"units": "degrees_east",  "standard_name": "longitude"})
         ds["AQS_code"].attrs.update({"long_name": "AQS site identifier"})
 
-    _src = {"case_name": casename, "scenario": scen, "year": yr,
+    _src = {"case_name": casename, "scenario": scen, "year": yr, "grid": EXP["grid"],
+            "model": EXP["model"], "column_index_file": os.path.basename(str(Monitorne30Idx_filepath)),
             "merged_input_file": os.path.basename(HourlyFilePath)}
     ds_all_mda8.attrs.update(_src)
     ds_all_hourly.attrs.update(_src)
@@ -357,6 +368,6 @@ def casei_build_and_save_all_sites(scen, yr, MonitorIdx_df, startMMDD, endMMDD, 
 for scen, yr in run_ls:
     print(f'Processing {scen} {yr}')
     #------------------------------
-    saveto_diri = str(ensure_dir(BGO3_GIVEN_MONITORS_DIR)) + '/'
+    saveto_diri = str(ensure_dir(EXP['points_dir'])) + '/'
     casei_build_and_save_all_sites(scen, yr, MonitorIdx_df, startMMDD, endMMDD, saveto_diri)
 print("Done!")

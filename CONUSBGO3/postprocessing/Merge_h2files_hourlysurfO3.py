@@ -14,8 +14,12 @@ MODIFICATION HISTORY:
       noBBGlobal case is a single run spanning both seasons
     - --scenarios to merge a subset; existing merged files are not redone
     - Checks: every file belongs to the case, no missing day, hourly time axis
+    - --experiment ne0CONUS for the ne0CONUSne30x8 runs; samples stamped before
+      Apr 1 01:00 are dropped so every case starts on the same hour (ne0 BASE
+      files start at 00:00, everything else at 01:00; all stamps = end of hour)
 
     python Merge_h2files_hourlysurfO3.py --scenarios noBBGlobal
+    python Merge_h2files_hourlysurfO3.py --experiment ne0CONUS
 """
 
 # for hourly
@@ -64,6 +68,7 @@ from config.paths import (
     BGO3_CASES,
     BGO3_CASE_LABELS,
     BGO3_SCENARIOS,
+    BGO3_EXPERIMENTS,
     bgo3_merged_surfo3_glob,
     BGO3_MERGED_SURFO3_DIR,
     case_hist_dir,
@@ -72,14 +77,19 @@ from config.paths import (
 
 import argparse
 ap = argparse.ArgumentParser()
-ap.add_argument('--scenarios', nargs='+', default=list(BGO3_SCENARIOS),
-                choices=list(BGO3_SCENARIOS))
+ap.add_argument('--experiment', default='ne30', choices=list(BGO3_EXPERIMENTS))
+ap.add_argument('--scenarios', nargs='+', default=None)
 args = ap.parse_args()
+EXP = BGO3_EXPERIMENTS[args.experiment]
+CASES = EXP['cases']; LABELS = {k: f'{k[0]}{k[1]}' for k in CASES}
+MERGED_DIR = EXP['merged_dir']
+args.scenarios = args.scenarios or list(EXP['scenarios'])
+assert set(args.scenarios) <= set(EXP['scenarios']), args.scenarios
 
 varlist = ['O3']
 lev_idx = -1
 
-ensure_dir(BGO3_MERGED_SURFO3_DIR)
+ensure_dir(MERGED_DIR)
 
 #================================================================================================
 ### read in hourly mean
@@ -90,10 +100,10 @@ def file_date(fname):
     return pd.Timestamp(f"{m.group(1)}-{m.group(2)}-{m.group(3)}") if m else None
 
 # Writing hourly data for the surface layer, one file per (case, year)
-for (scen, yr), casename in BGO3_CASES.items():
+for (scen, yr), casename in CASES.items():
     if scen not in args.scenarios:
         continue
-    label = BGO3_CASE_LABELS[(scen, yr)]
+    label = LABELS[(scen, yr)]
     print(f"\n=== {label}: {casename}")
 
     t0 = pd.Timestamp(f"{yr}-{startMMDD[:2]}-{startMMDD[2:]}")
@@ -114,20 +124,22 @@ for (scen, yr), casename in BGO3_CASES.items():
 
     startfileDate = days.min().strftime('%Y-%m-%d')
     endfileDate = days.max().strftime('%Y-%m-%d')
-    HourlyFilePath = str(BGO3_MERGED_SURFO3_DIR /
+    HourlyFilePath = str(MERGED_DIR /
                          f'{casename}.cam.h2.surflev.O3.{startfileDate}T{endfileDate}.nc')
-    if glob.glob(bgo3_merged_surfo3_glob(casename, yr)):
-        print('Exists, not redone:', glob.glob(bgo3_merged_surfo3_glob(casename, yr)))
+    if glob.glob(bgo3_merged_surfo3_glob(casename, yr, MERGED_DIR)):
+        print('Exists, not redone:', glob.glob(bgo3_merged_surfo3_glob(casename, yr, MERGED_DIR)))
         continue
 
     # read in
     ds = xr.open_mfdataset(RunFiles, combine='nested', concat_dim=['time'], coords='minimal',
                            compat='override', use_cftime=False)
+    # common first stamp across cases: Apr 1 01:00 (= mean over 00:00-01:00)
+    ds = ds.sel(time=ds.time >= np.datetime64(f"{yr}-{startMMDD[:2]}-{startMMDD[2:]}T01:00"))
     dt = np.diff(ds.time.values).astype('timedelta64[m]').astype(int)
     assert (dt == 60).all(), f"{label}: time axis not hourly (steps {sorted(set(dt))})"
     # surface
     surf_da = ds.isel(lev=lev_idx, ilev=lev_idx)['O3']
-    surf_da.attrs.update(case_name=casename, scenario=scen, year=yr,
+    surf_da.attrs.update(case_name=casename, scenario=scen, year=yr, grid=EXP['grid'],
                          source_files=f"{os.path.basename(RunFiles[0])} .. {os.path.basename(RunFiles[-1])}")
 
     # save to .nc

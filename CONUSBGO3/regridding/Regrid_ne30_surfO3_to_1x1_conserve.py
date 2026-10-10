@@ -37,6 +37,12 @@ MODIFICATION HISTORY:
     # regression: recompute BASE 2022 and require equality with the old file
     python Regrid_ne30_surfO3_to_1x1_conserve.py --scenarios BASE --years 2022 \
         --check-against <old unified file> --no-write
+    - --experiment ne0CONUS (ne0CONUSne30x8 runs) and --target 1x1 | 0.15: the SE
+      grid, weights, destination grid and output names come from
+      BGO3_EXPERIMENTS; the MDA8 code is unchanged
+
+    python Regrid_ne30_surfO3_to_1x1_conserve.py --experiment ne0CONUS --target 1x1
+    python Regrid_ne30_surfO3_to_1x1_conserve.py --experiment ne0CONUS --target 0.15
 """
 import os, datetime
 import numpy as np, pandas as pd, xarray as xr
@@ -53,18 +59,17 @@ _ROOT = next(p for p in pathlib.Path(__file__).resolve().parents
 sys.path.insert(0, str(_ROOT))
 import config  # noqa: F401  - also puts functions/ on sys.path
 from config.paths import (
-    BGO3_CASES, BGO3_CASE_LABELS, BGO3_SCENARIOS, BGO3_YEARS,
-    BGO3_START_MMDD, BGO3_END_MMDD,
-    BGO3_REGRIDDED_1DEG_DIR, BGO3_REGRIDDED_1DEG_HOURLY_DIR,
-    SCRIP_NE30NP4, FV_GRIDINFO_1X1, WEIGHTS_NE30_TO_1X1,
+    BGO3_EXPERIMENTS, BGO3_START_MMDD, BGO3_END_MMDD,
     AUTHOR_TAG, PROCESSED_BY, CONTACT, INSTITUTION, MACHINE,
-    bgo3_merged_surfo3_path, bgo3_unified_mda8_name, case_hist_dir, ensure_dir,
+    bgo3_merged_surfo3_path, case_hist_dir, ensure_dir,
 )
 import argparse
 ap = argparse.ArgumentParser()
-ap.add_argument('--scenarios', nargs='+', default=list(BGO3_SCENARIOS), choices=list(BGO3_SCENARIOS),
+ap.add_argument('--experiment', default='ne30', choices=list(BGO3_EXPERIMENTS))
+ap.add_argument('--target', default='1x1', help='destination grid key in BGO3_EXPERIMENTS[...]["targets"]')
+ap.add_argument('--scenarios', nargs='+', default=None,
                 help='scenarios to compute (hourly files are written for these)')
-ap.add_argument('--years', nargs='+', type=int, default=list(BGO3_YEARS))
+ap.add_argument('--years', nargs='+', type=int, default=None)
 ap.add_argument('--append-to', default=None,
                 help='existing unified MDA8 file; scenarios not computed are copied from it')
 ap.add_argument('--check-against', default=None,
@@ -73,39 +78,46 @@ ap.add_argument('--no-write', action='store_true', help='write nothing (use with
 ap.add_argument('--cdate', default=None, help='YYYYMMDD stamp for output names (default today)')
 args = ap.parse_args()
 OLD_NAMES = {'noBB': 'noBBCONUS'}         # scenario names in files delivered before Oct 2026
+EXP = BGO3_EXPERIMENTS[args.experiment]
+assert args.target in EXP['targets'], f"--target must be one of {list(EXP['targets'])}"
+GRIDINFO, WGT, GTAG = EXP['targets'][args.target]          # e.g. FV1x1 gridinfo, weights, 'CONUS1x1'
+GRIDINFO, WGT = str(GRIDINFO), str(WGT)
 
-DST  = str(ensure_dir(BGO3_REGRIDDED_1DEG_DIR)) + "/"
-HRLY = str(ensure_dir(BGO3_REGRIDDED_1DEG_HOURLY_DIR)) + "/"
-WGT  = str(WEIGHTS_NE30_TO_1X1)
+DST  = str(ensure_dir(EXP['regrid_dir'])) + "/"
+HRLY = str(ensure_dir(EXP['hourly_dir'])) + "/"
 
 # ================= cases =================
-CASE  = dict(BGO3_CASES)
-LABEL = dict(BGO3_CASE_LABELS)            # (scenario, year) -> e.g. noBBGlobal2023
+CASE  = dict(EXP['cases'])
+LABEL = {k: f"{EXP['label_prefix']}{k[0]}{k[1]}" for k in CASE}   # e.g. noBBGlobal2023
 
-# Any h2 file of the BASE 2022 case provides the ne30 coordinates / grid metadata.
-_h2ex_hist = case_hist_dir(CASE[('BASE', 2022)])
+# Any h2 file of the first BASE case provides the SE coordinates / grid metadata.
+_h2ex_hist = case_hist_dir(CASE[('BASE', EXP['years'][0])])
 _h2ex_hits = sorted(glob.glob(str(_h2ex_hist / '*.cam.h2.*.nc')))
 if not _h2ex_hits:
     raise FileNotFoundError(f'No h2 history files found under {_h2ex_hist}')
 h2ex = _h2ex_hits[0]
 
-SCEN = list(BGO3_SCENARIOS); YEARS = list(BGO3_YEARS)
+SCEN = list(EXP['scenarios']); YEARS = list(EXP['years'])
+args.scenarios = args.scenarios or SCEN; args.years = args.years or YEARS
+assert set(args.scenarios) <= set(SCEN) and set(args.years) <= set(YEARS)
 RUN_SCEN = [sc for sc in SCEN if sc in args.scenarios]; RUN_YEARS = [y for y in YEARS if y in args.years]
 STARTMMDD, ENDMMDD = BGO3_START_MMDD, BGO3_END_MMDD
 
-# ================= CONUS 1x1 target =================
-LATMIN,LATMAX,LONMIN,LONMAX = 24,50,235,294   # CONUS; lon 0..360 (=-125..-66)
-latc = np.arange(LATMIN,LATMAX+1,1); lonc = np.arange(LONMIN,LONMAX+1,1)
-nlat,nlon = latc.size, lonc.size
+# ================= CONUS box on the destination grid =================
+LATMIN,LATMAX,LONMIN,LONMAX = 24,50,-125,-66   # CONUS; cell centres inside, lon -180..180
 
 # ================= build conservative operator restricted to CONUS =================
-# Global dest grid (FV1x1grid_info): lat -90..90 (181), lon 0..360 (361).
-lat_grid=np.arange(-90,91,1.0); lon_grid=np.arange(0,361,1.0)
-NLATG,NLONG=lat_grid.size,lon_grid.size; NGLOB=NLATG*NLONG; NSRC=48602
+# Global dest grid from its gridinfo file (1x1: lat -90..90 (181), lon 0..360 (361);
+# 0.15: lat -89.95..89.9 (1200), lon -179.95..179.9 (2400)).
+_gi=xr.open_dataset(GRIDINFO)
+lat_grid=_gi['lat'].values.astype('float64'); lon_grid=_gi['lon'].values.astype('float64')
+NLATG,NLONG=lat_grid.size,lon_grid.size; NGLOB=NLATG*NLONG; NSRC=EXP['ncol']
 w=xr.open_dataset(WGT); col=w['col'].values-1; row=w['row'].values-1; S=w['S'].values
+assert col.max()+1==NSRC and row.max()+1<=NGLOB, f"{WGT}: does not map {EXP['grid']} -> {GRIDINFO}"
 Mg=coo_matrix((S,(row,col)),shape=(NGLOB,NSRC)).tocsr()
 wsum=np.asarray(Mg.sum(1)).ravel()
 slat=xr.open_dataset(h2ex)['lat'].values; slon=xr.open_dataset(h2ex)['lon'].values
+assert slat.size==NSRC, (h2ex, slat.size)
 clat=Mg.dot(slat); clon=Mg.dot(slon)                      # area-wtd centroid (for ORDER detection only)
 
 # --- detect ESMF flattened dest ordering (C: lon-fastest vs F: lat-fastest) ---
@@ -120,12 +132,15 @@ allr=np.arange(NGLOB)
 ILAT=(allr//NLONG) if corder else (allr%NLATG)
 ILON=(allr%NLONG)  if corder else (allr//NLATG)
 tlat=lat_grid[ILAT]; tlon=lon_grid[ILON]                  # TRUE center of each global dest cell
-sel=np.where((wsum>0.999)&(tlat>=LATMIN)&(tlat<=LATMAX)&(tlon>=LONMIN)&(tlon<=LONMAX))[0]
-iy=(tlat[sel]-LATMIN).astype(int); ix=(tlon[sel]-LONMIN).astype(int)   # exact bijection
+tlon180=np.where(tlon>180,tlon-360,tlon)
+sel=np.where((wsum>0.999)&(tlat>=LATMIN)&(tlat<=LATMAX)&(tlon180>=LONMIN)&(tlon180<=LONMAX))[0]
+latc=np.unique(tlat[sel]); lonc=np.unique(tlon180[sel]); nlat,nlon=latc.size,lonc.size
+iy=np.searchsorted(latc,tlat[sel]); ix=np.searchsorted(lonc,tlon180[sel])   # exact bijection
 Mc=Mg[sel,:]; wsum_c=wsum[sel]; ncell=sel.size
-cell_lat=latc[iy]; cell_lon180=np.where(lonc[ix]>180,lonc[ix]-360,lonc[ix])
+cell_lat=latc[iy]; cell_lon180=lonc[ix]
 assert len(set(zip(iy.tolist(),ix.tolist())))==ncell, "placement not unique!"
-print(f"CONUS cells mapped: {ncell} (grid {nlat}x{nlon}={nlat*nlon})")
+print(f"CONUS cells mapped: {ncell} (grid {nlat}x{nlon}={nlat*nlon}) "
+      f"lat {latc[0]:.3f}..{latc[-1]:.3f} lon {lonc[0]:.3f}..{lonc[-1]:.3f}")
 
 # ================= per-cell summertime UTC offset (timezonefinder) =================
 tf=TimezoneFinder()
@@ -153,12 +168,29 @@ def compute_mda8(o3_hourly_utc, datesv1, utc_off, min_hours=6, min_blocks=13):
 
 # ================= common provenance attrs =================
 YMD = args.cdate or dtmod.now().strftime('%Y%m%d')
+GRES = {'1x1': '1x1 deg', '0.15': '0.15x0.15 deg'}.get(args.target, args.target)
+SCEN_TEXT = {
+    'ne30': None,   # filled below (kept verbatim from v1.2)
+    'ne0CONUS': dict(
+        scenarios=("BASE = all emissions (hourly NEI2022v2 over CONUS + CAMS-GLOB-ANT v6.2 elsewhere, "
+                   "QFED2.6 hi-res biomass burning); noBBCONUS = QFED2.6 biomass-burning emissions zeroed over "
+                   "CONUS land + 80 km buffer only (fires in Canada/Alaska/Mexico kept, so BASE - noBBCONUS = "
+                   "O3 from US fires). No global no-BB run exists on this grid."),
+        scenario_notes=("BASE and noBBCONUS (.01) are hybrid starts from the same state on 2023-01-01, so CONUS "
+                        "fires have been off in noBBCONUS since Jan 1 (3-month spin-up before the Apr-Oct window). "
+                        "noBBCONUS .01 branched to .02 at 2023-04-01 with an identical namelist; only .02 output "
+                        "is used. BASE and noBBCONUS share grid, GEOS-5 nudging and all "
+                        "non-fire emissions. Hourly values are means stamped at the END of each hour; every series "
+                        "starts at Apr 1 01:00 UTC. This BASE is a different model setup from the ne30 CONUSBGO3 "
+                        "BASE (inventories, resolution, nudging), so the two sets are not interchangeable."),
+    ),
+}
 def prov(extra):
+    st = SCEN_TEXT.get(args.experiment)
     a = dict(
-        title="MUSICAv0 ne30 CONUS Background-O3: surface O3 regridded to 1x1 deg (mass-conservative)",
+        title=f"MUSICAv0 {EXP['grid']} CONUS Background-O3: surface O3 regridded to {GRES} (mass-conservative)",
         project="CONUS background ozone: emission-zeroing sensitivity experiments",
-        source=("MUSICAv0 = CESM2.2 CAM-chem (MOZART TS1), ne30np4 (~111 km global) "
-                "spectral-element, FCnudged nudged to MERRA-2"),
+        source=EXP['model'],
         institution=INSTITUTION,
         scenarios=("BASE = all emissions; "
                    "noAnthro = CONUS anthropogenic emissions zeroed (land, 80 km buffer); "
@@ -173,10 +205,10 @@ def prov(extra):
                         "2023-04-01. Grid, MERRA-2 nudging, all other emissions and the 2022 initial "
                         "condition are identical across scenarios."),
         case_names="; ".join(f"{LABEL[k]}: {v}" for k,v in CASE.items()),
-        horizontal_regrid="ESMF first-order conservative remap, ne30np4 -> 1x1 deg (dest weight-sums = 1)",
+        horizontal_regrid=f"ESMF first-order conservative remap, {EXP['grid']} -> {GRES} (dest weight-sums = 1)",
         regrid_weight_file=WGT,
-        regrid_source_scrip=str(SCRIP_NE30NP4),
-        regrid_dest_grid=str(FV_GRIDINFO_1X1),
+        regrid_source_scrip=str(EXP['scrip']),
+        regrid_dest_grid=GRIDINFO,
         processed_by=PROCESSED_BY,
         processing_date=dtmod.now().strftime('%Y-%m-%d %H:%M:%S'),
         machine=MACHINE,
@@ -184,6 +216,7 @@ def prov(extra):
         contact=CONTACT,
         Conventions="CF-1.9",
     )
+    if st: a.update(st)
     a.update(extra); return a
 
 # ================= regrid one merged file (chunked mat-mul) =================
@@ -203,13 +236,14 @@ def to_map(vec_cell_time):   # (ntime, ncell) -> (ntime, nlat, nlon)
     return g
 
 # ================= main =================
-lon_out=np.where(lonc>180,lonc-360.0,lonc).astype('float64')     # -128..-64 for output
+lon_out=np.round(lonc,4).astype('float64')                       # -125..-66 for output
+latc=np.round(latc,4)
 merged_used={}  # label -> merged input file
 mda8_all={}   # (scenario,year) -> (214, ncell)
 mda8_dates={}
 for sc in RUN_SCEN:
     for yr in RUN_YEARS:
-        cn=CASE[(sc,yr)]; lab=LABEL[(sc,yr)]; p=bgo3_merged_surfo3_path(cn,yr)
+        cn=CASE[(sc,yr)]; lab=LABEL[(sc,yr)]; p=bgo3_merged_surfo3_path(cn,yr,EXP['merged_dir'])
         print(f"\n=== {lab} === {cn}\n    merged: {os.path.basename(p)}")
         merged_used[lab]=os.path.basename(p)
         times,hourly=regrid_hourly(p)                            # (nt, ncell) ppb, UTC
@@ -223,14 +257,14 @@ for sc in RUN_SCEN:
         hmap=to_map(hourly[tmask]); htimes=times[tmask]
         dsh=xr.Dataset(
             {'O3':(('time','lat','lon'),hmap,
-                   {'units':'ppb','long_name':'Hourly surface O3 (UTC), conservatively regridded to 1x1'})},
+                   {'units':'ppb','long_name':f'Hourly surface O3 (UTC), conservatively regridded to {GRES}'})},
             coords={'time':htimes,'lat':latc.astype('float64'),'lon':lon_out},
-            attrs=prov({'title':f'MUSICAv0 ne30 {lab} hourly surface O3 on 1x1 CONUS grid (UTC)',
+            attrs=prov({'title':f"MUSICAv0 {EXP['grid']} {lab} hourly surface O3 on {GRES} CONUS grid (UTC)",
                         'case_name':cn,'scenario':sc,'year':yr,'merged_input_file':os.path.basename(p),
                         'time_note':'UTC timestamps; hours over Apr 1 - Oct 31'}))
         dsh['lat'].attrs.update(units='degrees_north',standard_name='latitude')
         dsh['lon'].attrs.update(units='degrees_east',standard_name='longitude')
-        fpath=HRLY+f'CONUS1x1_UTChourlySurfO3.{lab}.{yr}-{STARTMMDD}T{yr}-{ENDMMDD}.{AUTHOR_TAG}_c{YMD}.nc'
+        fpath=HRLY+f'{GTAG}_UTChourlySurfO3.{lab}.{yr}-{STARTMMDD}T{yr}-{ENDMMDD}.{AUTHOR_TAG}_c{YMD}.nc'
         if not args.no_write:
             assert not os.path.exists(fpath), f"{fpath} exists"
             dsh.to_netcdf(fpath,format='NETCDF4',
@@ -294,7 +328,8 @@ dsm=xr.Dataset(
          'cell_methods':'time: mean (interval: 8 hours) time: maximum within days'})},
     coords={'scenario':np.array(SCEN),'time':time_all,
             'lat':latc.astype('float64'),'lon':lon_out},
-    attrs=prov({'title':f'MUSICAv0 ne30 CONUS Background-O3: 1x1 deg daily MDA8 O3, {len(SCEN)} scenarios, 2022-2023 (Apr-Oct)',
+    attrs=prov({'title':(f"MUSICAv0 {EXP['grid']} CONUS Background-O3: {GRES} daily MDA8 O3, {len(SCEN)} scenarios, "
+                         f"{YEARS[0]}-{YEARS[-1]} (Apr-Oct)"),
                 'case_names':case_names,
                 'mda8_method':('EPA convention: 8-h rolling mean (>=6 valid hours); daily max over windows '
                                'ending 07-23 local; day valid if >=13 of 17 windows'),
@@ -302,11 +337,12 @@ dsm=xr.Dataset(
                 'scenario_dim':', '.join(SCEN),
                 'scenario_source':extra_src,
                 'merged_input_files':'; '.join(f'{k}: {v}' for k,v in merged_used.items()),
-                'time_note':'428 daily dates = Apr1-Oct31 2022 (214) + Apr1-Oct31 2023 (214)'}))
+                'time_note':(f"{len(time_all)} daily dates = " +
+                             " + ".join(f"Apr1-Oct31 {y} ({len(mda8_dates[y])})" for y in YEARS))}))
 dsm['lat'].attrs.update(units='degrees_north',standard_name='latitude')
 dsm['lon'].attrs.update(units='degrees_east',standard_name='longitude')
 dsm['scenario'].attrs.update(long_name='emission scenario')
-fpath=DST+bgo3_unified_mda8_name(YMD)
+fpath=DST+EXP['unified_stem'].format(tag=GTAG)+f'_c{YMD}.nc'
 assert not os.path.exists(fpath), f"{fpath} exists; pass another --cdate or remove it"
 dsm.to_netcdf(fpath,format='NETCDF4',
               encoding={'MDA8O3':{'zlib':True,'complevel':4,'_FillValue':np.float32(np.nan)}})

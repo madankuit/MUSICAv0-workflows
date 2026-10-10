@@ -7,7 +7,8 @@
 # One CONUSBGO3 pipeline step: sbatch -J <name> bgo3_step.sbatch <script relative to CONUSBGO3/> [args]
 # Submitted by submit_noBBGlobal.sh; run from CONUSBGO3/jobs/.
 set -euo pipefail
-source /home/software/anaconda3/2023.07/etc/profile.d/conda.sh && conda activate base
+# BGO3_ENV=rootxesmf for weight generation (esmpy); everything else runs in base
+source /home/software/anaconda3/2023.07/etc/profile.d/conda.sh && conda activate "${BGO3_ENV:-base}"
 export PYTHONUNBUFFERED=1
 cd "$SLURM_SUBMIT_DIR/.."
 echo "host $(hostname)  git $(git rev-parse --short HEAD)  $(date)"

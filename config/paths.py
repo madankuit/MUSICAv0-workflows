@@ -423,7 +423,7 @@ def bgo3_unified_mda8_latest():
     return max(hits, key=lambda h: re.search(r'_c(\d{8})\.nc$', h).group(1))
 
 
-def bgo3_merged_surfo3_glob(casename, year=None):
+def bgo3_merged_surfo3_glob(casename, year=None, merged_dir=None):
     """Glob pattern for the merged hourly surface-O3 file(s) of `casename`.
 
     The date span is part of the file name and differs per case, so callers
@@ -432,16 +432,16 @@ def bgo3_merged_surfo3_glob(casename, year=None):
     one noBBGlobal case, which has one merged file per year).
     """
     span = f'{year}-*' if year is not None else '*'
-    return str(BGO3_MERGED_SURFO3_DIR / f'{casename}.cam.h2.surflev.O3.{span}.nc')
+    return str(Path(merged_dir or BGO3_MERGED_SURFO3_DIR) / f'{casename}.cam.h2.surflev.O3.{span}.nc')
 
 
-def bgo3_merged_surfo3_path(casename, year):
+def bgo3_merged_surfo3_path(casename, year, merged_dir=None):
     """Merged surface-O3 file for (`casename`, `year`); newest if several.
 
     Checks the name really belongs to that case and starts on `year`-04-01.
     """
     import glob, os
-    hits = sorted(glob.glob(bgo3_merged_surfo3_glob(casename, year)))
+    hits = sorted(glob.glob(bgo3_merged_surfo3_glob(casename, year, merged_dir)))
     if not hits:
         raise FileNotFoundError(f'No merged surface-O3 file for {casename} {year}; '
                                 'run Merge_h2files_hourlysurfO3.py first.')
@@ -449,6 +449,61 @@ def bgo3_merged_surfo3_path(casename, year):
     base = os.path.basename(p)
     assert base.startswith(casename + '.cam.h2.surflev.O3.' + f'{year}-04-01T'), base
     return p
+
+
+# --- second experiment set: ne0CONUSne30x8 (~14 km over CONUS) ---------
+# A different model setup from the ne30 set above: hourly NEI2022v2 over CONUS
+# merged with CAMS-GLOB-ANT v6.2 elsewhere, QFED2.6 hi-res fires, nudged to
+# GEOS-5. Only BASE and noBBCONUS exist (no global no-BB run on this grid).
+# noBBCONUS is .02, a branch of .01 at 2023-04-01 with an identical namelist;
+# only files carrying the .02 name are read. Both runs cover 2023-01 .. 2024-11.
+BGO3NE0_CASE_PREFIX = 'f.e22.FCnudged.ne0CONUSne30x8_ne0CONUSne30x8_mt12.'
+BGO3NE0_CASES = {
+    ('BASE', 2023): BGO3NE0_CASE_PREFIX + 'hourlyNEIemisCONUS.From20230101.01',
+    ('BASE', 2024): BGO3NE0_CASE_PREFIX + 'hourlyNEIemisCONUS.From20230101.01',
+    ('noBBCONUS', 2023): BGO3NE0_CASE_PREFIX + 'hourlyNEInoBBemisCONUS.From20230101.02',
+    ('noBBCONUS', 2024): BGO3NE0_CASE_PREFIX + 'hourlyNEInoBBemisCONUS.From20230101.02',
+}
+BGO3NE0_ROOT = BGO3_ROOT / 'ne0CONUSne30x8'
+
+# ne0CONUSne30x8 -> global 1x1 conservative weights (made by gen_SE_to_1x1_weights.py)
+WEIGHTS_NE0CONUS_TO_1X1 = _env_path(
+    'MUSICA_ENV_WEIGHTS_NE0CONUS_TO_1X1',
+    GRIDS_EXTERNAL_DIR / 'ESMFmap_ne0CONUSne30x8_TO_1x1_conserve_c20261009.nc')
+
+# One entry per experiment set; the CONUSBGO3 scripts take --experiment <key>.
+# 'targets' = regular grids the regrid step can write: (gridinfo, weights, tag).
+BGO3_EXPERIMENTS = {
+    'ne30': dict(
+        grid='ne30np4', ncol=48602, scrip=SCRIP_NE30NP4,
+        label_prefix='',                      # file labels e.g. BASE2022
+        cases=BGO3_CASES, scenarios=BGO3_SCENARIOS, years=BGO3_YEARS,
+        merged_dir=BGO3_MERGED_SURFO3_DIR, points_dir=BGO3_GIVEN_MONITORS_DIR,
+        colidx=BGO3_MONITOR_COLIDX,
+        regrid_dir=BGO3_REGRIDDED_1DEG_DIR, hourly_dir=BGO3_REGRIDDED_1DEG_HOURLY_DIR,
+        targets={'1x1': (FV_GRIDINFO_1X1, WEIGHTS_NE30_TO_1X1, 'CONUS1x1')},
+        unified_stem='MUSICAv0_ne30_CONUS1x1_MDA8O3_2022-2023_AprOct',
+        model=('MUSICAv0 = CESM2.2 CAM-chem (MOZART TS1), ne30np4 (~111 km global) '
+               'spectral-element, FCnudged nudged to MERRA-2; CAMS-GLOB-ANT v6.2 anthropogenic, '
+               'QFED2.6 biomass burning'),
+    ),
+    'ne0CONUS': dict(
+        grid='ne0CONUSne30x8', ncol=174098, scrip=SCRIP_NE0CONUSNE30X8,
+        label_prefix='ne0CONUSne30x8_',       # file labels e.g. ne0CONUSne30x8_BASE2023
+        cases=BGO3NE0_CASES, scenarios=['BASE', 'noBBCONUS'], years=[2023, 2024],
+        merged_dir=BGO3NE0_ROOT / 'h2_surfO3_merged',
+        points_dir=BGO3NE0_ROOT / 'ForGivenMonitors',
+        colidx=BGO3_MONITOR_INFO_DIR / 'MatchedMonitors_ne0CONUSne30x8_ColIdx.csv',
+        regrid_dir=BGO3NE0_ROOT / 'Regridded', hourly_dir=BGO3NE0_ROOT / 'Regridded' / 'hourly',
+        targets={'1x1': (FV_GRIDINFO_1X1, WEIGHTS_NE0CONUS_TO_1X1, 'CONUS1x1'),
+                 '0.15': (FV_GRIDINFO_015, WEIGHTS_NE0CONUS_TO_015, 'CONUS0.15x0.15')},
+        unified_stem='MUSICAv0_ne0CONUSne30x8_{tag}_MDA8O3_2023-2024_AprOct',
+        model=('MUSICAv0 = CESM2.2 CAM-chem (MOZART TS1), ne0CONUSne30x8 variable-resolution '
+               'spectral-element (~14 km over CONUS, ~111 km elsewhere), FCnudged nudged to GEOS-5; '
+               'hourly NEI2022v2 anthropogenic over CONUS merged with CAMS-GLOB-ANT v6.2 elsewhere, '
+               'QFED2.6 hi-res biomass burning. NOT the same setup as the ne30 CONUSBGO3 runs.'),
+    ),
+}
 
 
 # ============================================================

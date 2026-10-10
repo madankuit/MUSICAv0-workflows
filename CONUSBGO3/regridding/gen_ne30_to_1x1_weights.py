@@ -1,6 +1,10 @@
 #!/usr/bin/env python
-"""Generate ne30np4 -> 1x1 FV CONSERVATIVE ESMF weights (esmpy 8.7),
-mirroring the Regridding_ESMF_v1 call_ESMF setup. Weight-file only + verify."""
+"""Generate SE -> 1x1 FV CONSERVATIVE ESMF weights (esmpy 8.7),
+mirroring the Regridding_ESMF_v1 call_ESMF setup. Weight-file only + verify.
+
+    python gen_ne30_to_1x1_weights.py                          # ne30np4 (Jul 2026)
+    python gen_ne30_to_1x1_weights.py --experiment ne0CONUS    # ne0CONUSne30x8 (Oct 2026)
+"""
 import esmpy, numpy as np, xarray as xr, datetime, os
 import sys, pathlib
 
@@ -9,13 +13,21 @@ _ROOT = next(p for p in pathlib.Path(__file__).resolve().parents
              if (p / 'config' / 'paths.py').exists())
 sys.path.insert(0, str(_ROOT))
 import config  # noqa: F401
-from config.paths import SCRIP_NE30NP4, FV_GRIDINFO_1X1, GRIDS_EXTERNAL_DIR, ensure_dir
+from config.paths import FV_GRIDINFO_1X1, GRIDS_EXTERNAL_DIR, BGO3_EXPERIMENTS, ensure_dir
+import argparse
+ap = argparse.ArgumentParser()
+ap.add_argument('--experiment', default='ne30', choices=list(BGO3_EXPERIMENTS))
+EXP = BGO3_EXPERIMENTS[ap.parse_args().experiment]
 
-SRC = str(SCRIP_NE30NP4)      # SE source SCRIP (corners), ships with the repo
+SRC = str(EXP['scrip'])       # SE source SCRIP (corners), ships with the repo
 DST = str(FV_GRIDINFO_1X1)    # 1x1 global FV grid info (CF bnds), ships with the repo
+NSRC = EXP['ncol']
 YMD = datetime.datetime.now().strftime("%Y%m%d")
 # The weight file is large and derived, so it is written outside the repo.
-WGT = str(ensure_dir(GRIDS_EXTERNAL_DIR) / f"ESMFmap_ne30np4_TO_1x1_conserve_c{YMD}.nc")
+# ne30: dated name as generated in Jul 2026; others: the name config/paths.py expects.
+WGT = (str(ensure_dir(GRIDS_EXTERNAL_DIR) / f"ESMFmap_ne30np4_TO_1x1_conserve_c{YMD}.nc")
+       if EXP['grid'] == 'ne30np4' else str(EXP['targets']['1x1'][1]))
+assert not os.path.exists(WGT), f"{WGT} exists"
 
 print("esmpy", esmpy.__version__)
 # --- source: SE mesh from SCRIP, field on elements ---
@@ -38,7 +50,8 @@ print("weight-gen time:", datetime.datetime.now() - t0)
 ds = xr.open_dataset(WGT)
 col, row, S = ds["col"].values, ds["row"].values, ds["S"].values
 print("n_s:", len(S))
-print("col(SOURCE) max:", col.max(), "(ne30np4=48602)")
+print("col(SOURCE) max:", col.max(), f"({EXP['grid']}={NSRC})")
+assert col.max() == NSRC, "source size does not match the SE grid"
 print("row(DEST)   max:", row.max(), "(1x1 =181*361=", 181*361, ")")
 uniq, idx = np.unique(np.sort(row), return_index=True)
 sums = np.add.reduceat(S[np.argsort(row)], idx)
