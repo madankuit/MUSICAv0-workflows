@@ -14,6 +14,11 @@ MODIFICATION HISTORY:
     9 Oct 2026: VERSION 1.2
     - --experiment ne0CONUS matches the same monitors on the ne0CONUSne30x8 grid;
       prints the monitor-to-column-centre distance as a sanity check
+    - --match exact (default for ne0CONUS): point-in-polygon on the SCRIP cell
+      outline. get_site_index (--match legacy, the ne30 default) only tests the
+      boxes spanned by the cell centre and each corner, so it misses sites near
+      cell edges (22/803 on ne30, 53/803 on ne0CONUS). The legacy ne30 file is
+      kept as is because the delivered ne30 point files were built from it.
 
     python GetMatched_ne30_GivenMonitors_ColumnIndex.py --experiment ne0CONUS
 '''
@@ -58,10 +63,33 @@ from config.paths import (
 import argparse
 ap = argparse.ArgumentParser()
 ap.add_argument('--experiment', default='ne30', choices=list(BGO3_EXPERIMENTS))
-EXP = BGO3_EXPERIMENTS[ap.parse_args().experiment]
+ap.add_argument('--match', choices=['legacy', 'exact'], default=None,
+                help="default: legacy for ne30 (as delivered), exact otherwise")
+_a = ap.parse_args()
+EXP = BGO3_EXPERIMENTS[_a.experiment]
+MATCH = _a.match or ('legacy' if _a.experiment == 'ne30' else 'exact')
 
 # repo-local shared functions (functions/ is on sys.path via `import config`)
 from SE_analysis import get_site_index
+from matplotlib.path import Path as _MplPath
+
+
+def get_site_index_exact(site_lat, site_lon, ds_scrip, ncand=30):
+    """Column whose SCRIP polygon contains the site (lon in -180..180 or 0..360).
+
+    Tests the `ncand` nearest cell centres with an exact point-in-polygon check,
+    longitudes unwrapped around the site. Returns None if no candidate contains it.
+    """
+    clat = ds_scrip['grid_center_lat'].values; clon = ds_scrip['grid_center_lon'].values
+    d = np.abs(clat - site_lat) + np.abs(((clon - site_lon + 180) % 360) - 180) * np.cos(np.deg2rad(site_lat))
+    for i in np.argsort(d)[:ncand]:
+        ylat = ds_scrip['grid_corner_lat'].values[i]
+        xlon = site_lon + ((ds_scrip['grid_corner_lon'].values[i] - site_lon + 180) % 360) - 180
+        poly = np.column_stack([xlon, ylat])
+        keep = np.r_[True, np.any(np.diff(poly, axis=0) != 0, axis=1)]   # drop repeated corners
+        if _MplPath(poly[keep]).contains_point((site_lon, site_lat)):
+            return int(i)
+    return None
 
 # Specified input
 MonitorInfo_filepath = BGO3_MONITOR_LIST
@@ -123,6 +151,7 @@ _ex_files = sorted(glob.glob(str(_ex_hist / '*.cam.h2.*.nc')))
 if not _ex_files:
     raise FileNotFoundError(f'No h2 history files found under {_ex_hist}')
 ex_h2_filepath = _ex_files[0]
+ds_scrip = xr.open_dataset(SCRIP_ne30)
 ds_ne30 = xr.open_dataset(ex_h2_filepath).isel(lev=lev_idx,ilev=lev_idx,time=10) 
 assert ds_ne30.sizes['ncol'] == EXP['ncol'], (ex_h2_filepath, ds_ne30.sizes['ncol'])
 
@@ -145,7 +174,10 @@ for MonitorIDi in unique_monitor_locations.AQS_code.values:
     loni = MonitorIDi_df['lon'].iloc[0]
 
     # find the model index
-    Index_MonitorIDi = get_site_index( site_lat=lati, site_lon=360+loni, scrip_file=SCRIP_ne30 )
+    if MATCH == 'exact':
+        Index_MonitorIDi = get_site_index_exact(lati, loni, ds_scrip)
+    else:
+        Index_MonitorIDi = get_site_index( site_lat=lati, site_lon=360+loni, scrip_file=SCRIP_ne30 )
     if Index_MonitorIDi==None:
         # add to the list
         ls_Index_MonitorIDi.append('Find None')
@@ -170,8 +202,9 @@ _ok = unique_monitor_locations['MUSICA0_colIndex'] != 'Find None'
 _m = unique_monitor_locations[_ok]
 _dlon = (((_m['Approx_MUSICA0_lon'].astype(float) - _m['lon'] + 180) % 360) - 180) * np.cos(np.deg2rad(_m['lat']))
 _d_km = 111.2 * np.hypot(_m['Approx_MUSICA0_lat'].astype(float) - _m['lat'], _dlon)
-print(f"{EXP['grid']}: matched {_ok.sum()}/{len(_ok)} monitors; monitor-to-column-centre distance "
+print(f"{EXP['grid']} ({MATCH}): matched {_ok.sum()}/{len(_ok)} monitors; monitor-to-column-centre distance "
       f"median {_d_km.median():.1f} km, p99 {_d_km.quantile(.99):.1f} km, max {_d_km.max():.1f} km")
+unique_monitor_locations['match_method'] = MATCH
 unique_monitor_locations.to_csv(Savefile_path, index=False)
 
 print("Saved to:",Savefile_path)
