@@ -43,8 +43,9 @@ def newest(exp, target):
 
 
 ROWS = [
-    ('ne30np4 (~111 km global)\nCAMS-GLOB-ANT v6.2 + MERRA-2 met\n1° output', bgo3_unified_mda8_latest()),
-    ('ne0CONUSne30x8 (~14 km over CONUS)\nNEI2022v2 hourly (CONUS) + CAMS v6.2 + GEOS-5 met\n0.15° output',
+    ('ne30np4 (~111 km global)  |  CAMS-GLOB-ANT v6.2 anthro + MERRA-2 met  |  1° output',
+     bgo3_unified_mda8_latest()),
+    ('ne0CONUSne30x8 (~14 km over CONUS)  |  NEI2022v2 hourly (CONUS) + CAMS v6.2 anthro + GEOS-5 met  |  0.15° output',
      newest('ne0CONUSne30x8', '0.15')),
 ]
 
@@ -68,30 +69,30 @@ allb = np.concatenate([b.values.ravel() for _, _, b, _ in fields])
 bmin, bmax = np.floor(np.nanpercentile(allb, 2)), np.ceil(np.nanpercentile(allb, 98))
 vf = float(np.ceil(max(np.nanpercentile(np.abs(d.values), 99.5) for *_, d in fields)))
 
-fig, axs = plt.subplots(2, 2, figsize=(13.5, 7.4), subplot_kw={'projection': ccrs.PlateCarree()},
-                        constrained_layout=True)
+fig = plt.figure(figsize=(14, 8.4))
+X0, W = [0.03, 0.515], 0.455                    # panel columns
+Y0, H = [0.555, 0.15], 0.335                    # panel rows (top, bottom)
+cbars = {}
 for r, (lab, f, base, fire) in enumerate(fields):
+    fig.text(0.5, Y0[r] + H + 0.022, lab, ha='center', va='bottom', fontsize=11.5, fontweight='bold',
+             color='#1f3b73' if r == 0 else '#7a1f1f')
     for c, (da, cmap, lo, hi, ttl) in enumerate([
             (base, 'YlOrRd', bmin, bmax, 'BASE MDA8 O$_3$'),
             (fire, 'RdBu_r', -vf, vf, 'Fire impact: BASE $-$ noBBCONUS')]):
-        ax = axs[r, c]
+        ax = fig.add_axes([X0[c], Y0[r], W, H], projection=ccrs.PlateCarree())
         pc = ax.pcolormesh(da.lon, da.lat, da, cmap=cmap, vmin=lo, vmax=hi, shading='auto',
                            transform=ccrs.PlateCarree())
         ax.add_feature(cfeat.COASTLINE, lw=.5); ax.add_feature(cfeat.STATES, lw=.3, edgecolor='gray')
         ax.add_feature(cfeat.BORDERS, lw=.4); ax.set_extent(EXT, ccrs.PlateCarree())
-        if r == 0:
-            ax.set_title(ttl, fontsize=12, fontweight='bold')
-        if c == 0:
-            ax.text(-0.03, 0.5, lab, transform=ax.transAxes, rotation=90, ha='right', va='center',
-                    fontsize=9.5, fontweight='bold')
+        ax.set_title(ttl, fontsize=10.5)
         ax.text(0.01, 0.03, f'box mean {boxmean(da):.2f} ppb\nmax {float(da.max()):.1f} ppb',
                 transform=ax.transAxes, fontsize=8.5, va='bottom',
                 bbox=dict(fc='white', ec='0.6', alpha=.85))
-        if r == 1:
-            fig.colorbar(pc, ax=axs[:, c], orientation='horizontal', shrink=.8, pad=.02, aspect=40,
-                         extend='both').set_label('seasonal-mean MDA8 O$_3$ (ppb)' if c == 0 else
-                                                  '$\\Delta$MDA8 O$_3$ (ppb)')
+        cbars[c] = pc
+for c, lab in [(0, 'seasonal-mean MDA8 O$_3$ (ppb)'), (1, '$\\Delta$MDA8 O$_3$ (ppb)')]:
+    cax = fig.add_axes([X0[c] + 0.06, 0.075, W - 0.12, 0.022])
+    fig.colorbar(cbars[c], cax=cax, orientation='horizontal', extend='both').set_label(lab)
 fig.suptitle(f'US-fire impact on surface O$_3$, Apr$-$Oct {YEAR}: ne30np4 vs ne0CONUSne30x8',
-             fontsize=13, fontweight='bold')
+             fontsize=14, fontweight='bold', y=0.985)
 out = FIG / f'FireImpact_BASEminusNoBBCONUS_ne30np4_vs_ne0CONUSne30x8_AprOct{YEAR}.png'
 fig.savefig(out, dpi=170); plt.close(fig); print('saved', out)

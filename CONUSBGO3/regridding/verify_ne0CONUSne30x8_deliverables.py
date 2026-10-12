@@ -15,7 +15,7 @@ Checks the ne0CONUSne30x8 CONUSBGO3 deliverables (BASE, noBBCONUS; Apr-Oct 2023 
 5. Fire signal: BASE - noBBCONUS seasonal mean per year; the ne30 2023
    BASE - noBBCONUS on the same 1x1 cells for reference.
 
-Figure -> BGO3_FIGURE_DIR/ne0CONUSne30x8/ne0CONUS_BASE_minus_noBBCONUS_MDA8_<year>.png
+Figure -> BGO3_FIGURE_DIR/ne0CONUSne30x8/ne0CONUSne30x8_BASE_minus_noBBCONUS_MDA8_<year>.png
 
     python verify_ne0CONUS_deliverables.py <cdate YYYYMMDD>
 
@@ -128,6 +128,6 @@ for yr in E['years']:
     fig.colorbar(pc, ax=axs, orientation='horizontal', shrink=.5, pad=.03, extend='both') \
        .set_label('BASE $-$ noBBCONUS seasonal-mean MDA8 O$_3$ (ppb)')
     fig.suptitle(f'US-fire MDA8 O$_3$ (BASE $-$ noBBCONUS), Apr$-$Oct {yr}', fontsize=13, fontweight='bold')
-    out = FIG / f'ne0CONUS_BASE_minus_noBBCONUS_MDA8_{yr}.png'
+    out = FIG / f'ne0CONUSne30x8_BASE_minus_noBBCONUS_MDA8_{yr}.png'
     fig.savefig(out, dpi=150); plt.close(fig); print('saved', out)
 print('all checks passed')
