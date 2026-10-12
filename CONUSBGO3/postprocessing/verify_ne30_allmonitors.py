@@ -11,7 +11,9 @@ Checks the ne30 point files rebuilt with exact point-in-polygon column matching
    (Oct 2026: legacy put 30/781 monitors in a NEIGHBOURING cell; exact is right
    for all 30, and matches 22 monitors legacy missed.)
 2. For every (scenario, year): values at monitors whose column did not change
-   are identical to the delivered file; corrected monitors differ (reported);
+   match the delivered file -- hourly O3 bit-identical, MDA8 to float32
+   round-off (<= 1e-3 ppb; the delivered files were computed in Sep 2025 with an
+   older software stack, max seen 3e-4 ppb); corrected monitors differ (reported);
    added monitors have no extra missing days.
 
     python verify_ne30_allmonitors.py
@@ -65,6 +67,7 @@ for (sc, yr) in E['cases']:
         fo = glob.glob(str(E['points_dir'] / f"{kind}.{OLD_LABEL.get(sc, sc)}{yr}.GivenMonitors.*.nc"))
         assert len(fn) == 1 and len(fo) == 1, (sc, yr, kind, fn, fo)
         n = xr.open_dataset(fn[0]); o = xr.open_dataset(fo[0])
+        assert np.array_equal(n.time.values, o.time.values), (sc, yr, kind, "time axes differ")
         allshared = np.intersect1d(o.AQS_code.values, n.AQS_code.values)
         assert len(allshared) == o.sizes['AQS_code']
         fixed = np.array(sorted(FIXED & set(allshared)))
@@ -72,13 +75,16 @@ for (sc, yr) in E['cases']:
         fa = n[var].sel(AQS_code=fixed).values; fb = o[var].sel(AQS_code=fixed).values
         a = n[var].sel(AQS_code=shared).transpose('AQS_code', 'time').values
         b = o[var].sel(AQS_code=shared).transpose('AQS_code', 'time').values
-        ident = np.array_equal(np.isnan(a), np.isnan(b)) and np.array_equal(a[~np.isnan(a)], b[~np.isnan(b)])
+        tol = 1e-3 if var == 'MDA8O3' else 0.0                 # ppb; hourly must be bit-identical
+        sc_ = 1e9 if var == 'O3' else 1.0                      # hourly O3 in mol/mol -> ppb
+        dmax = float(np.nanmax(np.abs(a - b))) * sc_
+        ident = np.array_equal(np.isnan(a), np.isnan(b)) and dmax <= tol
         added = sorted(set(n.AQS_code.values) - set(o.AQS_code.values))
         assert set(added) == NEW, (sc, yr, kind)
         nan_new = float(np.isnan(n[var].sel(AQS_code=added).values).mean())
         nan_old = float(np.isnan(b).mean())
-        sc_ = 1e9 if var == 'O3' else 1.0                    # hourly O3 in mol/mol -> ppb
-        print(f"2. {sc}{yr} {kind:15s}: {len(shared)} unchanged sites {'IDENTICAL' if ident else 'DIFFERENT'}; "
+        print(f"2. {sc}{yr} {kind:15s}: {len(shared)} unchanged sites {'MATCH' if ident else 'DIFFERENT'} "
+              f"(max |d| {dmax:.1e} ppb); "
               f"{len(fixed)} corrected (mean |old-new| {sc_*np.nanmean(np.abs(fa-fb)):.2f} ppb); "
               f"{len(added)} added; NaN% added {100*nan_new:.2f} vs unchanged {100*nan_old:.2f}")
         assert ident

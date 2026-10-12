@@ -436,16 +436,19 @@ def bgo3_merged_surfo3_glob(casename, year=None, merged_dir=None):
 
 
 def bgo3_merged_surfo3_path(casename, year, merged_dir=None):
-    """Merged surface-O3 file for (`casename`, `year`); newest if several.
+    """Merged surface-O3 file for (`casename`, `year`); the shortest span if several.
 
-    Checks the name really belongs to that case and starts on `year`-04-01.
+    BASE2022 has two (ending 2022-11-01 and 2022-11-30); the delivered point files
+    used the 11-01 one, and it ends like every other case. Values in the common
+    hours are identical, so MDA8 does not depend on the choice. Checks the name
+    belongs to that case and starts on `year`-04-01.
     """
     import glob, os
     hits = sorted(glob.glob(bgo3_merged_surfo3_glob(casename, year, merged_dir)))
     if not hits:
         raise FileNotFoundError(f'No merged surface-O3 file for {casename} {year}; '
                                 'run Merge_h2files_hourlysurfO3.py first.')
-    p = hits[-1]
+    p = hits[0]                     # names sort by end date: hits[0] = shortest span
     base = os.path.basename(p)
     assert base.startswith(casename + '.cam.h2.surflev.O3.' + f'{year}-04-01T'), base
     return p
