@@ -78,6 +78,7 @@ ap.add_argument('--append-to', default=None,
 ap.add_argument('--check-against', default=None,
                 help='unified MDA8 file; computed MDA8 must equal it (regression test)')
 ap.add_argument('--no-write', action='store_true', help='write nothing (use with --check-against)')
+ap.add_argument('--no-hourly', action='store_true', help='skip the hourly gridded files (unified MDA8 only)')
 ap.add_argument('--cdate', default=None, help='YYYYMMDD stamp for output names (default today)')
 args = ap.parse_args()
 OLD_NAMES = {'noBB': 'noBBCONUS'}         # scenario names in files delivered before Oct 2026
@@ -273,7 +274,7 @@ for sc in RUN_SCEN:
         dsh['lat'].attrs.update(units='degrees_north',standard_name='latitude')
         dsh['lon'].attrs.update(units='degrees_east',standard_name='longitude')
         fpath=HRLY+f'{GTAG}_UTChourlySurfO3.{lab}.{yr}-{STARTMMDD}T{yr}-{ENDMMDD}.{AUTHOR_TAG}_c{YMD}.nc'
-        if not args.no_write:
+        if not (args.no_write or args.no_hourly):
             assert not os.path.exists(fpath), f"{fpath} exists"
             dsh.to_netcdf(fpath,format='NETCDF4',
                           encoding={'O3':{'zlib':True,'complevel':4,'_FillValue':np.float32(np.nan)}})
