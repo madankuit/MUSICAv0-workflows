@@ -37,6 +37,9 @@ MODIFICATION HISTORY:
     # regression: recompute BASE 2022 and require equality with the old file
     python Regrid_ne30_surfO3_to_1x1_conserve.py --scenarios BASE --years 2022 \
         --check-against <old unified file> --no-write
+    12 Oct 2026: VERSION 1.3
+    - Local-time offset per YEAR (was 2022 rules for all years: Mexican cells
+      1 h off in 2023/2024 after Mexico dropped DST). US cells unchanged.
     - --experiment ne0CONUSne30x8 (ne0CONUSne30x8 runs) and --target 1x1 | 0.15: the SE
       grid, weights, destination grid and output names come from
       BGO3_EXPERIMENTS; the MDA8 code is unchanged
@@ -144,13 +147,18 @@ print(f"CONUS cells mapped: {ncell} (grid {nlat}x{nlon}={nlat*nlon}) "
 
 # ================= per-cell summertime UTC offset (timezonefinder) =================
 tf=TimezoneFinder()
-def summer_offset(lat,lon180):
-    tz=tf.timezone_at(lat=lat,lng=lon180)
+# The offset is taken from the rules of the year being processed: Mexico abolished
+# DST in Oct 2022, so its summer offsets are 1 h earlier from 2023 on (US rules unchanged).
+# (Before Oct 2026 the 2022 rules were used for every year -> Mexican cells were 1 h off in 2023/2024.)
+_tzname=[tf.timezone_at(lat=la,lng=lo) for la,lo in zip(cell_lat,cell_lon180)]
+def summer_offset(tz,lon180,year):
     if tz is None: return int(round(lon180/15.0))
-    dt=pytz.timezone(tz).localize(dtmod(2022,7,1),is_dst=True)
+    dt=pytz.timezone(tz).localize(dtmod(year,7,1),is_dst=True)
     return int(dt.utcoffset().total_seconds()//3600)
-offset=np.array([summer_offset(la,lo) for la,lo in zip(cell_lat,cell_lon180)])
-print("cell UTC offsets present:",sorted(set(offset.tolist())))
+OFFSET={yr:np.array([summer_offset(tz,lo,yr) for tz,lo in zip(_tzname,cell_lon180)]) for yr in YEARS}
+for yr in YEARS:
+    print(f"cell UTC offsets {yr}:",sorted(set(OFFSET[yr].tolist())),
+          f"(cells differing from {YEARS[0]} rules: {int((OFFSET[yr]!=OFFSET[YEARS[0]]).sum())})")
 
 # ================= MDA8 (EPA), vectorized over cells, per point pipeline =================
 def compute_mda8(o3_hourly_utc, datesv1, utc_off, min_hours=6, min_blocks=13):
@@ -275,8 +283,8 @@ for sc in RUN_SCEN:
         datesv1=pd.date_range(f'{yr}-{STARTMMDD}',f'{yr}-{ENDMMDD}',freq='D')
         da=xr.DataArray(hourly,dims=['time','cell'],coords={'time':times})
         mda8=np.full((len(datesv1),ncell),np.nan,dtype='float32')
-        for off in sorted(set(offset.tolist())):
-            idx=np.where(offset==off)[0]
+        for off in sorted(set(OFFSET[yr].tolist())):
+            idx=np.where(OFFSET[yr]==off)[0]
             res=compute_mda8(da.isel(cell=idx),datesv1.strftime('%Y-%m-%d').tolist(),off)
             mda8[:,idx]=res.values
         mda8_all[(sc,yr)]=mda8; mda8_dates[yr]=datesv1
@@ -333,7 +341,8 @@ dsm=xr.Dataset(
                 'case_names':case_names,
                 'mda8_method':('EPA convention: 8-h rolling mean (>=6 valid hours); daily max over windows '
                                'ending 07-23 local; day valid if >=13 of 17 windows'),
-                'local_time':'per-grid-cell summertime (DST) UTC offset from timezonefinder',
+                'local_time':('per-grid-cell summertime (DST) UTC offset from timezonefinder, using each '
+                              "year's rules (Mexico has no DST from 2023)"),
                 'scenario_dim':', '.join(SCEN),
                 'scenario_source':extra_src,
                 'merged_input_files':'; '.join(f'{k}: {v}' for k,v in merged_used.items()),

@@ -148,7 +148,7 @@ from datetime import datetime
 import pytz
 
 """Function to get the hour offset to UTC based on the location of the monitor"""
-def get_summer_offset(lati: float, loni: float) -> int:
+def get_summer_offset(lati: float, loni: float, year: int) -> int:
     # Find the timezone name from lat/lon
     tf = TimezoneFinder()
     tz_name = tf.timezone_at(lat=lati, lng=loni)
@@ -156,7 +156,8 @@ def get_summer_offset(lati: float, loni: float) -> int:
         raise ValueError("Could not determine timezone for given coordinates")
 
     # Pick a midsummer date (July 1) to ensure DST applies if relevant
-    dt = datetime(datetime.now().year, 7, 1)
+    # that year's rules (Mexico dropped DST in Oct 2022; US monitors are unaffected)
+    dt = datetime(year, 7, 1)
 
     # Localize to that timezone
     tz = pytz.timezone(tz_name)
@@ -280,7 +281,7 @@ def casei_build_and_save_all_sites(scen, yr, MonitorIdx_df, startMMDD, endMMDD, 
         # Compute daily MDA8 for local dates using fixed summertime UTC offset
         MDA8O3 = compute_mda8_UTCoffset(
             Monitori_HourlyO3_da, datesv1,
-            utc_offset_hours=get_summer_offset(lati, loni)
+            utc_offset_hours=get_summer_offset(lati, loni, int(YYYY))
         )  # -> xr.DataArray with 'time' on local dates
 
         # Per-site MDA8 dataset (AQS_code x time)

@@ -28,7 +28,7 @@ rng = np.random.default_rng(1); bad = 0
 for _ in range(N):
     iy = int(rng.integers(0, H.sizes['lat'])); ix = int(rng.integers(0, H.sizes['lon']))
     s = H.isel(lat=iy, lon=ix).to_series(); la, lo = float(H.lat[iy]), float(H.lon[ix])
-    off = summer_offset(la, lo)
+    off = summer_offset(la, lo, YR)
     th = U.sel(scenario=SC, time=slice(f'{YR}-04-01', f'{YR}-10-30')).isel(lat=iy, lon=ix).values
     mine = mda8_numpy(s.index, s.values, off, YR).loc[:f'{YR}-10-30']
     dd = np.abs(mine.values - th)

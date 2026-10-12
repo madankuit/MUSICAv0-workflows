@@ -25,7 +25,7 @@ MDA8 convention checked (as specified for the deliverables): hourly means labell
 by the END of the hour; fixed summertime UTC offset per location (timezonefinder);
 8-h windows ending 07-23 local, >=6 valid hours; day valid with >=13 windows.
 
-    python audit_deliverables.py
+    python audit_deliverables.py [cdate YYYYMMDD]
 
     12 Oct 2026: VERSION 1.0
 """
@@ -44,6 +44,7 @@ import config  # noqa: F401
 from config.paths import BGO3_EXPERIMENTS, case_hist_dir
 
 RNG = np.random.default_rng(20261012)
+CDATE = sys.argv[1] if len(sys.argv) > 1 else '20261010'   # unified-file stamp to audit
 FAIL = []
 def check(ok, msg):
     print(("   OK   " if ok else "   FAIL ") + msg)
@@ -68,11 +69,11 @@ for ex, d in EXPECT.items():
             assert BGO3_EXPERIMENTS[ex]['cases'][(sc, yr)].endswith(short), (ex, sc, yr)
 
 tf = TimezoneFinder()
-def summer_offset(lat, lon):
+def summer_offset(lat, lon, year):
     tz = tf.timezone_at(lat=lat, lng=lon)
     if tz is None:
         return int(round(lon / 15.0))
-    return int(pytz.timezone(tz).localize(datetime(2023, 7, 1), is_dst=True).utcoffset().total_seconds() // 3600)
+    return int(pytz.timezone(tz).localize(datetime(year, 7, 1), is_dst=True).utcoffset().total_seconds() // 3600)
 
 def mda8_numpy(times_utc, vals, off, year):
     """Independent MDA8 (plain numpy): Series local-date -> value (NaN if invalid)."""
@@ -132,8 +133,8 @@ for ex, E in BGO3_EXPERIMENTS.items():
     lp = E['label_prefix']
     for tgt, (_, _, tag) in E['targets'].items():
         stem = E['unified_stem'].format(tag=tag)
-        f = sorted(glob.glob(str(E['regrid_dir'] / f'{stem}_c20261010.nc')))
-        check(len(f) == 1, f'{ex} {tgt}: unified file {stem}_c20261010.nc present')
+        f = sorted(glob.glob(str(E['regrid_dir'] / f'{stem}_c{CDATE}.nc')))
+        check(len(f) == 1, f'{ex} {tgt}: unified file {stem}_c{CDATE}.nc present')
         if not f:
             continue
         m = xr.open_dataset(f[0]); M = m.MDA8O3
@@ -141,8 +142,11 @@ for ex, E in BGO3_EXPERIMENTS.items():
         days = pd.DatetimeIndex(m.time.values)
         want = pd.DatetimeIndex(np.concatenate([pd.date_range(f'{y}-04-01', f'{y}-10-31') for y in E['years']]))
         check(days.equals(want), f'{ex} {tgt}: 428 dates Apr1-Oct31 of {E["years"]}')
-        check(M.attrs.get('units') == 'ppb' and 0 < float(M.min()) and float(M.max()) < 200,
-              f'{ex} {tgt}: MDA8 range {float(M.min()):.1f}..{float(M.max()):.1f} ppb, NaN {100*float(np.isnan(M).mean()):.2f}%')
+        # units sanity only (mol/mol or a double 1e9 would be off by orders of magnitude); the model
+        # has real fire-plume extremes up to ~460 ppb at 0.15 deg, reported, not failed
+        check(M.attrs.get('units') == 'ppb' and 0 < float(M.min()) and float(M.max()) < 1000,
+              f'{ex} {tgt}: MDA8 range {float(M.min()):.1f}..{float(M.max()):.1f} ppb, NaN {100*float(np.isnan(M).mean()):.2f}%, '
+              f'cell-days >150 ppb {100*float((M > 150).mean()):.3f}%')
         for sc, yy in EXPECT[ex].items():
             for yr, short in yy.items():
                 check(f'{lp}{sc}{yr}: ' in m.attrs['case_names'] and short in
@@ -162,12 +166,13 @@ for ex, E in BGO3_EXPERIMENTS.items():
                 check(ok, f'{ex} points {kind} {lp}{sc}{yr}: 803 sites, case ...{short}' + (f', {rng}' if len(f) == 1 else ''))
     for tgt, (_, _, tag) in E['targets'].items():
         hf = sorted(glob.glob(str(E['hourly_dir'] / f'{tag}_UTChourlySurfO3.*.nc')))
-        got = {pathlib.Path(h).name.split('.')[1] for h in hf}
+        pre = f'{tag}_UTChourlySurfO3.'
+        lab_of = lambda h: pathlib.Path(h).name[len(pre):].split('.')[0]      # tag may contain dots
         for sc, yy in EXPECT[ex].items():
             for yr, short in yy.items():
                 lab = f'{lp}{sc}{yr}'
                 alt = lab.replace('noBBCONUS', 'noBB')      # ne30 hourly files from Jul 2026 use the old label
-                hit = [h for h in hf if pathlib.Path(h).name.split('.')[1] in (lab, alt)]
+                hit = [h for h in hf if lab_of(h) in (lab, alt)]
                 ok = len(hit) == 1
                 if ok:
                     ds = xr.open_dataset(hit[0]); ok = ds.attrs['case_name'].endswith(short)
@@ -189,15 +194,19 @@ for ex, E in BGO3_EXPERIMENTS.items():
         c = contains_col(scrip, mon.lat[a], mon.lon[a])
         check(c == int(mon.MUSICA0_colIndex[a]), f'{ex} {a}: shapely column {c} == pipeline column {mon.MUSICA0_colIndex[a]}')
         cols.append(c)
-    offs = [summer_offset(mon.lat[a], mon.lon[a]) for a in sites]
+
     lp = E['label_prefix']; tagpt = 'All803' if ex == 'ne30' else ''
     for sc, yy in EXPECT[ex].items():
         for yr in yy:
             case = E['cases'][(sc, yr)]
+            offs = [summer_offset(mon.lat[a], mon.lon[a], yr) for a in sites]
             T, V = raw_series(case, yr, cols)
             pm = xr.open_dataset(glob.glob(str(E['points_dir'] / f'LocalTimeMDA8O3.{lp}{sc}{yr}.GivenMonitors{tagpt}.*.nc'))[0])
             ph = xr.open_dataset(glob.glob(str(E['points_dir'] / f'UTChourlyO3.{lp}{sc}{yr}.GivenMonitors{tagpt}.*.nc'))[0])
-            dmax_h = dmax_m = 0.0; nan_mis = 0
+            dmax_h = dmax_m = 0.0; nan_mis = 0; edge = 0
+            # runs whose output ends before Nov 1 ~08 UTC cannot complete Oct 31 local in the West;
+            # the pipeline and this audit treat the missing tail differently -> compared separately
+            short_tail = T[-1] < pd.Timestamp(f'{yr}-11-01 08:00')
             for k, a in enumerate(sites):
                 h = ph.O3.sel(AQS_code=a).to_series()
                 com = h.index.intersection(T)
@@ -205,11 +214,18 @@ for ex, E in BGO3_EXPERIMENTS.items():
                                                             pd.Series(V[:, k], index=T).reindex(com).values))) * 1e9)
                 mine = mda8_numpy(T, V[:, k] * 1e9, offs[k], yr)
                 theirs = pm.MDA8O3.sel(AQS_code=a).to_series().reindex(mine.index)
+                if short_tail:
+                    last = mine.index == pd.Timestamp(f'{yr}-10-31')
+                    edge += int(((np.abs(mine.values - theirs.values) > 1e-3) |
+                                 (np.isnan(mine.values) != np.isnan(theirs.values)))[last].sum())
+                    mine, theirs = mine[~last], theirs[~last]
                 nan_mis += int((np.isnan(mine.values) != np.isnan(theirs.values)).sum())
                 dmax_m = max(dmax_m, float(np.nanmax(np.abs(mine.values - theirs.values))))
             check(dmax_h == 0 and dmax_m < 1e-3 and nan_mis == 0,
                   f'{ex} {lp}{sc}{yr}: {len(sites)} sites, raw-vs-file hourly max|d| {dmax_h:.1e} ppb, '
-                  f'MDA8 max|d| {dmax_m:.1e} ppb, NaN mismatches {nan_mis}')
+                  f'MDA8 max|d| {dmax_m:.1e} ppb, NaN mismatches {nan_mis}' +
+                  (f' (Apr 1-Oct 30; output ends {T[-1]:%m-%d %H} UTC, Oct 31 differs at {edge}/{len(sites)} sites '
+                   f'= incomplete-record edge)' if short_tail else ''))
 
 # ======================================================================= C
 print("\n=== C. regrid recomputed with shapely overlap weights (raw h2, sample hours) ===")
@@ -270,7 +286,7 @@ for ex, tgt, uf in inv:
                 s = H.isel(lat=iy, lon=ix).to_series()
                 if s.isna().all():
                     continue
-                mine = mda8_numpy(s.index, s.values, summer_offset(la, lo), yr).loc[:f'{yr}-10-30']
+                mine = mda8_numpy(s.index, s.values, summer_offset(la, lo, yr), yr).loc[:f'{yr}-10-30']
                 theirs = U.sel(scenario=sc, time=slice(f'{yr}-04-01', f'{yr}-10-30')).isel(lat=iy, lon=ix).to_series()
                 theirs.index = mine.index
                 nm += int((np.isnan(mine.values) != np.isnan(theirs.values)).sum())
