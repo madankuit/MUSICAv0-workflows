@@ -15,7 +15,7 @@ Checks the ne0CONUSne30x8 CONUSBGO3 deliverables (BASE, noBBCONUS; Apr-Oct 2023 
 5. Fire signal: BASE - noBBCONUS seasonal mean per year; the ne30 2023
    BASE - noBBCONUS on the same 1x1 cells for reference.
 
-Figure -> BGO3_FIGURE_DIR/ne0CONUS/ne0CONUS_BASE_minus_noBBCONUS_MDA8_<year>.png
+Figure -> BGO3_FIGURE_DIR/ne0CONUSne30x8/ne0CONUS_BASE_minus_noBBCONUS_MDA8_<year>.png
 
     python verify_ne0CONUS_deliverables.py <cdate YYYYMMDD>
 
@@ -34,8 +34,8 @@ from config.paths import (BGO3_EXPERIMENTS, BGO3_FIGURE_DIR, bgo3_merged_surfo3_
                           bgo3_unified_mda8_latest, ensure_dir)
 
 CDATE = sys.argv[1]
-E = BGO3_EXPERIMENTS['ne0CONUS']
-FIG = ensure_dir(BGO3_FIGURE_DIR / 'ne0CONUS')
+E = BGO3_EXPERIMENTS['ne0CONUSne30x8']
+FIG = ensure_dir(BGO3_FIGURE_DIR / 'ne0CONUSne30x8')
 
 # 1. merged series
 for yr in E['years']:
@@ -106,12 +106,12 @@ for yr in E['years']:
 d30 = (ne30.sel(scenario='BASE', time='2023') - ne30.sel(scenario='noBBCONUS', time='2023')).mean('time')
 d0 = (U['1x1'].MDA8O3.sel(scenario='BASE', time='2023') - U['1x1'].MDA8O3.sel(scenario='noBBCONUS', time='2023')).mean('time')
 ok = np.isfinite(d30.values) & np.isfinite(d0.values)
-print(f"   2023 1x1 BASE-noBBCONUS: ne30 CONUS mean {float(d30.mean()):.2f} vs ne0CONUS {float(d0.mean()):.2f} ppb; "
+print(f"   2023 1x1 BASE-noBBCONUS: ne30 CONUS mean {float(d30.mean()):.2f} vs ne0CONUSne30x8 {float(d0.mean()):.2f} ppb; "
       f"pattern r={np.corrcoef(d30.values[ok], d0.values[ok])[0, 1]:.2f} (different model setups)")
 
 # figure: per year, BASE and BASE-noBBCONUS on 1x1 and 0.15 (+ ne30 1x1 for 2023)
 for yr in E['years']:
-    panels = [(f'ne0CONUS 1x1', U['1x1']), ('ne0CONUS 0.15', U['0.15'])]
+    panels = [(f'ne0CONUSne30x8 1x1', U['1x1']), ('ne0CONUSne30x8 0.15', U['0.15'])]
     fig, axs = plt.subplots(1, 3 if yr == 2023 else 2, figsize=(15 if yr == 2023 else 10.5, 3.8),
                             subplot_kw={'projection': ccrs.PlateCarree()}, constrained_layout=True)
     fields = [(n, (m.MDA8O3.sel(scenario='BASE', time=str(yr)) - m.MDA8O3.sel(scenario='noBBCONUS', time=str(yr))).mean('time'))

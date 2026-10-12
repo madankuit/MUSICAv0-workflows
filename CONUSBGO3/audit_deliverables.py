@@ -13,7 +13,7 @@ A. Inventory: every deliverable's dims, dates, scenarios, units, ranges, NaN%,
 B. Points: for sample monitors (incl. corrected and newly added ones) the column
    is found with shapely point-in-polygon on the SCRIP grid; hourly O3 is read
    from the raw h2 files; MDA8 is recomputed with plain numpy. Compared with the
-   point files for every (scenario, year), ne30 (All803) and ne0CONUS.
+   point files for every (scenario, year), ne30 (All803) and ne0CONUSne30x8.
 C. Regrid: for sample target cells, weights are rebuilt from shapely polygon
    intersections (lon-lat plane, cos(lat) area factor) instead of the ESMF file;
    raw h2 O3 at sample hours is averaged and compared with the hourly gridded files.
@@ -58,7 +58,7 @@ EXPECT = {
              'noBBCONUS': {2022: 'noBBemisCONUS80kmBufferY20220401TY20221101',
                            2023: 'noBBemisCONUS80kmBufferY20230401TY20231101'},
              'noBBGlobal': {2022: 'noBBemisGlobalY20220401TY20231231', 2023: 'noBBemisGlobalY20220401TY20231231'}},
-    'ne0CONUS': {'BASE': {2023: 'hourlyNEIemisCONUS.From20230101.01', 2024: 'hourlyNEIemisCONUS.From20230101.01'},
+    'ne0CONUSne30x8': {'BASE': {2023: 'hourlyNEIemisCONUS.From20230101.01', 2024: 'hourlyNEIemisCONUS.From20230101.01'},
                  'noBBCONUS': {2023: 'hourlyNEInoBBemisCONUS.From20230101.02',
                                2024: 'hourlyNEInoBBemisCONUS.From20230101.02'}},
 }
@@ -178,7 +178,7 @@ for ex, E in BGO3_EXPERIMENTS.items():
 # ======================================================================= B
 print("\n=== B. points recomputed from raw h2 (independent column lookup + numpy MDA8) ===")
 SITES = {'ne30': ['aqs_340130003', 'aqs_040134010', 'aqs_060811001', 'aqs_530330080', 'aqs_230010014', 'aqs_410050004'],
-         'ne0CONUS': ['aqs_340130003', 'aqs_060374009', 'aqs_530330080', 'aqs_120712002']}
+         'ne0CONUSne30x8': ['aqs_340130003', 'aqs_060374009', 'aqs_530330080', 'aqs_120712002']}
 for ex, E in BGO3_EXPERIMENTS.items():
     scrip = xr.open_dataset(E['scrip'])
     mon = pd.read_csv(E.get('colidx_exact', E['colidx']), dtype={'AQS_code': str}).set_index('AQS_code')

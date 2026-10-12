@@ -59,10 +59,10 @@ MODIFICATION HISTORY:
     - --scenarios to process a subset; case/scenario/source file in attrs
 
     python Extract_givenmonitorO3_hourly_dailyMDA8_toNetCDF.py --scenarios noBBGlobal
-    - --experiment ne0CONUS: same monitors and MDA8 code on the ne0CONUSne30x8 runs
-      (column indices from GetMatched_..._ColumnIndex.py --experiment ne0CONUS)
+    - --experiment ne0CONUSne30x8: same monitors and MDA8 code on the ne0CONUSne30x8 runs
+      (column indices from GetMatched_..._ColumnIndex.py --experiment ne0CONUSne30x8)
 
-    python Extract_givenmonitorO3_hourly_dailyMDA8_toNetCDF.py --experiment ne0CONUS
+    python Extract_givenmonitorO3_hourly_dailyMDA8_toNetCDF.py --experiment ne0CONUSne30x8
     - --match exact uses the exact point-in-polygon column indices (ne30: the
       _exact file); --file-tag goes after 'GivenMonitors' in output names so new
       files never overwrite delivered ones

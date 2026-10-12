@@ -14,12 +14,12 @@ MODIFICATION HISTORY:
       noBBGlobal case is a single run spanning both seasons
     - --scenarios to merge a subset; existing merged files are not redone
     - Checks: every file belongs to the case, no missing day, hourly time axis
-    - --experiment ne0CONUS for the ne0CONUSne30x8 runs; samples stamped before
+    - --experiment ne0CONUSne30x8 for the ne0CONUSne30x8 runs; samples stamped before
       Apr 1 01:00 are dropped so every case starts on the same hour (ne0 BASE
       files start at 00:00, everything else at 01:00; all stamps = end of hour)
 
     python Merge_h2files_hourlysurfO3.py --scenarios noBBGlobal
-    python Merge_h2files_hourlysurfO3.py --experiment ne0CONUS
+    python Merge_h2files_hourlysurfO3.py --experiment ne0CONUSne30x8
 """
 
 # for hourly

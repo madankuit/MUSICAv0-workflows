@@ -203,7 +203,7 @@ point files are `…GivenMonitorsAll803….nc`. Checked with
 values (hourly bit-identical, MDA8 within 3e-4 ppb round-off); the 30 corrected sites
 change by ~2–3 ppb on average. Use the All803 files.
 
-**Second experiment set: ne0CONUSne30x8 (`--experiment ne0CONUS`).** The same pipeline and
+**Second experiment set: ne0CONUSne30x8 (`--experiment ne0CONUSne30x8`).** The same pipeline and
 MDA8 code run on the ~14 km variable-resolution runs (`BGO3NE0_CASES`): BASE
 (`hourlyNEIemisCONUS.From20230101.01`) and noBBCONUS (`hourlyNEInoBBemisCONUS.From20230101.02`),
 Apr–Oct 2023 + 2024. This is a different model setup from the ne30 runs (hourly NEI2022v2 +
@@ -211,7 +211,7 @@ CAMS v6.2, QFED2.6 hi-res, GEOS-5 nudging), and no global no-BB run exists on th
 Outputs, under `CONUSBGO3_postprocessing/ne0CONUSne30x8/`: point files
 (`…ne0CONUSne30x8_<scen><yr>.GivenMonitors…`, exact matching, 803 monitors), and unified MDA8 at
 two resolutions: `MUSICAv0_ne0CONUSne30x8_CONUS1x1_MDA8O3_2023-2024_AprOct_c<YMD>.nc` and
-`…_CONUS0.15x0.15_…`. Run with [`jobs/submit_ne0CONUS.sh`](jobs/submit_ne0CONUS.sh); checked with
+`…_CONUS0.15x0.15_…`. Run with [`jobs/submit_ne0CONUSne30x8.sh`](jobs/submit_ne0CONUSne30x8.sh); checked with
 `regridding/verify_ne0CONUS_deliverables.py`.
 
 The gridded MDA8 uses the identical local-time-adjusted EPA method as step 3, and

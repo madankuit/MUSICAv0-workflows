@@ -1,17 +1,17 @@
 #!/bin/bash
 # CONUSBGO3 deliverables for the ne0CONUSne30x8 runs (BASE, noBBCONUS; Apr-Oct 2023 + 2024).
-#   w  ne0CONUS -> 1x1 conservative weights (rootxesmf env)
-#   c  monitor -> ne0CONUS column indices
+#   w  ne0CONUSne30x8 -> 1x1 conservative weights (rootxesmf env)
+#   c  monitor -> ne0CONUSne30x8 column indices
 #   r  ne30 regression: recompute BASE2022 with the changed regrid code; must equal the file
 #   mB, mN  merge BASE / noBBCONUS h2 -> surface O3, one file per year
 #   p  point MDA8 + hourly                         (after c, mB, mN)
 #   g1 regrid to 1x1  + unified MDA8 (1x1)         (after w, r, mB, mN)
 #   g2 regrid to 0.15 + unified MDA8 (0.15)        (after r, mB, mN)
-# Usage (from CONUSBGO3/jobs/): bash submit_ne0CONUS.sh <ne30 unified file for the regression> <YYYYMMDD>
+# Usage (from CONUSBGO3/jobs/): bash submit_ne0CONUSne30x8.sh <ne30 unified file for the regression> <YYYYMMDD>
 set -euo pipefail
 REF=${1:?ne30 unified MDA8 file}; CDATE=${2:?YYYYMMDD stamp}
 test -f "$REF"; mkdir -p logs
-S=bgo3_step.sbatch; E="--experiment ne0CONUS"
+S=bgo3_step.sbatch; E="--experiment ne0CONUSne30x8"
 w=$(BGO3_ENV=rootxesmf sbatch --parsable -J ne0_weights --time=04:00:00 --mem=64G $S regridding/gen_ne30_to_1x1_weights.py $E)
 c=$(sbatch --parsable -J ne0_colidx --time=01:00:00 --mem=16G $S postprocessing/GetMatched_ne30_GivenMonitors_ColumnIndex.py $E)
 r=$(sbatch --parsable -J ne30_regress --time=01:00:00 --mem=32G $S regridding/Regrid_ne30_surfO3_to_1x1_conserve.py \

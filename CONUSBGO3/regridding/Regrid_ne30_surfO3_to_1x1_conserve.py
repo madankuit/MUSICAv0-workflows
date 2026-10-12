@@ -37,12 +37,12 @@ MODIFICATION HISTORY:
     # regression: recompute BASE 2022 and require equality with the old file
     python Regrid_ne30_surfO3_to_1x1_conserve.py --scenarios BASE --years 2022 \
         --check-against <old unified file> --no-write
-    - --experiment ne0CONUS (ne0CONUSne30x8 runs) and --target 1x1 | 0.15: the SE
+    - --experiment ne0CONUSne30x8 (ne0CONUSne30x8 runs) and --target 1x1 | 0.15: the SE
       grid, weights, destination grid and output names come from
       BGO3_EXPERIMENTS; the MDA8 code is unchanged
 
-    python Regrid_ne30_surfO3_to_1x1_conserve.py --experiment ne0CONUS --target 1x1
-    python Regrid_ne30_surfO3_to_1x1_conserve.py --experiment ne0CONUS --target 0.15
+    python Regrid_ne30_surfO3_to_1x1_conserve.py --experiment ne0CONUSne30x8 --target 1x1
+    python Regrid_ne30_surfO3_to_1x1_conserve.py --experiment ne0CONUSne30x8 --target 0.15
 """
 import os, datetime
 import numpy as np, pandas as pd, xarray as xr
@@ -171,7 +171,7 @@ YMD = args.cdate or dtmod.now().strftime('%Y%m%d')
 GRES = {'1x1': '1x1 deg', '0.15': '0.15x0.15 deg'}.get(args.target, args.target)
 SCEN_TEXT = {
     'ne30': None,   # filled below (kept verbatim from v1.2)
-    'ne0CONUS': dict(
+    'ne0CONUSne30x8': dict(
         scenarios=("BASE = all emissions (hourly NEI2022v2 over CONUS + CAMS-GLOB-ANT v6.2 elsewhere, "
                    "QFED2.6 hi-res biomass burning); noBBCONUS = QFED2.6 biomass-burning emissions zeroed over "
                    "CONUS land + 80 km buffer only (fires in Canada/Alaska/Mexico kept, so BASE - noBBCONUS = "

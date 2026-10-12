@@ -492,7 +492,7 @@ BGO3_EXPERIMENTS = {
                'spectral-element, FCnudged nudged to MERRA-2; CAMS-GLOB-ANT v6.2 anthropogenic, '
                'QFED2.6 biomass burning'),
     ),
-    'ne0CONUS': dict(
+    'ne0CONUSne30x8': dict(
         grid='ne0CONUSne30x8', ncol=174098, scrip=SCRIP_NE0CONUSNE30X8,
         label_prefix='ne0CONUSne30x8_',       # file labels e.g. ne0CONUSne30x8_BASE2023
         cases=BGO3NE0_CASES, scenarios=['BASE', 'noBBCONUS'], years=[2023, 2024],

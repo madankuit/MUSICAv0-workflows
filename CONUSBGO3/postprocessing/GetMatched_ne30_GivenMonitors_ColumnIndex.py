@@ -12,15 +12,15 @@ MODIFICATION HISTORY:
     31 Aug 2026: VERSION 1.1
     - Paths moved to config/paths.py; SCRIP grid now read from the repo
     9 Oct 2026: VERSION 1.2
-    - --experiment ne0CONUS matches the same monitors on the ne0CONUSne30x8 grid;
+    - --experiment ne0CONUSne30x8 matches the same monitors on the ne0CONUSne30x8 grid;
       prints the monitor-to-column-centre distance as a sanity check
-    - --match exact (default for ne0CONUS): point-in-polygon on the SCRIP cell
+    - --match exact (default for ne0CONUSne30x8): point-in-polygon on the SCRIP cell
       outline. get_site_index (--match legacy, the ne30 default) only tests the
       boxes spanned by the cell centre and each corner, so it misses sites near
-      cell edges (22/803 on ne30, 53/803 on ne0CONUS). The legacy ne30 file is
+      cell edges (22/803 on ne30, 53/803 on ne0CONUSne30x8). The legacy ne30 file is
       kept as is because the delivered ne30 point files were built from it.
 
-    python GetMatched_ne30_GivenMonitors_ColumnIndex.py --experiment ne0CONUS
+    python GetMatched_ne30_GivenMonitors_ColumnIndex.py --experiment ne0CONUSne30x8
 '''
 #================================================================================================
 # ### functions import ###

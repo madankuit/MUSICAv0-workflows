@@ -3,7 +3,7 @@
 mirroring the Regridding_ESMF_v1 call_ESMF setup. Weight-file only + verify.
 
     python gen_ne30_to_1x1_weights.py                          # ne30np4 (Jul 2026)
-    python gen_ne30_to_1x1_weights.py --experiment ne0CONUS    # ne0CONUSne30x8 (Oct 2026)
+    python gen_ne30_to_1x1_weights.py --experiment ne0CONUSne30x8    # ne0CONUSne30x8 (Oct 2026)
 """
 import esmpy, numpy as np, xarray as xr, datetime, os
 import sys, pathlib
