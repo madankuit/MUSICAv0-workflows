@@ -193,6 +193,27 @@ noBBGlobal was added in Oct 2026 without recomputing the other three scenarios: 
 [`jobs/submit_noBBGlobal.sh`](jobs/submit_noBBGlobal.sh) (merge → points; a BASE2022
 regression check against the delivered file; regrid with `--append-to`).
 
+**Monitor matching (Oct 2026).** The original matching (`get_site_index`, used for the
+ne30 point files delivered before Oct 2026) only tests boxes spanned by a cell centre and
+each corner. On ne30 it missed 22 of the 803 monitors and put 30 others in a
+**neighbouring** cell. `GetMatched_…_ColumnIndex.py --match exact` uses a point-in-polygon
+test on the SCRIP outline instead (`MatchedMonitors_ne30_ColIdx_exact.csv`); the rebuilt ne30
+point files are `…GivenMonitorsAll803….nc`. Checked with
+`postprocessing/verify_ne30_allmonitors.py`: the 751 unchanged sites match the delivered
+values (hourly bit-identical, MDA8 within 3e-4 ppb round-off); the 30 corrected sites
+change by ~2–3 ppb on average. Use the All803 files.
+
+**Second experiment set: ne0CONUSne30x8 (`--experiment ne0CONUS`).** The same pipeline and
+MDA8 code run on the ~14 km variable-resolution runs (`BGO3NE0_CASES`): BASE
+(`hourlyNEIemisCONUS.From20230101.01`) and noBBCONUS (`hourlyNEInoBBemisCONUS.From20230101.02`),
+Apr–Oct 2023 + 2024. This is a different model setup from the ne30 runs (hourly NEI2022v2 +
+CAMS v6.2, QFED2.6 hi-res, GEOS-5 nudging), and no global no-BB run exists on this grid.
+Outputs, under `CONUSBGO3_postprocessing/ne0CONUSne30x8/`: point files
+(`…ne0CONUSne30x8_<scen><yr>.GivenMonitors…`, exact matching, 803 monitors), and unified MDA8 at
+two resolutions: `MUSICAv0_ne0CONUSne30x8_CONUS1x1_MDA8O3_2023-2024_AprOct_c<YMD>.nc` and
+`…_CONUS0.15x0.15_…`. Run with [`jobs/submit_ne0CONUS.sh`](jobs/submit_ne0CONUS.sh); checked with
+`regridding/verify_ne0CONUS_deliverables.py`.
+
 The gridded MDA8 uses the identical local-time-adjusted EPA method as step 3, and
 should be cross-checked against the point deliverable by sampling the nearest cell
 to each monitor — the two pipelines implement the method independently, so close
