@@ -79,6 +79,7 @@ ap.add_argument('--check-against', default=None,
                 help='unified MDA8 file; computed MDA8 must equal it (regression test)')
 ap.add_argument('--no-write', action='store_true', help='write nothing (use with --check-against)')
 ap.add_argument('--no-hourly', action='store_true', help='skip the hourly gridded files (unified MDA8 only)')
+ap.add_argument('--hourly-only', action='store_true', help='write the hourly gridded files only (no MDA8)')
 ap.add_argument('--cdate', default=None, help='YYYYMMDD stamp for output names (default today)')
 args = ap.parse_args()
 OLD_NAMES = {'noBB': 'noBBCONUS'}         # scenario names in files delivered before Oct 2026
@@ -280,6 +281,8 @@ for sc in RUN_SCEN:
                           encoding={'O3':{'zlib':True,'complevel':4,'_FillValue':np.float32(np.nan)}})
             print("  hourly ->",fpath)
 
+        if args.hourly_only:
+            continue
         # ---- MDA8 (use full hourly for local-time completeness; target 04-01..10-31) ----
         datesv1=pd.date_range(f'{yr}-{STARTMMDD}',f'{yr}-{ENDMMDD}',freq='D')
         da=xr.DataArray(hourly,dims=['time','cell'],coords={'time':times})
@@ -290,6 +293,9 @@ for sc in RUN_SCEN:
             mda8[:,idx]=res.values
         mda8_all[(sc,yr)]=mda8; mda8_dates[yr]=datesv1
         print(f"  MDA8 ppb: min={np.nanmin(mda8):.1f} max={np.nanmax(mda8):.1f} nan%={100*np.isnan(mda8).mean():.0f}")
+
+if args.hourly_only:
+    print("--hourly-only: done."); sys.exit(0)
 
 # ================= regression check against an existing unified file =================
 def _open_unified(path):
