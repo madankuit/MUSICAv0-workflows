@@ -203,6 +203,15 @@ point files are `…GivenMonitorsAll803….nc`. Checked with
 values (hourly bit-identical, MDA8 within 3e-4 ppb round-off); the 30 corrected sites
 change by ~2–3 ppb on average. Use the All803 files.
 
+**Local-time fix (Oct 2026, files `c20261012`).** Gridded MDA8 had taken each cell's summertime UTC
+offset from the 2022 time-zone rules for every year. Mexico dropped DST in Oct 2022, so Mexican cells
+inside the CONUS box were 1 h off in 2023 and 2024 (~50 cells at 1°, ~1,960 at 0.15°; up to ~3–4 ppb at
+1°, ~11 ppb on single 0.15° cell-days). Offsets now follow each year's rules. US cells, 2022, all hourly
+files and all point files are unchanged (`diagnostics/compare_unified_versions.py`). Use the
+`c20261012` unified files. An independent audit (`audit_deliverables.py`: raw h2, shapely, numpy) passes
+on them. Note: ne30 BASE2023 and noBBCONUS2022 output ends at Nov 1 00 UTC, so Oct 31 local is
+incomplete in the West for those two runs.
+
 **Second experiment set: ne0CONUSne30x8 (`--experiment ne0CONUSne30x8`).** The same pipeline and
 MDA8 code run on the ~14 km variable-resolution runs (`BGO3NE0_CASES`): BASE
 (`hourlyNEIemisCONUS.From20230101.01`) and noBBCONUS (`hourlyNEInoBBemisCONUS.From20230101.02`),
