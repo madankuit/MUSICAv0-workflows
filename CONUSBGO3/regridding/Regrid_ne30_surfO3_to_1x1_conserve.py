@@ -184,13 +184,13 @@ SCEN_TEXT = {
     'ne0CONUSne30x8': dict(
         scenarios=("BASE = all emissions (hourly NEI2022v2 over CONUS + CAMS-GLOB-ANT v6.2 elsewhere, "
                    "QFED2.6 hi-res biomass burning); noBBCONUS = QFED2.6 biomass-burning emissions zeroed over "
-                   "CONUS land + 80 km buffer only (fires in Canada/Alaska/Mexico kept, so BASE - noBBCONUS = "
-                   "O3 from US fires). No global no-BB run exists on this grid."),
+                   "CONUS land + 80 km buffer only (biomass-burning emissions in Canada/Alaska/Mexico kept, so "
+                   "BASE - noBBCONUS = O3 from US biomass burning). No global no-BB run exists on this grid."),
         scenario_notes=("BASE and noBBCONUS (.01) are hybrid starts from the same state on 2023-01-01, so CONUS "
-                        "fires have been off in noBBCONUS since Jan 1 (3-month spin-up before the Apr-Oct window). "
+                        "biomass-burning emissions have been off in noBBCONUS since Jan 1 (3-month spin-up before the Apr-Oct window). "
                         "noBBCONUS .01 branched to .02 at 2023-04-01 with an identical namelist; only .02 output "
                         "is used. BASE and noBBCONUS share grid, GEOS-5 nudging and all "
-                        "non-fire emissions. Hourly values are means stamped at the END of each hour; every series "
+                        "non-biomass-burning emissions. Hourly values are means stamped at the END of each hour; every series "
                         "starts at Apr 1 01:00 UTC. This BASE is a different model setup from the ne30 CONUSBGO3 "
                         "BASE (inventories, resolution, nudging), so the two sets are not interchangeable."),
     ),
@@ -205,13 +205,14 @@ def prov(extra):
         scenarios=("BASE = all emissions; "
                    "noAnthro = CONUS anthropogenic emissions zeroed (land, 80 km buffer); "
                    "noBBCONUS = QFED2.6 biomass-burning emissions zeroed over CONUS land + 80 km buffer only "
-                   "(fires in Canada/Alaska/Mexico kept, so BASE - noBBCONUS = O3 from US fires; "
+                   "(biomass-burning emissions in Canada/Alaska/Mexico kept, so BASE - noBBCONUS = O3 from US "
+                   "biomass burning; "
                    "called noBB in files delivered before Oct 2026); "
-                   "noBBGlobal = biomass-burning emissions zeroed globally (QFED2.6 plus CMIP6 fire DMS and "
-                   "num_so4_a1), so BASE - noBBGlobal = O3 from all fires incl. transported smoke and the "
-                   "hemispheric fire background"),
+                   "noBBGlobal = biomass-burning emissions zeroed globally (QFED2.6 plus CMIP6 biomass-burning DMS and "
+                   "num_so4_a1), so BASE - noBBGlobal = O3 from all biomass burning incl. transported smoke and "
+                   "the hemispheric biomass-burning background"),
         scenario_notes=("noBBGlobal is one continuous run from 2022-04-01, so its 2023 season starts from a "
-                        "no-fire state; BASE2023, noAnthro2023 and noBBCONUS2023 branch from BASE2022 at "
+                        "no-biomass-burning state; BASE2023, noAnthro2023 and noBBCONUS2023 branch from BASE2022 at "
                         "2023-04-01. Grid, MERRA-2 nudging, all other emissions and the 2022 initial "
                         "condition are identical across scenarios."),
         case_names="; ".join(f"{LABEL[k]}: {v}" for k,v in CASE.items()),

@@ -6,7 +6,7 @@ make_mda8_scenario_subset.py
 Writes a unified MDA8 file holding only some scenarios of an existing one (values
 copied unchanged), with the scenario description, case names and title rewritten
 to cover only those scenarios. Used for the Oct 2026 share with the GAM group:
-BASE + noBBGlobal only (fire O3 = BASE - noBBGlobal).
+BASE + noBBGlobal only (biomass-burning O3 = BASE - noBBGlobal).
 
     python make_mda8_scenario_subset.py <source unified file> BASE noBBGlobal
 
@@ -23,9 +23,9 @@ DESC = {
     'BASE': 'BASE = all emissions',
     'noAnthro': 'noAnthro = CONUS anthropogenic emissions zeroed (land, 80 km buffer)',
     'noBBCONUS': 'noBBCONUS = QFED2.6 biomass-burning emissions zeroed over CONUS land + 80 km buffer only',
-    'noBBGlobal': ('noBBGlobal = biomass-burning emissions zeroed globally (QFED2.6 plus CMIP6 fire DMS and '
-                   'num_so4_a1), so BASE - noBBGlobal = O3 from all fires incl. transported smoke (e.g. Canadian) '
-                   'and the ~1 ppb hemispheric fire background'),
+    'noBBGlobal': ('noBBGlobal = biomass-burning emissions zeroed globally (QFED2.6 plus CMIP6 biomass-burning DMS and '
+                   'num_so4_a1), so BASE - noBBGlobal = O3 from all biomass burning incl. transported smoke (e.g. Canadian) '
+                   'and the ~1 ppb hemispheric biomass-burning background'),
 }
 
 src = pathlib.Path(sys.argv[1]); keep = sys.argv[2:]
@@ -44,7 +44,7 @@ a['scenario_dim'] = ', '.join(keep)
 a['title'] = re.sub(r'\d+ scenarios', f'{len(keep)} scenarios ({", ".join(keep)})', a['title'])
 if 'noBBGlobal' in keep:
     a['scenario_notes'] = ('noBBGlobal is one continuous run from 2022-04-01, so its 2023 season starts from a '
-                           'no-fire state; BASE2023 branches from BASE2022 at 2023-04-01. Grid, MERRA-2 nudging, '
+                           'no-biomass-burning state; BASE2023 branches from BASE2022 at 2023-04-01. Grid, MERRA-2 nudging, '
                            'all other emissions and the 2022 initial condition are identical.')
 a['scenario_source'] = (f"subset ({', '.join(keep)}) of {src.name}, values unchanged; "
                         f"created {datetime.now():%Y-%m-%d}")
