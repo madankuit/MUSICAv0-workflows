@@ -66,7 +66,7 @@ for ax,k,lab in zip(axs[2:],BB,"cd"):
     print(f"BASE-{k} 2-yr mean: CONUS mean {float(dB[k].mean()):.2f}, max {float(dB[k].max()):.2f} ppb")
 fig.colorbar(p2,ax=list(axs[2:]),orientation="horizontal",pad=0.03,aspect=40,extend="both").set_label("$\\Delta$MDA8 O$_3$ (ppb)")
 fig.suptitle("MUSICAv0 ne30, 1x1 deg: seasonal-mean daily MDA8 O$_3$ (EPA, 40 CFR 50 Appendix U), Apr$-$Oct 2022$-$2023",
-             fontsize=13,fontweight="bold")
+             fontsize=13,fontweight="bold",y=1.06)
 fig.text(0.5,-0.02,f"source: {pathlib.Path(MDA8_FILE).name}",ha="center",fontsize=8,color="0.35")
 out=FIG+"MDA8_BASE_and_diffs_seasonmean_2022-2023.png"
 for k,d in [("noAnthro",dA)]+list(dB.items()):
