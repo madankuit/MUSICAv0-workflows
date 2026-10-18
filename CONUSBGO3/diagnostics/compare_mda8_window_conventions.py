@@ -63,7 +63,7 @@ def mda8(H, t_utc, off, yr, end_hours):
             W = M[k]
             ok = np.isfinite(W).sum(0) >= 13
             with np.errstate(all='ignore'):
-                out[d, ok] = np.nanmax(W[:, ok], 0)
+                out[d, idx[ok]] = np.nanmax(W[:, ok], 0)
     return days, out
 
 CUR, EPA = list(range(7, 24)), list(range(15, 32))
