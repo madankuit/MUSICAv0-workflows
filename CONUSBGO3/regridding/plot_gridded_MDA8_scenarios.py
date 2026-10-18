@@ -19,6 +19,7 @@ hard-coded here.
     8 Jul 2026: VERSION 1.0
     31 Aug 2026: VERSION 1.1 - paths moved to config/paths.py
     9 Oct 2026: VERSION 1.2 - noBB renamed noBBCONUS; panel (d) BASE - noBBGlobal
+    18 Oct 2026: VERSION 1.3 - EPA App. U MDA8 in title, source file noted, panel meanings
 """
 import glob, sys, pathlib
 import numpy as np, xarray as xr
@@ -54,17 +55,20 @@ npan=2+len(BB)
 fig,axs=plt.subplots(1,npan,figsize=(5*npan,3.7),subplot_kw={"projection":ccrs.PlateCarree()},
                      constrained_layout=True)
 p0=axs[0].pcolormesh(lon,lat,BASE,cmap="YlOrRd",vmin=25,vmax=60,shading="auto",transform=ccrs.PlateCarree())
-deco(axs[0],"(a) BASE")
+deco(axs[0],"(a) BASE\n")
 fig.colorbar(p0,ax=axs[0],orientation="horizontal",pad=0.03,aspect=28,extend="both").set_label("MDA8 O$_3$ (ppb)")
 p1=axs[1].pcolormesh(lon,lat,dA,cmap="RdBu_r",vmin=-vA,vmax=vA,shading="auto",transform=ccrs.PlateCarree())
-deco(axs[1],"(b) BASE $-$ noAnthro")
+deco(axs[1],"(b) BASE $-$ noAnthro\n(CONUS anthropogenic)")
 fig.colorbar(p1,ax=axs[1],orientation="horizontal",pad=0.03,aspect=28,extend="both").set_label("$\\Delta$MDA8 O$_3$ (ppb)")
 for ax,k,lab in zip(axs[2:],BB,"cd"):
     p2=ax.pcolormesh(lon,lat,dB[k],cmap="RdBu_r",vmin=-vB,vmax=vB,shading="auto",transform=ccrs.PlateCarree())
-    deco(ax,f"({lab}) BASE $-$ {k}")
+    deco(ax,f"({lab}) BASE $-$ {k}"+{"noBBCONUS":"\n(US biomass burning)","noBBGlobal":"\n(all biomass burning)"}.get(k,""))
     print(f"BASE-{k} 2-yr mean: CONUS mean {float(dB[k].mean()):.2f}, max {float(dB[k].max()):.2f} ppb")
 fig.colorbar(p2,ax=list(axs[2:]),orientation="horizontal",pad=0.03,aspect=40,extend="both").set_label("$\\Delta$MDA8 O$_3$ (ppb)")
-fig.suptitle("MUSICAv0 ne30 (1x1, mass-conservative) seasonal-mean MDA8 O$_3$, Apr-Oct 2022-2023",
+fig.suptitle("MUSICAv0 ne30, 1x1 deg: seasonal-mean daily MDA8 O$_3$ (EPA, 40 CFR 50 Appendix U), Apr$-$Oct 2022$-$2023",
              fontsize=13,fontweight="bold")
+fig.text(0.5,-0.02,f"source: {pathlib.Path(MDA8_FILE).name}",ha="center",fontsize=8,color="0.35")
 out=FIG+"MDA8_BASE_and_diffs_seasonmean_2022-2023.png"
-fig.savefig(out,dpi=140); print("saved",out)
+for k,d in [("noAnthro",dA)]+list(dB.items()):
+    print(f"BASE-{k}: box mean {float(d.mean()):.2f} ppb, max {float(d.max()):.2f}")
+fig.savefig(out,dpi=170,bbox_inches="tight"); print("saved",out)
