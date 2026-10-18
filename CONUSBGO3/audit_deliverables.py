@@ -21,12 +21,14 @@ D. Grid MDA8: MDA8 recomputed (numpy) from the hourly gridded files at sample ce
    and compared with the unified MDA8 files (Apr 1 - Oct 30; the hourly files stop
    at Oct 31 23 UTC, so Oct 31 local is not complete in them).
 
-MDA8 convention checked (as specified for the deliverables): hourly means labelled
-by the END of the hour; fixed summertime UTC offset per location (timezonefinder);
-8-h windows ending 07-23 local, >=6 valid hours; day valid with >=13 windows.
+MDA8 convention checked: 40 CFR 50 Appendix U, written independently here (loops)
+from functions/mda8_epa.py: local standard time, hour-beginning = CAM stamp - 1 h,
+hourly and 8-h values truncated to whole ppb, 17 periods starting 07-23 LST, >=6 h
+(or zero-substituted > 70 ppb), day valid with >=13 or maximum > 70 ppb.
 
     python audit_deliverables.py [cdate YYYYMMDD]
 
+    18 Oct 2026: VERSION 1.1 - Appendix U MDA8 (independent implementation)
     12 Oct 2026: VERSION 1.0
 """
 import sys, pathlib, glob, re
@@ -44,7 +46,7 @@ import config  # noqa: F401
 from config.paths import BGO3_EXPERIMENTS, case_hist_dir
 
 RNG = np.random.default_rng(20261012)
-CDATE = sys.argv[1] if len(sys.argv) > 1 else '20261010'   # unified-file stamp to audit
+CDATE = sys.argv[1] if len(sys.argv) > 1 else '20261018'   # MDA8 (unified + point) stamp to audit
 FAIL = []
 def check(ok, msg):
     print(("   OK   " if ok else "   FAIL ") + msg)
@@ -70,28 +72,38 @@ for ex, d in EXPECT.items():
 
 tf = TimezoneFinder()
 def summer_offset(lat, lon, year):
+    """Local STANDARD time offset (h), written independently of functions/mda8_epa.py.
+    (Name kept for the call sites; Appendix U uses LST.)"""
     tz = tf.timezone_at(lat=lat, lng=lon)
     if tz is None:
         return int(round(lon / 15.0))
-    return int(pytz.timezone(tz).localize(datetime(year, 7, 1), is_dst=True).utcoffset().total_seconds() // 3600)
+    jan = pytz.timezone(tz).localize(datetime(year, 1, 15))          # northern-hemisphere winter = standard time
+    return int(jan.utcoffset().total_seconds() // 3600)
 
 def mda8_numpy(times_utc, vals, off, year):
-    """Independent MDA8 (plain numpy): Series local-date -> value (NaN if invalid)."""
-    from numpy.lib.stride_tricks import sliding_window_view
-    t_loc = pd.DatetimeIndex(times_utc) + pd.Timedelta(hours=off)
-    days = pd.date_range(f'{year}-04-01', f'{year}-10-31')
-    grid = pd.date_range(days[0] - pd.Timedelta(hours=7), days[-1] + pd.Timedelta(hours=23), freq='h')
-    a = pd.Series(np.asarray(vals, dtype='float64'), index=t_loc).reindex(grid).values
-    win = sliding_window_view(a, 8)                         # win[k] = hours grid[k] .. grid[k+7]
-    n = np.isfinite(win).sum(1)
-    with np.errstate(invalid='ignore'):
-        m = np.where(n >= 6, np.nansum(win, 1) / np.maximum(n, 1), np.nan)
-    end = grid[7:]                                          # window k ends at grid[k+7]
-    m = pd.Series(m, index=end)
+    """Independent Appendix-U MDA8 (plain loops): Series local-date -> whole-ppb value or NaN.
+    times_utc are CAM end-of-hour stamps -> hour-beginning LST = stamp - 1 h + off."""
+    hb = pd.DatetimeIndex(times_utc) - pd.Timedelta(hours=1) + pd.Timedelta(hours=off)
+    h = pd.Series(np.floor(np.asarray(vals, dtype='float64') + 1e-6), index=hb)   # hourly truncation
+    h = h[~h.index.duplicated()]
     out = []
+    days = pd.date_range(f'{year}-04-01', f'{year}-10-31')
     for d in days:
-        w = m.reindex(pd.date_range(d + pd.Timedelta(hours=7), d + pd.Timedelta(hours=23), freq='h')).values
-        out.append(np.nanmax(w) if np.isfinite(w).sum() >= 13 else np.nan)
+        wins = []
+        for st in range(7, 24):                                         # periods starting 07..23 LST
+            t0 = d + pd.Timedelta(hours=st)
+            x = h.reindex(pd.date_range(t0, t0 + pd.Timedelta(hours=7), freq='h')).values
+            n = int(np.isfinite(x).sum())
+            if n >= 6:
+                a = np.floor(np.nansum(x) / n + 1e-6)
+            elif n > 0 and np.floor(np.nansum(x) / 8 + 1e-6) > 70:          # zeros substituted
+                a = np.floor(np.nansum(x) / 8 + 1e-6)
+            else:
+                a = np.nan
+            wins.append(a)
+        wins = np.array(wins); nv = int(np.isfinite(wins).sum())
+        mx = np.nanmax(wins) if nv else np.nan
+        out.append(mx if (nv >= 13 or (nv and mx > 70)) else np.nan)
     return pd.Series(out, index=days)
 
 def raw_files(case, year, end_mmdd='11-01'):

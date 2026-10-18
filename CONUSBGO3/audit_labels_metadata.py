@@ -22,6 +22,7 @@ supersedes. Prints one line per file; exits 1 if anything is wrong.
 
     python audit_labels_metadata.py [--list-files]   # --list-files: print the share set paths only
 
+    18 Oct 2026: VERSION 1.1 - MDA8 stamp c20261018 (Appendix U), hourly c20261012
     13 Oct 2026: VERSION 1.0
 """
 import sys, pathlib, glob, re
@@ -32,7 +33,8 @@ sys.path.insert(0, str(_ROOT))
 import config  # noqa: F401
 from config.paths import BGO3_EXPERIMENTS
 
-STAMP = '20261012'
+STAMP = '20261018'          # MDA8 (unified + point MDA8 files): Appendix U recompute
+HSTAMP = '20261012'         # hourly gridded files (values unchanged)
 SIM = {   # written out by hand
     'ne30': {('BASE', 2022): 'f.e22.FCnudged.ne30_ne30_mg17.BGO3.BASEY20220401TY20230401',
              ('BASE', 2023): 'f.e22.FCnudged.ne30_ne30_mg17.BGO3.BASEY20230401TY20231101',
@@ -118,7 +120,8 @@ for ex, E in BGO3_EXPERIMENTS.items():
         res = '1x1 deg' if tgt == '1x1' else '0.15x0.15 deg'
         for k, need in [('title', GRIDNAME[ex]), ('title', res), ('horizontal_regrid', res),
                         ('regrid_weight_file', pathlib.Path(wgt).name), ('regrid_dest_grid', pathlib.Path(gi).name),
-                        ('regrid_source_scrip', pathlib.Path(E['scrip']).name), ('local_time', "each year's rules"),
+                        ('regrid_source_scrip', pathlib.Path(E['scrip']).name), ('local_time', 'local standard time'),
+                        ('mda8_method', 'Appendix U'), ('mda8_method', '07:00-23:00 LST'), ('mda8_values', 'whole ppb'),
                         ('scenario_dim', ', '.join(want)), ('scenarios', 'noBBCONUS')]:
             if need not in str(ds.attrs.get(k, '')):
                 iss.append(f"{k} lacks '{need}'")
@@ -131,12 +134,15 @@ for ex, E in BGO3_EXPERIMENTS.items():
             iss.append('time axis')
         if ds.MDA8O3.attrs.get('units') != 'ppb':
             iss.append('MDA8O3 units')
+        _v = ds.MDA8O3.values; _v = _v[np.isfinite(_v)]
+        if not np.all(_v == np.floor(_v)):
+            iss.append('MDA8 not whole ppb (Appendix U truncation)')
         report(f, iss, f"{ex} {tgt}: scenarios {want}, {len(days)} days")
     # ---- hourly gridded ----
     for tgt, (gi, wgt, tag) in E['targets'].items():
         for (sc, yr), cn in SIM[ex].items():
             hits = sorted(glob.glob(str(E['hourly_dir'] / f'{tag}_UTChourlySurfO3.{lp}{sc}{yr}.*.nc')))
-            cur = [h for h in hits if h.endswith(f'_c{STAMP}.nc')]
+            cur = [h for h in hits if h.endswith(f'_c{HSTAMP}.nc')]
             if not cur:
                 cur = hits[-1:]                         # ne0 hourly were made c20261010 (unchanged by later fixes)
             f = pathlib.Path(cur[0]) if cur else pathlib.Path(f'{tag}_UTChourlySurfO3.{lp}{sc}{yr}.MISSING')
@@ -162,6 +168,8 @@ for ex, E in BGO3_EXPERIMENTS.items():
     for (sc, yr), cn in SIM[ex].items():
         for kind, var, unit in [('LocalTimeMDA8O3', 'MDA8O3', 'ppb'), ('UTChourlyO3', 'O3', 'mol/mol')]:
             hits = glob.glob(str(E['points_dir'] / f'{kind}.{lp}{sc}{yr}.GivenMonitors{ptag}.*.nc'))
+            if kind == 'LocalTimeMDA8O3':
+                hits = [h for h in hits if h.endswith(f'_c{STAMP}.nc')]
             f = pathlib.Path(hits[0]) if len(hits) == 1 else pathlib.Path(f'{kind}.{lp}{sc}{yr}.GivenMonitors{ptag}.MISSING')
             share.append(f)
             if len(hits) != 1:
@@ -171,6 +179,12 @@ for ex, E in BGO3_EXPERIMENTS.items():
                 iss.append(f"AQS_code {ds.sizes.get('AQS_code')}")
             if ds[var].attrs.get('units') != unit:
                 iss.append(f"{var} units {ds[var].attrs.get('units')}")
+            if kind == 'LocalTimeMDA8O3':
+                if 'local standard time' not in ds.attrs.get('mda8_method', ''):
+                    iss.append('mda8_method lacks local standard time')
+                v = ds[var].values; v = v[np.isfinite(v)]
+                if not np.all(v == np.floor(v)):
+                    iss.append('MDA8 not whole ppb')
             ci = ds.attrs.get('column_index_file', '')
             want_ci = 'MatchedMonitors_ne30_ColIdx_exact.csv' if ex == 'ne30' else 'MatchedMonitors_ne0CONUSne30x8_ColIdx.csv'
             if ci != want_ci:
@@ -190,7 +204,7 @@ for ex, E in BGO3_EXPERIMENTS.items():
                 n = pathlib.Path(f).name
                 why = ('old noBB label' if BARE_NOBB.search(n) else
                        'legacy monitor matching (781 sites)' if '.GivenMonitors.' in n and ex == 'ne30' else
-                       'pre-fix MDA8 (Mexico tz) / older stamp' if 'MDA8O3' in n else
+                       'pre-Appendix-U MDA8 / older stamp' if 'MDA8O3' in n else
                        'older stamp, values identical to c20261012' if 'UTChourlySurfO3' in n else '?')
                 print(f"   superseded: {d.name if hasattr(d,'name') else d}/{n}  <- {why}")
 print(f"\n{'ALL LABELS AND METADATA CONSISTENT' if not problems else f'{len(problems)} FILE(S) WITH PROBLEMS'}")

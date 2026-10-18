@@ -28,10 +28,8 @@ Inputs
     Maps (scenario, year) to string label, e.g. 'noBBGlobal2023'.
 - bgo3_merged_surfo3_path(casename, year):
     Merged hourly surface O3 file for one case and year.
-- compute_mda8_UTCoffset: function
-    Computes daily MDA8 O3 from UTC hourly series given UTC offset (hours).
-- get_summer_offset: function
-    Returns integer UTC offset hours for given lat/lon (fixed summertime DST).
+- mda8_epa / lst_offset_hours (functions/mda8_epa.py):
+    MDA8 per 40 CFR 50 Appendix U; local standard time offset of the monitor.
 
 Outputs
 -------
@@ -43,8 +41,9 @@ Two NetCDF files in Output_diri:
 
 Notes
 -----
-- MDA8 calculation: rolling 8-h mean with ≥6 valid hours; daily max from
-  windows ending 07–23 local; day valid if ≥13 valid windows.
+- MDA8 calculation: 40 CFR 50 Appendix U (functions/mda8_epa.py): local standard
+  time, 8-h averages starting 07-23 (>=6 h, zero-substitution rule), truncation to
+  whole ppb, day valid with >=13 of 17 averages or if the maximum exceeds 70 ppb.
 - Output NetCDFs include per-site coordinates (lat, lon, AQS_code).
 - Script prints the saved file paths; no return object.
 
@@ -53,6 +52,10 @@ MODIFICATION HISTORY:
     - Initial version
     31 Aug 2026: VERSION 1.1
     - Paths, case names and the merged-file lookup moved to config/paths.py
+    18 Oct 2026: VERSION 1.3
+    - MDA8 exactly per 40 CFR 50 Appendix U via functions/mda8_epa.py (local
+      standard time, windows starting 07-23, truncation, validity rules);
+      --mda8-only, --cdate
     9 Oct 2026: VERSION 1.2
     - Loops over (scenario, year) and finds the merged file by (case, year):
       the noBBGlobal case is one run serving both years
@@ -100,6 +103,8 @@ ap.add_argument('--scenarios', nargs='+', default=None)
 ap.add_argument('--match', choices=['legacy', 'exact'], default=None,
                 help='column-index file: legacy (ne30 default, as delivered) or exact')
 ap.add_argument('--file-tag', default='', help="inserted after 'GivenMonitors' in output names")
+ap.add_argument('--mda8-only', action='store_true', help='write the MDA8 files only (hourly point files untouched)')
+ap.add_argument('--cdate', default='', help="YYYYMMDD; MDA8 file names end in _c<cdate>.nc")
 args = ap.parse_args()
 EXP = BGO3_EXPERIMENTS[args.experiment]
 CASES = EXP['cases']; LABELS = {k: f"{EXP['label_prefix']}{k[0]}{k[1]}" for k in CASES}
@@ -142,80 +147,14 @@ warnings.filterwarnings("ignore", category=FutureWarning, module="xarray.core.ac
 # Define functions specific for this application
 # repo-local shared functions (functions/ is on sys.path via `import config`)
 from SE_analysis import get_site_index
+from mda8_epa import mda8_epa, lst_offset_hours
+from timezonefinder import TimezoneFinder as _TFclass
+_TF = _TFclass()
 
 from timezonefinder import TimezoneFinder
 from datetime import datetime
 import pytz
 
-"""Function to get the hour offset to UTC based on the location of the monitor"""
-def get_summer_offset(lati: float, loni: float, year: int) -> int:
-    # Find the timezone name from lat/lon
-    tf = TimezoneFinder()
-    tz_name = tf.timezone_at(lat=lati, lng=loni)
-    if tz_name is None:
-        raise ValueError("Could not determine timezone for given coordinates")
-
-    # Pick a midsummer date (July 1) to ensure DST applies if relevant
-    # that year's rules (Mexico dropped DST in Oct 2022; US monitors are unaffected)
-    dt = datetime(year, 7, 1)
-
-    # Localize to that timezone
-    tz = pytz.timezone(tz_name)
-    localized_dt = tz.localize(dt, is_dst=True)
-
-    # Get offset from UTC in hours
-    offset_hours = int(localized_dt.utcoffset().total_seconds() // 3600)
-    return offset_hours
-# # Example
-# lati, loni = 33.545278, -86.549167
-# print(get_summer_offset(lati, loni))  # → -5
-
-
-"""Function to calculate MDA8 O3 in the local time following EPA's guidance"""
-def compute_mda8_UTCoffset(
-    o3_hourly_utc: xr.DataArray,
-    datesv1: list[str],
-    utc_offset_hours: int,         # e.g., -5 for CDT
-    min_hours_per_block: int = 6,  # ≥6 of 8 hours to form a valid 8-h mean
-    min_blocks_per_day: int = 13   # ≥13 of the 17 daily blocks required
-) -> xr.DataArray:
-    """
-    Compute daily MDA8 O3 from hourly O3 timestamps in UTC,
-    using a fixed integer local-time offset (hours) for the rolling windows.
-
-    - Shifts the time coordinate by `utc_offset_hours` to a 'local' clock
-      (local = UTC + offset), performs rolling and day grouping,
-      then returns results indexed by local dates in `datesv1`.
-    - Works with extra dims (e.g., 'site') and dask-backed arrays.
-    """
-
-    # 1) Shift time axis to 'local' clock (no tz objects, just a simple offset)
-    t_local = pd.DatetimeIndex(o3_hourly_utc.time.values) + pd.to_timedelta(utc_offset_hours, "h")
-    O3 = o3_hourly_utc.assign_coords(time=("time", t_local))
-    
-    # 2) 8-hour rolling mean with EPA min-hours criterion
-    O3_8h = O3.rolling(time=8, min_periods=min_hours_per_block).mean()
-    
-    # 3) Keep only the 17 blocks ending 07..23 local
-    O3_8h_17 = O3_8h.where(O3_8h["time"].dt.hour.isin(np.arange(7, 24)))
-
-    # 4) Group by local civil day; compute daily max and valid-block count
-    day_idx = pd.DatetimeIndex(O3_8h_17.time.values).floor("D")
-    O3_8h_17 = O3_8h_17.assign_coords(day=("time", day_idx))
-    
-    mda8_by_day    = O3_8h_17.groupby("day").max("time", skipna=True)
-    blocks_per_day = O3_8h_17.groupby("day").count("time")
-
-    # 5) Apply day validity (≥13 of 17 blocks)
-    valid = blocks_per_day >= min_blocks_per_day
-    mda8_by_day = mda8_by_day.where(valid)
-
-    # 6) Reindex to requested local dates and return with standard 'time' coord
-    target_days = pd.to_datetime(datesv1)  # these are local dates
-    out = mda8_by_day.reindex(day=target_days)
-    out = out.rename({"day": "time"}).assign_coords(time=("time", target_days))
-    return out
-    
 #================================================================================================
 # Get the saved match column Idx
 MonitorIdx_df = pd.read_csv(Monitorne30Idx_filepath)
@@ -278,16 +217,16 @@ def casei_build_and_save_all_sites(scen, yr, MonitorIdx_df, startMMDD, endMMDD, 
         # Hourly UTC series for this site (select by model column index)
         Monitori_HourlyO3_da = HourlyO3_da.sel(ncol=colIdxi)
 
-        # Compute daily MDA8 for local dates using fixed summertime UTC offset
-        MDA8O3 = compute_mda8_UTCoffset(
-            Monitori_HourlyO3_da, datesv1,
-            utc_offset_hours=get_summer_offset(lati, loni, int(YYYY))
-        )  # -> xr.DataArray with 'time' on local dates
+        # Daily MDA8 per 40 CFR 50 Appendix U (local standard time, truncation, validity rules)
+        _off = lst_offset_hours(_TF.timezone_at(lat=lati, lng=loni), loni, int(YYYY))
+        _, _m = mda8_epa(Monitori_HourlyO3_da.values * 1e9, Monitori_HourlyO3_da.time.values, [_off],
+                         startfileDate, endfileDate)
+        mda8_ppb = _m[:, 0]                                   # whole ppb, NaN = not a valid day
 
         # Per-site MDA8 dataset (AQS_code x time)
         ds_mda8 = xr.Dataset(
             data_vars={
-                "MDA8O3": (("AQS_code", "time"), MDA8O3.values[np.newaxis, :]*1e9, # to convert to ppb
+                "MDA8O3": (("AQS_code", "time"), mda8_ppb[np.newaxis, :],      # ppb
                            {"units": "ppb",
                             "long_name": "Daily maximum of 8-hour average ozone (MDA8)",
                             "cell_methods": "time: mean (interval: 8 hours) time: maximum within days"})
@@ -335,8 +274,14 @@ def casei_build_and_save_all_sites(scen, yr, MonitorIdx_df, startMMDD, endMMDD, 
     ds_all_mda8.attrs.update({
         "title": "Daily MDA8 O3 at point monitors (local-time dates)",
         "Conventions": "CF-1.9",
-        "comment": ("Local-time MDA8 computed from UTC hourly O3 using fixed summertime UTC offset "
-                    "(8h rolling means with >=6 valid hours; day valid if >=13 of 17 end-hours 07–23)."),
+        "comment": "MDA8 per 40 CFR Part 50 Appendix U (2015 O3 NAAQS); see mda8_method.",
+        "mda8_method": ("hourly values in local standard time (no daylight saving), truncated to whole ppb "
+                        "(0.001 ppm); 8-h averages stored at their start hour, valid with >=6 of 8 hours (divisor "
+                        "6/7), or with <=5 hours if the zero-substituted average exceeds 70 ppb; averages truncated "
+                        "to whole ppb; daily maximum of the 17 averages starting 07:00-23:00 LST; day valid with "
+                        ">=13 of 17 valid averages or if the maximum exceeds 70 ppb. Model hourly means are stamped "
+                        "at the end of the hour, so hour-beginning = stamp - 1 h."),
+        "mda8_values": "whole ppb (truncated, as EPA reports 3 decimals in ppm); NaN = not a valid day",
     })
     ds_all_hourly.attrs.update({
         "title": "Hourly O3 at point monitors (UTC timestamps)",
@@ -362,18 +307,20 @@ def casei_build_and_save_all_sites(scen, yr, MonitorIdx_df, startMMDD, endMMDD, 
 
     allMonitors_MDA8O3_filename = (
         f"{Output_diri}LocalTimeMDA8O3.{label}."
-        f"GivenMonitors{args.file_tag}.{startfileDate}T{endfileDate}.nc"
+        f"GivenMonitors{args.file_tag}.{startfileDate}T{endfileDate}"
+        f"{'_c' + args.cdate if args.cdate else ''}.nc"
     )
     allMonitors_HourlyO3_filename = (
         f"{Output_diri}UTChourlyO3.{label}."
         f"GivenMonitors{args.file_tag}.{startfileDate}T{endfileDate}.nc"
     )
 
+    assert not os.path.exists(allMonitors_MDA8O3_filename), allMonitors_MDA8O3_filename
     ds_all_mda8.to_netcdf(allMonitors_MDA8O3_filename, format="NETCDF4", encoding=enc_mda8)
-    ds_all_hourly.to_netcdf(allMonitors_HourlyO3_filename, format="NETCDF4", encoding=enc_hourly)
-
     print(f"Saved MDA8 dataset to   {allMonitors_MDA8O3_filename}")
-    print(f"Saved Hourly dataset to {allMonitors_HourlyO3_filename}")
+    if not args.mda8_only:
+        ds_all_hourly.to_netcdf(allMonitors_HourlyO3_filename, format="NETCDF4", encoding=enc_hourly)
+        print(f"Saved Hourly dataset to {allMonitors_HourlyO3_filename}")
 
 #================================================================================================
 # Apply this function to a selected list of case and provided dates

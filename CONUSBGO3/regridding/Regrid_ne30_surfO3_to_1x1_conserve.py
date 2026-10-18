@@ -37,6 +37,10 @@ MODIFICATION HISTORY:
     # regression: recompute BASE 2022 and require equality with the old file
     python Regrid_ne30_surfO3_to_1x1_conserve.py --scenarios BASE --years 2022 \
         --check-against <old unified file> --no-write
+    18 Oct 2026: VERSION 1.4
+    - MDA8 exactly per 40 CFR 50 Appendix U (functions/mda8_epa.py): local STANDARD
+      time, windows starting 07-23, truncation, zero-substitution and >NAAQS
+      validity rules. (Before: DST offset and windows ending 07-23.)
     12 Oct 2026: VERSION 1.3
     - Local-time offset per YEAR (was 2022 rules for all years: Mexican cells
       1 h off in 2023/2024 after Mexico dropped DST). US cells unchanged.
@@ -147,34 +151,17 @@ assert len(set(zip(iy.tolist(),ix.tolist())))==ncell, "placement not unique!"
 print(f"CONUS cells mapped: {ncell} (grid {nlat}x{nlon}={nlat*nlon}) "
       f"lat {latc[0]:.3f}..{latc[-1]:.3f} lon {lonc[0]:.3f}..{lonc[-1]:.3f}")
 
-# ================= per-cell summertime UTC offset (timezonefinder) =================
+# ================= per-cell local standard time (timezonefinder) =================
+# MDA8 follows 40 CFR 50 Appendix U (functions/mda8_epa.py): hours in LOCAL STANDARD
+# TIME (no daylight saving). Standard offsets did not change 2022-2024 anywhere in the
+# box (incl. Mexico, which dropped DST in Oct 2022).
+from mda8_epa import mda8_epa, lst_offset_hours, NAAQS_PPB
 tf=TimezoneFinder()
-# The offset is taken from the rules of the year being processed: Mexico abolished
-# DST in Oct 2022, so its summer offsets are 1 h earlier from 2023 on (US rules unchanged).
-# (Before Oct 2026 the 2022 rules were used for every year -> Mexican cells were 1 h off in 2023/2024.)
 _tzname=[tf.timezone_at(lat=la,lng=lo) for la,lo in zip(cell_lat,cell_lon180)]
-def summer_offset(tz,lon180,year):
-    if tz is None: return int(round(lon180/15.0))
-    dt=pytz.timezone(tz).localize(dtmod(year,7,1),is_dst=True)
-    return int(dt.utcoffset().total_seconds()//3600)
-OFFSET={yr:np.array([summer_offset(tz,lo,yr) for tz,lo in zip(_tzname,cell_lon180)]) for yr in YEARS}
+OFFSET={yr:np.array([lst_offset_hours(tz,lo,yr) for tz,lo in zip(_tzname,cell_lon180)]) for yr in YEARS}
 for yr in YEARS:
-    print(f"cell UTC offsets {yr}:",sorted(set(OFFSET[yr].tolist())),
-          f"(cells differing from {YEARS[0]} rules: {int((OFFSET[yr]!=OFFSET[YEARS[0]]).sum())})")
-
-# ================= MDA8 (EPA), vectorized over cells, per point pipeline =================
-def compute_mda8(o3_hourly_utc, datesv1, utc_off, min_hours=6, min_blocks=13):
-    t_local = pd.DatetimeIndex(o3_hourly_utc.time.values) + pd.to_timedelta(utc_off,'h')
-    O3 = o3_hourly_utc.assign_coords(time=('time',t_local))
-    O3_8h = O3.rolling(time=8, min_periods=min_hours).mean()
-    O3_8h = O3_8h.where(O3_8h['time'].dt.hour.isin(np.arange(7,24)))
-    day = pd.DatetimeIndex(O3_8h.time.values).floor('D')
-    O3_8h = O3_8h.assign_coords(day=('time',day))
-    mda8 = O3_8h.groupby('day').max('time',skipna=True)
-    cnt  = O3_8h.groupby('day').count('time')
-    mda8 = mda8.where(cnt>=min_blocks)
-    tgt = pd.to_datetime(datesv1)
-    return mda8.reindex(day=tgt).rename({'day':'time'}).assign_coords(time=('time',tgt))
+    print(f"cell LST offsets {yr}:",sorted(set(OFFSET[yr].tolist())),
+          f"(cells differing from {YEARS[0]}: {int((OFFSET[yr]!=OFFSET[YEARS[0]]).sum())})")
 
 # ================= common provenance attrs =================
 YMD = args.cdate or dtmod.now().strftime('%Y%m%d')
@@ -285,13 +272,7 @@ for sc in RUN_SCEN:
         if args.hourly_only:
             continue
         # ---- MDA8 (use full hourly for local-time completeness; target 04-01..10-31) ----
-        datesv1=pd.date_range(f'{yr}-{STARTMMDD}',f'{yr}-{ENDMMDD}',freq='D')
-        da=xr.DataArray(hourly,dims=['time','cell'],coords={'time':times})
-        mda8=np.full((len(datesv1),ncell),np.nan,dtype='float32')
-        for off in sorted(set(OFFSET[yr].tolist())):
-            idx=np.where(OFFSET[yr]==off)[0]
-            res=compute_mda8(da.isel(cell=idx),datesv1.strftime('%Y-%m-%d').tolist(),off)
-            mda8[:,idx]=res.values
+        datesv1,mda8=mda8_epa(hourly,times,OFFSET[yr],f'{yr}-{STARTMMDD}',f'{yr}-{ENDMMDD}')   # App. U
         mda8_all[(sc,yr)]=mda8; mda8_dates[yr]=datesv1
         print(f"  MDA8 ppb: min={np.nanmin(mda8):.1f} max={np.nanmax(mda8):.1f} nan%={100*np.isnan(mda8).mean():.0f}")
 
@@ -347,10 +328,14 @@ dsm=xr.Dataset(
     attrs=prov({'title':(f"MUSICAv0 {EXP['grid']} CONUS Background-O3: {GRES} daily MDA8 O3, {len(SCEN)} scenarios, "
                          f"{YEARS[0]}-{YEARS[-1]} (Apr-Oct)"),
                 'case_names':case_names,
-                'mda8_method':('EPA convention: 8-h rolling mean (>=6 valid hours); daily max over windows '
-                               'ending 07-23 local; day valid if >=13 of 17 windows'),
-                'local_time':('per-grid-cell summertime (DST) UTC offset from timezonefinder, using each '
-                              "year's rules (Mexico has no DST from 2023)"),
+                'mda8_method':('40 CFR Part 50 Appendix U (2015 O3 NAAQS): hourly values in local standard time, '
+                               'truncated to whole ppb (0.001 ppm); 8-h averages stored at their start hour, valid with '
+                               '>=6 of 8 hours (divisor 6/7), or with <=5 hours if the zero-substituted average exceeds '
+                               '70 ppb; averages truncated to whole ppb; daily maximum of the 17 averages starting '
+                               '07:00-23:00 LST; day valid with >=13 of 17 valid averages or if the maximum exceeds 70 ppb'),
+                'local_time':('local standard time (no daylight saving) per grid cell, zone from timezonefinder; '
+                              'model hourly means are stamped at the end of the hour, so hour-beginning = stamp - 1 h'),
+                'mda8_values':'whole ppb (truncated, as EPA reports 3 decimals in ppm); NaN = not a valid day',
                 'scenario_dim':', '.join(SCEN),
                 'scenario_source':extra_src,
                 'merged_input_files':'; '.join(f'{k}: {v}' for k,v in merged_used.items()),
