@@ -41,12 +41,17 @@ def data_md5(nc):
     h = hashlib.md5()
     for v in sorted(nc.variables):
         a = nc[v][:]
-        h.update(v.encode()); h.update(np.ma.filled(a, np.nan).tobytes() if np.ma.isMaskedArray(a) else np.asarray(a).tobytes())
+        h.update(v.encode())
+        if np.asarray(a).dtype.kind in 'OUS':                      # text (e.g. scenario names): hash the values
+            h.update('\x00'.join(map(str, np.asarray(a).ravel())).encode())
+        else:
+            h.update(np.ma.filled(a, np.nan).tobytes() if np.ma.isMaskedArray(a) else np.asarray(a).tobytes())
     return h.hexdigest()
 
 files = []
 for ex, E in BGO3_EXPERIMENTS.items():
-    files += sorted(pathlib.Path(E['regrid_dir']).glob('*_c20261012.nc'))
+    files += sorted(f for f in pathlib.Path(E['regrid_dir']).glob('*_c20261012.nc')
+                    if f.name.startswith(E['unified_stem'].split('{')[0]) and '_MDA8O3_2' in f.name)   # unified only
     files += sorted(pathlib.Path(E['hourly_dir']).glob('*_c20261012.nc'))
 bad = 0
 for f in files:
