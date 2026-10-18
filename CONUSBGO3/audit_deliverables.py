@@ -161,7 +161,7 @@ for ex, E in EXPS.items():
         check(days.equals(want), f'{ex} {tgt}: 428 dates Apr1-Oct31 of {E["years"]}')
         # units sanity only (mol/mol or a double 1e9 would be off by orders of magnitude); the model
         # has real fire-plume extremes up to ~460 ppb at 0.15 deg, reported, not failed
-        check(M.attrs.get('units') == 'ppb' and 0 < float(M.min()) and float(M.max()) < 1000,
+        check(M.attrs.get('units') == 'ppb' and 0 <= float(M.min()) and float(M.max()) < 1000,   # 0 = truncated <1 ppb (App. U)
               f'{ex} {tgt}: MDA8 range {float(M.min()):.1f}..{float(M.max()):.1f} ppb, NaN {100*float(np.isnan(M).mean()):.2f}%, '
               f'cell-days >150 ppb {100*float((M > 150).mean()):.3f}%')
         for sc, yy in EXPECT[ex].items():
