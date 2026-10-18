@@ -53,7 +53,7 @@ def wording(ds):
 files = sorted(FOLDER.glob('*.nc'))
 print('files:', [f.name for f in files])
 U = [f for f in files if 'MDA8O3' in f.name]; Hs = [f for f in files if 'UTChourlySurfO3' in f.name]
-chk(len(U) == 1 and len(Hs) == 2, f'{len(U)} MDA8 file + {len(Hs)} hourly files')
+chk(len(U) == 1 and len(Hs) in (2, 8), f'{len(U)} MDA8 file + {len(Hs)} hourly files')
 
 # ---- unified MDA8 ----
 u = op(U[0]); dump(u, U[0].name)
@@ -104,15 +104,15 @@ for yr in ('2022', '2023'):
 print('\n--- hourly files')
 for h in Hs:
     d = op(h); dump(d, h.name)
-    yr = int(re.search(r'noBBGlobal(\d{4})', h.name).group(1))
+    _m = re.search(r'UTChourlySurfO3\.(\w+?)(\d{4})\.', h.name); scen, yr = _m.group(1), int(_m.group(2))
     t = pd.DatetimeIndex(d.time.values)
     chk(list(d.data_vars) == ['O3'] and d.O3.dims == ('time', 'lat', 'lon') and d.O3.attrs.get('units') == 'ppb',
         f'{h.name}: O3(time,lat,lon) ppb')
     chk(t[0] == pd.Timestamp(f'{yr}-04-01 01:00') and t[-1] == pd.Timestamp(f'{yr}-10-31 23:00') and len(t) == 5135,
         f'time {t[0]} .. {t[-1]} UTC, {len(t)} hours')
     chk(np.array_equal(d.lat.values, u.lat.values) and np.array_equal(d.lon.values, u.lon.values), 'same grid as MDA8 file')
-    chk(d.attrs.get('scenario') == 'noBBGlobal' and int(d.attrs.get('year')) == yr and
-        d.attrs.get('case_name', '').endswith('noBBemisGlobalY20220401TY20231231'),
+    chk(d.attrs.get('scenario') == scen and int(d.attrs.get('year')) == yr and scen in str(u.scenario.values) and
+        d.attrs.get('case_name', '') in u.attrs.get('case_names', ''),
         f"scenario {d.attrs.get('scenario')} year {d.attrs.get('year')} case ...{d.attrs.get('case_name','')[-36:]}")
     for kind, where in wording(d):
         print(f'  NOTE {kind}: {where}')
