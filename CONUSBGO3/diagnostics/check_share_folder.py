@@ -79,18 +79,26 @@ for c in ('time', 'lat', 'lon'):
 chk(str(j.MDA8O3.encoding.get('_FillValue')) == str(u.MDA8O3.encoding.get('_FillValue')),
     f"_FillValue July {j.MDA8O3.encoding.get('_FillValue')} / new {u.MDA8O3.encoding.get('_FillValue')}")
 print('  July scenarios:', list(map(str, j.scenario.values)), '| scenario dtype July', j.scenario.dtype, 'new', u.scenario.dtype)
+# July MDA8 used DST + windows ending 07-23 + no truncation; the new one is Appendix U,
+# so values differ everywhere: report how much (daily and seasonal-mean, and for the
+# scenario differences Olivia uses).
+v = u.MDA8O3.values; v = v[np.isfinite(v)]
+chk(np.all(v == np.floor(v)), 'new MDA8 values are whole ppb (Appendix U truncation)')
+chk('local standard time' in u.attrs.get('local_time', '') and 'Appendix U' in u.attrs.get('mda8_method', ''),
+    'local_time / mda8_method describe Appendix U, LST')
 for jn, nn in [('BASE', 'BASE'), ('noAnthro', 'noAnthro'), ('noBB', 'noBBCONUS')]:
     for yr in ('2022', '2023'):
         a = j.MDA8O3.sel(scenario=jn, time=yr).values; b = u.MDA8O3.sel(scenario=nn, time=yr).values
-        ch = (np.abs(a - b) > 1e-3).any(0) | (np.isnan(a) != np.isnan(b)).any(0)
-        cells = [(float(u.lat[i]), float(u.lon[k])) for i, k in zip(*np.where(ch))]
-        msg = f'July {jn}{yr} vs new {nn}{yr}: {int(ch.sum())} cells differ, max |d| {np.nanmax(np.abs(a - b)):.3f} ppb'
-        if yr == '2022':
-            chk(ch.sum() == 0, msg + ' (must be 0)')
-        else:
-            lats = sorted({c[0] for c in cells})
-            chk(ch.sum() <= 60 and (max(lats) <= 32 if lats else True),
-                msg + (f'; all at lat <= {max(lats):.0f}N (northern Mexico / border)' if lats else ''))
+        d = b - a; ad = np.abs(d); sm = np.nanmean(b, 0) - np.nanmean(a, 0)
+        print(f'  new {nn}{yr} - July {jn}{yr}: daily mean {np.nanmean(d):+.2f} ppb, |d|>1 ppb {100*np.nanmean(ad > 1):.0f}%, '
+              f'>5 ppb {100*np.nanmean(ad > 5):.1f}%, max |d| {np.nanmax(ad):.1f}; seasonal-mean change '
+              f'{np.nanmin(sm):+.2f}..{np.nanmax(sm):+.2f} (box mean {np.nanmean(sm):+.2f}) ppb; '
+              f'valid-day count July {int(np.isfinite(a).sum())} / new {int(np.isfinite(b).sum())}')
+for yr in ('2022', '2023'):
+    dj = j.MDA8O3.sel(scenario='BASE', time=yr).mean('time') - j.MDA8O3.sel(scenario='noBB', time=yr).mean('time')
+    dn = u.MDA8O3.sel(scenario='BASE', time=yr).mean('time') - u.MDA8O3.sel(scenario='noBBCONUS', time=yr).mean('time')
+    print(f'  seasonal BASE-noBB(CONUS) {yr}: July box mean {float(dj.mean()):.2f}, new {float(dn.mean()):.2f} ppb; '
+          f'max |change| {float(np.abs(dn - dj).max()):.2f} ppb')
 
 # ---- hourly ----
 print('\n--- hourly files')
