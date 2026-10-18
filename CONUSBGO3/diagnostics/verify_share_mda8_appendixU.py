@@ -35,13 +35,16 @@ tf = TimezoneFinder()
 LA, LO = np.meshgrid(U.lat.values, U.lon.values, indexing='ij')
 lat, lon = LA.ravel(), LO.ravel()
 
-def lst(la, lo):
+def lst(la, lo, year):
+    """Standard time of that year (January = standard in the northern hemisphere). Year matters:
+    Chihuahua/Ojinaga were -7 in 2022 and moved to -6 from Oct 30, 2022."""
     z = tf.timezone_at(lat=la, lng=lo)
     if z is None:
         return int(round(lo / 15))
-    return int(pytz.timezone(z).localize(datetime(2023, 1, 15)).utcoffset().total_seconds() // 3600)
-OFF = np.array([lst(a, b) for a, b in zip(lat, lon)])
-print('LST offsets present:', sorted(set(OFF.tolist())))
+    return int(pytz.timezone(z).localize(datetime(year, 1, 15)).utcoffset().total_seconds() // 3600)
+OFFY = {yr: np.array([lst(a, b, yr) for a, b in zip(lat, lon)]) for yr in (2022, 2023)}
+print('LST offsets present:', {yr: sorted(set(o.tolist())) for yr, o in OFFY.items()},
+      '| cells differing 2022 vs 2023:', int((OFFY[2022] != OFFY[2023]).sum()))
 
 def pandas_impl(series_end_utc_ppb, off, year):
     """Independent: pandas Series (index = CAM end-of-hour UTC) -> MDA8 per local date."""
@@ -93,7 +96,7 @@ for sc in map(str, U.scenario.values):
         h = xr.open_dataset(glob.glob(str(HD / f'CONUS1x1_UTChourlySurfO3.{sc}{yr}.*.nc'))[0]).O3
         t = pd.DatetimeIndex(h.time.values); Hv = h.values.reshape(len(t), -1).astype('float64')
         ref = M.sel(scenario=sc, time=slice(f'{yr}-04-01', f'{yr}-10-30')).values.reshape(-1, Hv.shape[1])
-        mism = 0; nanmis = 0
+        OFF = OFFY[yr]; mism = 0; nanmis = 0
         for c in range(Hv.shape[1]):
             p = pandas_impl(pd.Series(Hv[:, c], index=t), OFF[c], yr).values
             mism += int(np.nansum(np.abs(p - ref[:, c]) > 0)); nanmis += int((np.isnan(p) != np.isnan(ref[:, c])).sum())
