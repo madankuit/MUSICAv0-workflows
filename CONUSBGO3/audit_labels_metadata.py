@@ -122,6 +122,7 @@ for ex, E in BGO3_EXPERIMENTS.items():
                         ('regrid_weight_file', pathlib.Path(wgt).name), ('regrid_dest_grid', pathlib.Path(gi).name),
                         ('regrid_source_scrip', pathlib.Path(E['scrip']).name), ('local_time', 'local standard time'),
                         ('mda8_method', 'Appendix U'), ('mda8_method', '07:00-23:00 LST'), ('mda8_values', 'whole ppb'),
+                        ('references', '40 CFR Part 50, Appendix U'), ('references', '80 FR 65292'),
                         ('scenario_dim', ', '.join(want)), ('scenarios', 'noBBCONUS')]:
             if need not in str(ds.attrs.get(k, '')):
                 iss.append(f"{k} lacks '{need}'")
@@ -182,6 +183,8 @@ for ex, E in BGO3_EXPERIMENTS.items():
             if kind == 'LocalTimeMDA8O3':
                 if 'local standard time' not in ds.attrs.get('mda8_method', ''):
                     iss.append('mda8_method lacks local standard time')
+                if '40 CFR Part 50, Appendix U' not in ds.attrs.get('references', ''):
+                    iss.append('references attribute missing')
                 v = ds[var].values; v = v[np.isfinite(v)]
                 if not np.all(v == np.floor(v)):
                     iss.append('MDA8 not whole ppb')

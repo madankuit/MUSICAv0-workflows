@@ -34,6 +34,16 @@ import pandas as pd
 NAAQS_PPB = 70.0
 EPS = 1e-6
 
+# Citations written into every MDA8 file (attribute 'references') and the share README.
+REFERENCES = (
+    "40 CFR Part 50, Appendix U - Interpretation of the Primary and Secondary National Ambient Air "
+    "Quality Standards for Ozone [80 FR 65458, Oct. 26, 2015], Section 3 (data handling): "
+    "https://www.ecfr.gov/current/title-40/chapter-I/subchapter-C/part-50/appendix-Appendix%20U%20to%20Part%2050 "
+    "(also https://www.law.cornell.edu/cfr/text/40/appendix-U_to_part_50); "
+    "U.S. EPA (2015), National Ambient Air Quality Standards for Ozone, Final Rule, 80 FR 65292, "
+    "Oct. 26, 2015, docket EPA-HQ-OAR-2008-0699: "
+    "https://www.federalregister.gov/documents/2015/10/26/2015-26594/national-ambient-air-quality-standards-for-ozone")
+
 
 def lst_offset_hours(tz_name, lon, year=2023):
     """Standard-time UTC offset (h) of an IANA zone in `year` (no DST); nautical if no zone."""

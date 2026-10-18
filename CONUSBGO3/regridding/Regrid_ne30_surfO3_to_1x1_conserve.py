@@ -155,7 +155,7 @@ print(f"CONUS cells mapped: {ncell} (grid {nlat}x{nlon}={nlat*nlon}) "
 # MDA8 follows 40 CFR 50 Appendix U (functions/mda8_epa.py): hours in LOCAL STANDARD
 # TIME (no daylight saving). Standard offsets did not change 2022-2024 anywhere in the
 # box (incl. Mexico, which dropped DST in Oct 2022).
-from mda8_epa import mda8_epa, lst_offset_hours, NAAQS_PPB
+from mda8_epa import mda8_epa, lst_offset_hours, NAAQS_PPB, REFERENCES as MDA8_REFERENCES
 tf=TimezoneFinder()
 _tzname=[tf.timezone_at(lat=la,lng=lo) for la,lo in zip(cell_lat,cell_lon180)]
 OFFSET={yr:np.array([lst_offset_hours(tz,lo,yr) for tz,lo in zip(_tzname,cell_lon180)]) for yr in YEARS}
@@ -336,6 +336,7 @@ dsm=xr.Dataset(
                 'local_time':('local standard time (no daylight saving) per grid cell, zone from timezonefinder; '
                               'model hourly means are stamped at the end of the hour, so hour-beginning = stamp - 1 h'),
                 'mda8_values':'whole ppb (truncated, as EPA reports 3 decimals in ppm); NaN = not a valid day',
+                'references':MDA8_REFERENCES,
                 'scenario_dim':', '.join(SCEN),
                 'scenario_source':extra_src,
                 'merged_input_files':'; '.join(f'{k}: {v}' for k,v in merged_used.items()),

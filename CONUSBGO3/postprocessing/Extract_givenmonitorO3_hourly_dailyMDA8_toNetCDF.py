@@ -147,7 +147,7 @@ warnings.filterwarnings("ignore", category=FutureWarning, module="xarray.core.ac
 # Define functions specific for this application
 # repo-local shared functions (functions/ is on sys.path via `import config`)
 from SE_analysis import get_site_index
-from mda8_epa import mda8_epa, lst_offset_hours
+from mda8_epa import mda8_epa, lst_offset_hours, REFERENCES as MDA8_REFERENCES
 from timezonefinder import TimezoneFinder as _TFclass
 _TF = _TFclass()
 
@@ -282,6 +282,7 @@ def casei_build_and_save_all_sites(scen, yr, MonitorIdx_df, startMMDD, endMMDD, 
                         ">=13 of 17 valid averages or if the maximum exceeds 70 ppb. Model hourly means are stamped "
                         "at the end of the hour, so hour-beginning = stamp - 1 h."),
         "mda8_values": "whole ppb (truncated, as EPA reports 3 decimals in ppm); NaN = not a valid day",
+        "references": MDA8_REFERENCES,
     })
     ds_all_hourly.attrs.update({
         "title": "Hourly O3 at point monitors (UTC timestamps)",
