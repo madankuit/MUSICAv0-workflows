@@ -44,6 +44,11 @@ _ROOT = next(p for p in pathlib.Path(__file__).resolve().parents
 sys.path.insert(0, str(_ROOT))
 import config  # noqa: F401
 from config.paths import BGO3_EXPERIMENTS, case_hist_dir
+# --experiments=ne30[,ne0CONUSne30x8]: audit only these sets (ne0 outputs deleted 2026-10-18)
+_ex=[a.split('=',1)[1].split(',') for a in sys.argv if a.startswith('--experiments=')]
+EXPS={k:v for k,v in BGO3_EXPERIMENTS.items() if not _ex or k in _ex[0]}
+sys.argv=[a for a in sys.argv if not a.startswith('--experiments=')]
+
 
 RNG = np.random.default_rng(20261012)
 CDATE = sys.argv[1] if len(sys.argv) > 1 else '20261018'   # MDA8 (unified + point) stamp to audit
@@ -141,7 +146,7 @@ def contains_col(scrip, lat, lon):
 # ======================================================================= A
 print("\n=== A. inventory ===")
 inv = []
-for ex, E in BGO3_EXPERIMENTS.items():
+for ex, E in EXPS.items():
     lp = E['label_prefix']
     for tgt, (_, _, tag) in E['targets'].items():
         stem = E['unified_stem'].format(tag=tag)
@@ -196,7 +201,7 @@ for ex, E in BGO3_EXPERIMENTS.items():
 print("\n=== B. points recomputed from raw h2 (independent column lookup + numpy MDA8) ===")
 SITES = {'ne30': ['aqs_340130003', 'aqs_040134010', 'aqs_060811001', 'aqs_530330080', 'aqs_230010014', 'aqs_410050004'],
          'ne0CONUSne30x8': ['aqs_340130003', 'aqs_060374009', 'aqs_530330080', 'aqs_120712002']}
-for ex, E in BGO3_EXPERIMENTS.items():
+for ex, E in EXPS.items():
     scrip = xr.open_dataset(E['scrip'])
     mon = pd.read_csv(E.get('colidx_exact', E['colidx']), dtype={'AQS_code': str}).set_index('AQS_code')
     extra = list(RNG.choice([a for a in mon.index if 25 < mon.lat[a] < 49 and a not in SITES[ex]], 3, replace=False))
@@ -241,7 +246,7 @@ for ex, E in BGO3_EXPERIMENTS.items():
 
 # ======================================================================= C
 print("\n=== C. regrid recomputed with shapely overlap weights (raw h2, sample hours) ===")
-for ex, E in BGO3_EXPERIMENTS.items():
+for ex, E in EXPS.items():
     scrip = xr.open_dataset(E['scrip'])
     clat = scrip['grid_center_lat'].values; clon = scrip['grid_center_lon'].values
     clon180 = np.where(clon > 180, clon - 360, clon)

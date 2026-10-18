@@ -32,6 +32,11 @@ _ROOT = next(p for p in pathlib.Path(__file__).resolve().parents if (p / 'config
 sys.path.insert(0, str(_ROOT))
 import config  # noqa: F401
 from config.paths import BGO3_EXPERIMENTS
+# --experiments=ne30[,ne0CONUSne30x8]: audit only these sets (ne0 outputs deleted 2026-10-18)
+_ex=[a.split('=',1)[1].split(',') for a in sys.argv if a.startswith('--experiments=')]
+EXPS={k:v for k,v in BGO3_EXPERIMENTS.items() if not _ex or k in _ex[0]}
+sys.argv=[a for a in sys.argv if not a.startswith('--experiments=')]
+
 
 STAMP = '20261018'          # MDA8 (unified + point MDA8 files): Appendix U recompute
 HSTAMP = '20261012'         # hourly gridded files (values unchanged)
@@ -102,7 +107,7 @@ def common(ds, ex, sc, yr, kind):
     return iss
 
 
-for ex, E in BGO3_EXPERIMENTS.items():
+for ex, E in EXPS.items():
     lp = E['label_prefix']
     # ---- unified MDA8 ----
     for tgt, (gi, wgt, tag) in E['targets'].items():
@@ -200,7 +205,7 @@ if '--list-files' in sys.argv:
 # ---- everything else in the output folders ----
 print('\n=== other .nc files in the output folders (not in the share set) ===')
 shareset = {str(p) for p in share}
-for ex, E in BGO3_EXPERIMENTS.items():
+for ex, E in EXPS.items():
     for d in sorted({E['regrid_dir'], E['hourly_dir'], E['points_dir']}):
         for f in sorted(glob.glob(str(pathlib.Path(d) / '*.nc'))):
             if f not in shareset:
