@@ -39,7 +39,7 @@ sys.argv=[a for a in sys.argv if not a.startswith('--experiments=')]
 
 
 STAMP = '20261018'          # MDA8 (unified + point MDA8 files): Appendix U recompute
-HSTAMP = '20261012'         # hourly gridded files (values unchanged)
+HSTAMP = '20261018'         # hourly gridded files (re-issued 2026-10-19 with the MDA8 stamp; values unchanged)
 SIM = {   # written out by hand
     'ne30': {('BASE', 2022): 'f.e22.FCnudged.ne30_ne30_mg17.BGO3.BASEY20220401TY20230401',
              ('BASE', 2023): 'f.e22.FCnudged.ne30_ne30_mg17.BGO3.BASEY20230401TY20231101',
